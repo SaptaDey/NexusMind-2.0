@@ -17,18 +17,19 @@ def bayesian_update_confidence(
     edge_type: Optional[EdgeType] = None,  # P1.10, P1.24, P1.25 for context
 ) -> ConfidenceVector:
     """
-    Simplified Bayesian-inspired update for a ConfidenceVector.
-    P1.14: Apply Bayesian updates... considering evidence reliability (P1.26 power) and edge type.
-
+    Performs a simplified Bayesian-inspired update on a confidence vector using new evidence.
+    
+    The update adjusts each component of the confidence vector toward 1.0 if the evidence supports the hypothesis, or toward 0.0 if it contradicts, scaled by the product of evidence strength, statistical power, and an edge type factor. The adjustment is clamped to maintain valid probability values.
+    
     Args:
-        prior_confidence: The current confidence vector of the hypothesis.
-        evidence_strength: A score (0-1) indicating the strength/reliability of the new evidence.
-        evidence_supports_hypothesis: Boolean indicating if evidence supports or contradicts.
-        statistical_power: Statistical power of the evidence.
-        edge_type: Type of edge connecting evidence to hypothesis, can influence update.
-
+        prior_confidence: The current confidence vector representing the hypothesis.
+        evidence_strength: A float between 0 and 1 indicating the reliability of the new evidence.
+        evidence_supports_hypothesis: Whether the evidence supports (True) or contradicts (False) the hypothesis.
+        statistical_power: Optional; the statistical power of the evidence, influencing update weight.
+        edge_type: Optional; the type of relationship between evidence and hypothesis, affecting the update factor.
+    
     Returns:
-        A new ConfidenceVector with updated values.
+        A new ConfidenceVector with updated confidence values.
     """
     # This is a highly simplified placeholder. True Bayesian updates involve likelihoods, priors, etc.
     # and updating probability distributions, not just scores.
@@ -79,8 +80,16 @@ def calculate_information_gain(
     prior_distribution: list[float], posterior_distribution: list[float]
 ) -> float:
     """
-    Placeholder for calculating information gain (e.g., KL divergence reduction). P1.27.
-    This would compare the uncertainty before and after evidence.
+    Calculates a simplified information gain between prior and posterior probability distributions.
+    
+    The function returns the average absolute difference between corresponding elements of the two distributions, providing a basic measure of how much the probabilities have changed after incorporating new evidence.
+    
+    Args:
+        prior_distribution: The probability distribution before observing new evidence.
+        posterior_distribution: The probability distribution after updating with new evidence.
+    
+    Returns:
+        The average absolute change between the prior and posterior distributions. Returns 0.0 if the distributions have different lengths.
     """
     # Simplified: sum of absolute changes in probability for now
     if len(prior_distribution) != len(posterior_distribution):

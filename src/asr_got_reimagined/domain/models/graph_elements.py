@@ -208,6 +208,16 @@ class Node(TimestampedModel):
 
     @field_serializer("confidence")
     def serialize_confidence_to_list(self, v: ConfidenceVector, _info):
+        """
+        Serializes a ConfidenceVector to a list representation.
+        
+        Args:
+            v: The ConfidenceVector instance to serialize.
+            _info: Serialization context (unused).
+        
+        Returns:
+            A list representation of the confidence vector.
+        """
         return v.to_list()
 
     # To allow Node instances to be added to sets or used as dict keys
@@ -267,6 +277,9 @@ class Edge(TimestampedModel):
     )  # To allow Edge instances to be added to sets or used as dict keys (e.g. by source, target, type)
 
     def __hash__(self):
+        """
+        Returns a hash value based on the edge's ID, source ID, target ID, and type.
+        """
         return hash((self.id, self.source_id, self.target_id, self.type))
 
     def __eq__(self, other: Any) -> bool:
@@ -301,6 +314,12 @@ class Hyperedge(TimestampedModel):  # P1.9
 
     @field_validator("node_ids")
     def check_min_nodes(cls, v: set[str]) -> set[str]:  # Ensure this is lowercase 'set'
+        """
+        Validates that a hyperedge connects at least two nodes.
+        
+        Raises:
+            ValueError: If fewer than two node IDs are provided.
+        """
         if (
             len(v) < 2
         ):  # P1.9 stated |Eh| > 2, but often hyperedges also model pairs with specific semantics

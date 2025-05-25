@@ -52,9 +52,17 @@ class HypothesisStage(BaseStage):
         self, dimension_node: Node, hypo_index: int, initial_query: str
     ) -> dict[str, Any]:
         """
-        Generates content for a single hypothesis.
-        In a real system, this would involve more sophisticated generation,
-        possibly using an LLM or rule-based systems based on the dimension and query.
+        Generates a dictionary containing the content for a single hypothesis based on a dimension node and an initial query.
+        
+        The generated content includes a hypothesis label, an evaluation plan, falsification criteria, optional bias flags, an estimated impact score, and a set of disciplinary tags. The values are randomly selected or constructed to simulate hypothesis generation for testing or prototyping purposes.
+        
+        Args:
+            dimension_node: The node representing the dimension for which the hypothesis is generated.
+            hypo_index: The index of the hypothesis among those generated for this dimension.
+            initial_query: The original query string that prompted hypothesis generation.
+        
+        Returns:
+            A dictionary with keys: 'label', 'plan', 'falsification_criteria', 'bias_flags', 'impact_score', and 'disciplinary_tags', representing the generated hypothesis content.
         """
         # Placeholder content generation
         dim_label = dimension_node.label
@@ -124,6 +132,14 @@ class HypothesisStage(BaseStage):
     async def execute(
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
+        """
+        Asynchronously generates hypothesis nodes for each dimension node in the graph and links them.
+        
+        For each dimension node identified from the previous decomposition stage, this method creates a configurable number of hypothesis nodes with associated metadata, including plans, falsification criteria, bias flags, impact scores, and disciplinary tags. Each hypothesis node is added to the graph and connected to its parent dimension node with an edge. The method returns a StageOutput summarizing the number of hypotheses generated, metrics, and context updates for downstream processing.
+        
+        Returns:
+            StageOutput: Contains a summary, metrics, and context update with generated hypothesis node IDs.
+        """
         self._log_start(current_session_data.session_id)
 
         # GoTProcessor now stores the dictionary from next_stage_context_update directly.

@@ -63,6 +63,10 @@ async def handle_asr_got_query(
     params: MCPASRGoTQueryParams,
     request_id: Optional[Union[str, int]],
 ) -> JSONRPCResponse[MCPASRGoTQueryResult, Any]:
+    """
+    Processes an ASR-GoT query request and returns the result in JSON-RPC format.
+    
+    Handles query execution using the GoTProcessor, optionally including graph state and reasoning trace in the response. Returns a structured result with the answer, confidence vector, execution time, and session ID. If the processor is unavailable or an error occurs during processing, returns a JSON-RPC error response.
     logger.info(
         "MCP asr_got.query request received for query: '{}'",
         params.query[:100] + "..." if params.query else "N/A",
@@ -235,6 +239,11 @@ async def handle_shutdown(
 async def mcp_endpoint_handler(
     request_payload: JSONRPCRequest[dict[str, Any]], http_request: Request
 ):
+    """
+    Handles incoming MCP JSON-RPC requests and dispatches them to the appropriate method handler.
+    
+    Supports the "initialize", "asr_got.query", and "shutdown" methods. Returns a JSON-RPC error response for unsupported methods or if parameter validation fails. Internal errors are caught and returned as JSON-RPC error responses.
+    """
     logger.debug(
         "MCP Endpoint received raw request: method={}, id={}",
         request_payload.method,

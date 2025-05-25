@@ -46,6 +46,11 @@ class SubgraphExtractionStage(BaseStage):
     stage_name: str = "SubgraphExtractionStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the subgraph extraction stage with default extraction criteria.
+        
+        Defines a set of default subgraph extraction strategies, each specifying node selection filters and neighbor inclusion depth. These criteria guide how subgraphs are extracted from the input graph and can be overridden by configuration or operational parameters.
+        """
         super().__init__(settings)
         # P1.6: Subgraph extraction criteria can be complex and data-driven.
         # For now, define some default strategies. These could also come from config or operational_params.
@@ -81,7 +86,12 @@ class SubgraphExtractionStage(BaseStage):
         ]
 
     def _node_matches_criteria(self, node: Node, criterion: SubgraphCriterion) -> bool:
-        """Checks if a single node matches the filtering criteria."""
+        """
+        Determines whether a node satisfies all specified subgraph extraction criteria.
+        
+        Returns:
+            True if the node meets all attribute-based and tag-based filters defined in the criterion; otherwise, False.
+        """
         if (
             criterion.min_avg_confidence is not None
             and node.confidence.average_confidence < criterion.min_avg_confidence
@@ -130,7 +140,11 @@ class SubgraphExtractionStage(BaseStage):
     async def _extract_single_subgraph(
         self, graph: ASRGoTGraph, criterion: SubgraphCriterion
     ) -> ExtractedSubgraph:
-        """Extracts one subgraph based on a single criterion."""
+        """
+        Extracts a subgraph from the input graph based on the specified criterion.
+        
+        Identifies seed nodes that match the given criterion, then expands the subgraph by including neighboring nodes up to the specified depth. Returns an ExtractedSubgraph containing the names, description, node IDs, and basic metrics.
+        """
         seed_node_ids: set[str] = set()
         for node_id, node_obj in graph.nodes.items():
             if self._node_matches_criteria(node_obj, criterion):
@@ -177,6 +191,18 @@ class SubgraphExtractionStage(BaseStage):
     async def execute(
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
+        """
+        Executes the subgraph extraction stage, generating subgraphs based on configurable criteria.
+        
+        This method applies either default or custom extraction criteria to the input graph, extracting subgraphs that match each criterion. It aggregates the results, compiles summary metrics, and prepares context updates for downstream pipeline stages.
+        
+        Args:
+            graph: The input graph from which subgraphs are to be extracted.
+            current_session_data: Session data containing operational parameters and context.
+        
+        Returns:
+            A StageOutput object containing a summary, extraction metrics, and context updates with the extracted subgraph definitions.
+        """
         self._log_start(current_session_data.session_id)
 
         # Allow operational parameters to override or add to default criteria

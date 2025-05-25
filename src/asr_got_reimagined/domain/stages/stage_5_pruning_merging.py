@@ -61,7 +61,17 @@ class PruningMergingStage(BaseStage):
         return False
 
     async def _prune_nodes(self, graph: ASRGoTGraph) -> int:
-        """Prunes nodes based on criteria."""
+        """
+        Removes nodes from the graph that meet pruning criteria for low confidence and low impact.
+        
+        Nodes are identified for removal if they do not meet the configured confidence and impact thresholds. For each pruned node, a revision record is appended to its metadata documenting the pruning action.
+        
+        Args:
+            graph: The ASRGoTGraph instance to prune nodes from.
+        
+        Returns:
+            The number of nodes that were pruned.
+        """
         nodes_to_prune_ids: set[str] = set()
         for node_id, node_obj in list(
             graph.nodes.items()
@@ -94,8 +104,12 @@ class PruningMergingStage(BaseStage):
 
     async def _merge_nodes(self, graph: ASRGoTGraph) -> int:
         """
-        Merges highly similar nodes based on P1.5.
-        Merging threshold: semantic_overlap >= threshold.
+        Merges highly similar nodes in the graph based on semantic overlap.
+        
+        Nodes of the same type (hypotheses or evidence) are compared for semantic similarity using a threshold. When two nodes exceed the overlap threshold, the node with lower confidence and impact is merged into the other. This process rewires edges, combines metadata and disciplinary tags, updates confidence scores, and records the merge in revision history. The merged-away node is then removed from the graph.
+        
+        Returns:
+            The number of node pairs merged.
         """
         # This is a complex operation. A simplified approach:
         # 1. Group nodes by type (hypotheses with hypotheses, evidence with evidence).

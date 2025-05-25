@@ -209,7 +209,11 @@ class ReflectionStage(BaseStage):
             )
 
     async def _check_statistical_rigor(self, graph: ASRGoTGraph) -> AuditCheckResult:
-        """P1.7: Check statistical rigor of evidence (P1.26)."""
+        """
+        Evaluates the statistical rigor of evidence nodes based on statistical power.
+        
+        Assesses all evidence nodes in the graph and determines the proportion that meet or exceed a statistical power threshold of 0.7. Returns PASS if the proportion meets the configured minimum ratio, WARNING if not, and NOT_APPLICABLE if there are no evidence nodes to assess.
+        """
         evidence_nodes = [
             n for n in graph.nodes.values() if n.type == NodeType.EVIDENCE
         ]
@@ -247,6 +251,9 @@ class ReflectionStage(BaseStage):
     # Placeholder checks for P1.7 items not yet deeply implemented in prior stages
     async def _check_causal_claim_validity(self) -> AuditCheckResult:  # P1.24
         # graph: ASRGoTGraph, # Marked as unused
+        """
+        Returns a placeholder audit result indicating that the causal claim validity check is not implemented.
+        """
         return AuditCheckResult(
             check_name="causal_claim_validity",
             status="NOT_RUN",
@@ -255,6 +262,9 @@ class ReflectionStage(BaseStage):
 
     async def _check_temporal_consistency(self) -> AuditCheckResult:  # P1.18, P1.25
         # graph: ASRGoTGraph, # Marked as unused
+        """
+        Returns a placeholder audit result indicating that the temporal consistency check is not implemented.
+        """
         return AuditCheckResult(
             check_name="temporal_consistency",
             status="NOT_RUN",
@@ -263,6 +273,9 @@ class ReflectionStage(BaseStage):
 
     async def _check_collaboration_attributions(self) -> AuditCheckResult:  # P1.29
         # graph: ASRGoTGraph, # Marked as unused
+        """
+        Returns a placeholder audit result indicating that the collaboration attributions check is not implemented.
+        """
         return AuditCheckResult(
             check_name="collaboration_attributions_check",
             status="NOT_RUN",
@@ -274,8 +287,15 @@ class ReflectionStage(BaseStage):
         audit_results: list[AuditCheckResult],  # graph: ASRGoTGraph # Marked as unused
     ) -> ConfidenceVector:
         """
-        Calculates a final overall confidence vector based on audit results and graph state.
-        This is a simplified heuristic.
+        Computes the final confidence vector by adjusting baseline values according to audit results.
+        
+        The method applies heuristic adjustments to the confidence dimensions (empirical support, methodological rigor, etc.) based on the statuses of relevant audit checks, such as falsifiability, bias assessment, and statistical rigor. All values are clamped between 0.0 and 1.0.
+        
+        Args:
+            audit_results: List of audit check results to inform confidence adjustments.
+        
+        Returns:
+            A ConfidenceVector reflecting the overall assessment based on audit outcomes.
         """
         # Start with a baseline (e.g., average confidence of key nodes or neutral)
         # For now, let's use a neutral base.
@@ -340,6 +360,18 @@ class ReflectionStage(BaseStage):
     async def execute(
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
+        """
+        Executes the reflection stage by performing a series of audit checks on the provided graph and composed output, then aggregates the results into a final confidence vector and audit summary.
+        
+        Runs multiple audit checks related to confidence coverage, bias, knowledge gaps, falsifiability, and statistical rigor, as well as placeholder checks. Aggregates the results, computes a final confidence vector, and prepares a summary and metrics for downstream processing. Updates the session context with the audit results and confidence vector.
+        
+        Args:
+            graph: The ASRGoTGraph to be audited.
+            current_session_data: The current session's data, including accumulated context.
+        
+        Returns:
+            A StageOutput containing the audit summary, metrics, and updated context.
+        """
         self._log_start(current_session_data.session_id)
 
         composition_stage_output = current_session_data.accumulated_context.get(

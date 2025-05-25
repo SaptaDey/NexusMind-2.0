@@ -45,13 +45,28 @@ class Logger:
         ...
 
     def add(self, sink: Any, **kwargs: Any) -> int:
-        """Add a new handler to the logger."""
+        """
+        Adds a new logging handler.
+        
+        Args:
+            sink: The destination for log messages, such as a file, stream, or callable.
+            **kwargs: Additional configuration options for the handler.
+        
+        Returns:
+            An integer identifier for the added handler.
+        """
         ...
 
     @overload
     def catch(
         self, exception: Callable[..., T]
     ) -> Callable[..., T]:  # T should be defined now
+        """
+        Decorator that wraps a function to automatically catch and log exceptions.
+        
+        Returns:
+            A callable with the same signature as the input, with exceptions logged.
+        """
         ...  # type: ignore[empty-body]
 
     @overload
@@ -68,10 +83,30 @@ class Logger:
     ) -> Callable[
         [Callable[..., T]], Callable[..., T]
     ]:  # Changed List to list, T should be defined
+        """
+        Decorator that wraps a function to automatically catch and log specified exceptions.
+        
+        Args:
+            exception: List of exception types to catch. Defaults to Exception.
+            default: Value to return if an exception is caught.
+            message: Optional log message to use when an exception is caught.
+            onerror: Optional callback invoked with exception details.
+            level: Log level to use for the exception message.
+            reraise: If True, re-raises the exception after logging.
+            exclude: List of exception types to ignore and not catch.
+        
+        Returns:
+            A decorator that wraps the target function, logging and handling exceptions as configured.
+        """
         ...  # type: ignore[empty-body]
 
     def catch(self, *args: Any, **kwargs: Any) -> Any:
-        """Catch exceptions in a function and log them."""
+        """
+        Decorator that catches exceptions raised by a function and logs them.
+        
+        Returns:
+            The result of the decorated function, or a default value if specified.
+        """
         ...  # type: ignore[empty-body]
 
 

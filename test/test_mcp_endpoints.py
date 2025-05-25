@@ -10,7 +10,10 @@ MCP_SERVER_URL = "http://localhost:8000/mcp"  # The MCP endpoint
 
 def test_initialize_endpoint() -> Dict[str, Any]:
     """
-    Test the initialize endpoint of the MCP server.
+    Sends a test JSON-RPC request to the MCP server's initialize endpoint and validates the response.
+    
+    Returns:
+        The parsed JSON response from the server if successful, or a dictionary containing error details if the request fails or the server returns a non-200 status code.
     """
     print("\n=== Testing Initialize Endpoint ===")
     payload = {
@@ -57,7 +60,13 @@ def test_initialize_endpoint() -> Dict[str, Any]:
 
 def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
     """
-    Test the asr_got.query endpoint with a simple scientific question.
+    Sends a test query to the asr_got.query endpoint and validates the response.
+    
+    Args:
+        session_id: Optional session identifier to use for the query. If not provided, a default test session ID is used.
+    
+    Returns:
+        The parsed JSON response from the server if successful, or a dictionary containing error details if the request fails or the server returns a non-200 status code.
     """
     print("\n=== Testing ASR-GoT Query Endpoint ===")
     payload = {
@@ -108,7 +117,10 @@ def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
 
 def test_shutdown() -> Dict[str, Any]:
     """
-    Test the shutdown endpoint.
+    Sends a JSON-RPC request to the MCP server's shutdown endpoint and returns the response.
+    
+    Returns:
+        The parsed JSON response from the server if successful, or a dictionary containing error details if the request fails or the server returns a non-200 status code.
     """
     print("\n=== Testing Shutdown Endpoint ===")
     payload = {
@@ -140,7 +152,9 @@ def test_shutdown() -> Dict[str, Any]:
 
 def run_all_tests():
     """
-    Run all MCP endpoint tests in sequence.
+    Runs the MCP server endpoint tests in sequence: initialization, query, and (optionally) shutdown.
+    
+    Executes the initialization test first. If successful, generates a session ID and runs the ASR-GOT query test with that session. The shutdown test is present but commented out to avoid stopping the server during normal testing. Prints a completion message after all tests.
     """
     # First test the initialize endpoint
     init_response = test_initialize_endpoint()

@@ -32,6 +32,16 @@ class RequestParams(BaseModel):
 
 @app.post("/mcp")
 async def mcp_handler(request: Request):
+    """
+    Handles JSON-RPC 2.0 requests for the MCP server, processing supported methods and returning appropriate responses.
+    
+    Supported methods include:
+    - "initialize": Returns server and protocol metadata.
+    - "asr_got.query": Processes a query and returns a simulated answer with reasoning trace, graph state, confidence vector, execution time, and session ID.
+    - "shutdown": Returns a response indicating shutdown.
+    
+    Returns a JSON-RPC error response for unsupported methods or invalid parameters. On unexpected errors, returns a JSON-RPC internal error response.
+    """
     try:
         data = await request.json()
         jsonrpc = data.get("jsonrpc")

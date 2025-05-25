@@ -14,11 +14,19 @@ from src.asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutp
 
 class GoTProcessor:
     def __init__(self, settings):
+        """
+        Initializes a GoTProcessor instance with the provided settings.
+        """
         self.settings = settings
         logger.info("Initializing GoTProcessor")
 
     def _initialize_stages(self) -> list[BaseStage]:
-        """Dynamically loads and initializes all stage classes."""
+        """
+        Dynamically imports and instantiates all processing stage classes in the ASR-GoT pipeline.
+        
+        Returns:
+            A list of initialized stage instances in the required execution order.
+        """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
             DecompositionStage,
@@ -59,16 +67,16 @@ class GoTProcessor:
         initial_context: Optional[dict[str, Any]] = None,
     ) -> GoTProcessorSessionData:
         """
-        Process a natural language query through the ASR-GoT stages.
-
+        Processes a natural language query through the ASR-GoT pipeline, executing each stage in sequence and managing session state, context, and error handling.
+        
         Args:
-            query: The natural language query to process
-            session_id: Optional session ID to continue or manage a session
-            operational_params: Optional parameters to control the processing behavior
-            initial_context: Optional initial context to seed the processing
-
+            query: The natural language query to process.
+            session_id: Optional session identifier for managing or continuing a session.
+            operational_params: Optional parameters to control processing behavior.
+            initial_context: Optional initial context to seed the processing.
+        
         Returns:
-            GoTProcessorSessionData: The result of processing the query
+            GoTProcessorSessionData containing the final answer, confidence vector, trace information, and accumulated context for the session.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,

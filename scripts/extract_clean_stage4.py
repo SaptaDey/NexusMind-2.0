@@ -11,7 +11,11 @@ import re
 
 
 def extract_clean_stage4_evidence():
-    """Extract clean stage_4_evidence.py file."""
+    """
+    Cleans and reformats the `stage_4_evidence.py` file, producing a version with standardized indentation, spacing, and improved syntax formatting.
+    
+    Reads the original file, replaces tabs with spaces, removes trailing whitespace, and inserts newlines between certain statements to address common formatting issues. The cleaned content is saved to a new file with a `.clean` suffix in the same directory. Prints the path to the cleaned file or an error message if processing fails.
+    """
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     original_path = os.path.join(project_dir, 'src', 'asr_got_reimagined', 'domain', 'stages', 'stage_4_evidence.py')
     clean_path = os.path.join(project_dir, 'src', 'asr_got_reimagined', 'domain', 'stages', 'stage_4_evidence.py.clean')

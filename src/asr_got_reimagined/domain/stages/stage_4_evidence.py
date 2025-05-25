@@ -40,6 +40,11 @@ class EvidenceStage(BaseStage):
     stage_name: str = "EvidenceStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the EvidenceStage with configuration parameters for evidence integration.
+        
+        Sets the maximum number of evidence integration iterations, the semantic similarity threshold for creating interdisciplinary bridge nodes, and the minimum number of evidence nodes required to consider hyperedge creation.
+        """
         super().__init__(settings)
         # P1.4: Adaptive Evidence Integration Loop
         self.max_iterations = self.default_params.evidence_max_iterations
@@ -56,9 +61,12 @@ class EvidenceStage(BaseStage):
         self, graph: ASRGoTGraph, hypothesis_node_ids: list[str]
     ) -> Optional[Node]:
         """
-        Selects the next hypothesis for evidence gathering.
-        P1.4: based on multi-dimensional confidence-to-cost ratio (P1.5) & potential impact (P1.28).
-        Simplified: selects a hypothesis, perhaps one with high uncertainty or impact.
+        Selects the next hypothesis node for evidence integration based on impact and uncertainty.
+        
+        Among the provided hypothesis node IDs, this method filters for valid hypothesis nodes and scores them by combining their impact score and the variance of their confidence vector (representing uncertainty). The hypothesis with the highest combined score is selected for evidence gathering. Returns `None` if no eligible hypotheses are found.
+        
+        Returns:
+            The selected hypothesis node, or `None` if no eligible hypothesis is available.
         """
         eligible_hypotheses: list[Node] = []
         for hypo_id in hypothesis_node_ids:
@@ -94,9 +102,15 @@ class EvidenceStage(BaseStage):
         # session_data: GoTProcessorSessionData, # Marked as unused by Ruff
     ) -> list[dict[str, Any]]:
         """
-        Simulates executing the plan associated with a hypothesis to find/generate evidence.
-        P1.4: executing plans...
-        In a real system, this would involve calling external tools, databases, LLMs, or running simulations.
+        Simulates the execution of a hypothesis plan to generate mock evidence data.
+        
+        Generates one or two pieces of simulated evidence for the given hypothesis node, each with randomized support, strength, statistical power, disciplinary tags, and timestamp. Intended as a placeholder for real evidence generation, which would involve external tools or data sources.
+        
+        Args:
+            hypothesis_node: The hypothesis node for which to generate evidence.
+        
+        Returns:
+            A list of dictionaries, each representing a piece of mock evidence with content, support indication, strength, statistical power, disciplinary tags, and temporal data.
         """
         plan = hypothesis_node.metadata.plan
         logger.info(
@@ -162,7 +176,11 @@ class EvidenceStage(BaseStage):
         iteration: int,
         evidence_index: int,
     ) -> Optional[Node]:
-        """Creates an evidence node and links it to the hypothesis."""
+        """
+        Creates an evidence node in the graph and links it to a hypothesis node.
+        
+        The evidence node is constructed using the provided evidence data, including content, support indication, disciplinary tags, statistical power, and strength. The node is linked to the hypothesis with an edge labeled as supportive or contradictory, depending on whether the evidence supports the hypothesis. The evidence node's confidence vector and metadata are set based on the evidence's properties. Returns the created evidence node, or None if creation fails.
+        """
         evidence_id = f"ev_{hypothesis_node.id}_{iteration}_{evidence_index}"
         # P1.10, P1.24, P1.25: Determine edge type (simplified)
         edge_type = (
@@ -234,7 +252,14 @@ class EvidenceStage(BaseStage):
     async def _try_create_interdisciplinary_bridge_node(
         self, graph: ASRGoTGraph, evidence_node: Node, hypothesis_node: Node
     ) -> Optional[str]:
-        """P1.8: Create Interdisciplinary Bridge Node (IBN)"""
+        """
+        Attempts to create an Interdisciplinary Bridge Node (IBN) linking an evidence node and a hypothesis node from distinct disciplines.
+        
+        An IBN is created only if the evidence and hypothesis nodes have non-overlapping disciplinary tags and their semantic similarity exceeds a predefined threshold. The method adds the IBN node and edges connecting it to both the evidence and hypothesis nodes in the graph.
+        
+        Returns:
+            The ID of the created IBN node if successful, or None if conditions are not met.
+        """
         hypo_tags = hypothesis_node.metadata.disciplinary_tags
         ev_tags = evidence_node.metadata.disciplinary_tags
 
@@ -317,7 +342,18 @@ class EvidenceStage(BaseStage):
         hypothesis_node: Node,
         related_evidence_nodes: list[Node],
     ) -> list[str]:
-        """P1.9: Create Hyperedges"""
+        """
+        Attempts to create a hyperedge representing the joint influence of multiple evidence nodes on a hypothesis.
+        
+        A hyperedge is created if at least the minimum required number of evidence nodes are present and all evidence nodes are either supportive or all are contradictory with respect to the hypothesis. The hyperedge aggregates confidence information and metadata from the hypothesis and evidence nodes.
+        
+        Args:
+            hypothesis_node: The hypothesis node to which the evidence nodes relate.
+            related_evidence_nodes: Evidence nodes considered for joint influence.
+        
+        Returns:
+            A list of IDs for the created hyperedges, or an empty list if no hyperedge was created.
+        """
         created_hyperedge_ids: list[str] = []
         # Simplified: If multiple pieces of evidence (e.g., >=2) jointly support/contradict a hypothesis non-additively.
         # True non-additivity is hard to detect without deeper semantic understanding.
@@ -380,7 +416,13 @@ class EvidenceStage(BaseStage):
     async def _apply_temporal_decay_and_patterns(
         self,
     ):  # graph: ASRGoTGraph removed (unused)
-        """P1.18: Apply temporal decay. P1.25: Detect temporal patterns."""
+        """
+        Placeholder for applying temporal decay to evidence and detecting temporal patterns.
+        
+        Currently, this method does not perform any operations but is reserved for future
+        implementation of logic to reduce the influence of outdated evidence and to analyze
+        temporal trends within the evidence graph.
+        """
         # Placeholder for temporal decay logic
         # Iterate through evidence nodes, check timestamps, potentially reduce impact/confidence of older evidence.
         # Placeholder for temporal pattern detection
@@ -391,7 +433,11 @@ class EvidenceStage(BaseStage):
         pass
 
     async def _adapt_graph_topology(self):  # graph: ASRGoTGraph removed (unused)
-        """P1.22: Dynamically adapt graph topology."""
+        """
+        Placeholder for dynamic graph topology adaptation.
+        
+        Intended for future implementation of advanced topology changes such as community detection or cluster summarization. Currently performs no action.
+        """
         # Placeholder for more complex topology adaptations like community detection,
         # creating summary nodes for dense clusters, etc.
         logger.debug(
@@ -402,6 +448,19 @@ class EvidenceStage(BaseStage):
     async def execute(
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
+        """
+        Integrates evidence into the hypothesis graph by iteratively selecting hypotheses, generating and linking evidence nodes, updating confidence vectors, and managing interdisciplinary and hyperedge structures.
+        
+        This method orchestrates the evidence integration stage by:
+        - Retrieving hypothesis node IDs from the session context.
+        - Iteratively selecting hypotheses to evaluate, up to a maximum number of iterations.
+        - For each selected hypothesis, simulating evidence generation, creating evidence nodes, linking them to hypotheses, updating hypothesis confidence using Bayesian methods, and attempting to create interdisciplinary bridge nodes and hyperedges.
+        - Applying temporal decay and adapting graph topology (currently as placeholders).
+        - Summarizing the integration process and returning metrics and context updates in a StageOutput.
+        
+        Returns:
+            StageOutput: Contains a summary, metrics on evidence integration, and context updates for subsequent stages.
+        """
         self._log_start(current_session_data.session_id)
         # GoTProcessor now stores the dictionary from next_stage_context_update directly.
         hypothesis_data_from_context = current_session_data.accumulated_context.get(

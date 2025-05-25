@@ -5,7 +5,11 @@ import re
 
 
 def add_type_annotations(file_path: str) -> None:
-    """Add type annotations to a Python file."""
+    """
+    Adds type annotations to specific variables in a Python file.
+    
+    Reads the file at the given path, updates assignments to `dimension_labels`, `dimension_node_ids`, and `dimensions_to_create` with appropriate type hints using regular expressions, and writes the changes back to the file.
+    """
     with open(file_path, encoding='utf-8') as file:
         content = file.read()
 

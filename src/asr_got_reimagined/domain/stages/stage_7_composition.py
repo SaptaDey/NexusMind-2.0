@@ -73,7 +73,14 @@ class CompositionStage(BaseStage):
         initial_query: str,
     ) -> str:
         """
-        Generates an executive summary. Placeholder - LLM would be ideal here.
+        Generates a placeholder executive summary for the analysis based on the initial query and identified subgraphs.
+        
+        Args:
+            extracted_subgraphs: List of extracted subgraphs to summarize.
+            initial_query: The original query or research question.
+        
+        Returns:
+            A summary string referencing the initial query and highlighting key subgraphs.
         """
         num_subgraphs = len(extracted_subgraphs)
         subgraph_names = [sg.name for sg in extracted_subgraphs]
@@ -93,8 +100,12 @@ class CompositionStage(BaseStage):
         node: Node,  # graph: ASRGoTGraph, # Marked as unused by Ruff
     ) -> tuple[str, Optional[CitationItem]]:
         """
-        Formats a node (e.g., hypothesis, key evidence) as a claim string and prepares a citation.
-        P1.6: Annotate claims with node IDs & edge types.
+        Formats a graph node as a claim statement and generates a corresponding citation.
+        
+        The claim string includes the node's ID, label, type, and a snippet of its description. The citation is constructed in a simplified Vancouver style referencing the node's metadata.
+        
+        Returns:
+            A tuple containing the formatted claim string and its associated CitationItem.
         """
         claim_text = (
             f"Claim based on Node {node.id} ('{node.label}', Type: {node.type.value}): "
@@ -117,8 +128,9 @@ class CompositionStage(BaseStage):
         self, graph: ASRGoTGraph, subgraph_def: ExtractedSubgraph
     ) -> tuple[OutputSection, list[CitationItem]]:
         """
-        Generates content for one output section based on an extracted subgraph.
-        Placeholder - LLM or template-based generation would be used.
+        Generates an output section summarizing key findings from an extracted subgraph.
+        
+        Analyzes the provided subgraph to identify and highlight up to three key nodes of type hypothesis, evidence, or interdisciplinary bridge with high confidence or impact. Each key node is formatted as a claim and, if applicable, associated with a citation. If no qualifying nodes are found, a placeholder statement is added. Returns the constructed output section and a list of citations.
         """
         section_title = f"Analysis: {subgraph_def.name.replace('_', ' ').title()}"
         content_parts: list[str] = [
@@ -198,6 +210,11 @@ class CompositionStage(BaseStage):
     async def execute(
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
+        """
+        Executes the composition stage to generate a structured composed output from extracted subgraphs.
+        
+        Retrieves extracted subgraph definitions from the session context, parses them, and generates an executive summary, detailed output sections, and citations for each subgraph. If no subgraphs are found, produces a minimal output. Deduplicates citations and appends a reasoning trace summary. Returns a StageOutput containing the composed output, summary, metrics, and context update for downstream processing.
+        """
         self._log_start(current_session_data.session_id)
 
         # GoTProcessor now stores the dictionary from next_stage_context_update directly.

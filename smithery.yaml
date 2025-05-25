@@ -1,0 +1,60 @@
+# Smithery deployment configuration for NexusMind MCP Server
+
+# Version of the Smithery configuration schema (if known, otherwise use a placeholder)
+version: '1.0'
+
+# Service definition
+service:
+  # Name of the service
+  name: 'nexusmind-mcp-server'
+
+  # Runtime environment (e.g., python, docker, kubernetes)
+  runtime: 'python' # Assuming a Python runtime, adjust if it's deployed via Docker
+
+  # Main entrypoint for the application
+  # This might be the command to start the server
+  entrypoint: 'python src/asr_got_reimagined/main.py'
+
+  # Build configuration (if applicable)
+  build:
+    # Command to build the application (e.g., for compiling assets or installing dependencies)
+    # command: 'poetry install --no-dev' # Example if using Poetry
+    # Or if using requirements.txt:
+    # command: 'pip install -r requirements.txt'
+    pass # Placeholder if no specific build command is immediately known
+
+  # Deployment configuration
+  deployment:
+    # Number of replicas or instances
+    replicas: 1
+
+    # Resource allocation (example)
+    resources:
+      cpu: '1'
+      memory: '512Mi'
+
+    # Port the application listens on internally
+    # This should align with how the application is configured (e.g., via APP__PORT or default)
+    # Smithery might use this to configure load balancers or service discovery.
+    port: 8000 # Default port, will be overridden by APP__PORT if set
+
+    # Environment variables to be set for the application
+    # Smithery might inject these into the runtime environment.
+    environment:
+      # Example: APP__PORT: ${ENV_PORT} # Smithery might have its own way to reference external vars
+      # Example: LOG_LEVEL: "INFO"
+      PYTHONUNBUFFERED: "1" # Common for Python applications in containers
+      # Add any other necessary environment variables
+
+  # Health check configuration (example)
+  health_check:
+    # Path for HTTP health checks
+    http_path: '/health'
+    # Port for health checks (if different from the main application port)
+    # port: 8000 
+
+# Add other sections as needed, for example:
+# - databases
+# - external_services
+# - network_configuration
+# - volume_mounts

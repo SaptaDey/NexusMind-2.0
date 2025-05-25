@@ -8,6 +8,11 @@ from loguru import logger
 def assess_falsifiability_score(
     criteria: Optional[Any],
 ) -> float:  # criteria: Optional[FalsificationCriteria]
+    """
+    Returns a placeholder falsifiability score based on the presence of criteria.
+    
+    If criteria is provided, returns 0.5; otherwise, returns 0.0. Intended as a stub for a more comprehensive falsifiability assessment.
+    """
     logger.warning(
         "Falsifiability assessment (P1.16) not fully implemented. Returning placeholder."
     )
@@ -17,6 +22,11 @@ def assess_falsifiability_score(
 def detect_potential_biases() -> list[
     Any
 ]:  # node_data: Dict[str, Any] removed (unused), List[BiasFlag]
+    """
+    Returns a placeholder list of detected biases.
+    
+    Currently, this function does not perform any bias detection and always returns an empty list.
+    """
     logger.warning(
         "Bias detection (P1.17) not fully implemented. Returning placeholder."
     )

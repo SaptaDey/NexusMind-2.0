@@ -6,7 +6,11 @@ from pathlib import Path
 
 
 def add_context_update_type(file_path):
-    """Add type annotations for the context_update variable"""
+    """
+    Adds missing type annotations for `context_update` and `created_hyperedge_ids` variables in the specified Python file.
+    
+    If the type annotations are not present, updates the file in place to add them.
+    """
     with open(file_path, encoding='utf-8') as file:
         content = file.read()
 

@@ -25,6 +25,12 @@ class DecompositionStage(BaseStage):
     stage_name: str = "DecompositionStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the DecompositionStage with default decomposition dimensions and confidence values from settings.
+        
+        Args:
+            settings: Configuration settings containing default parameters for decomposition.
+        """
         super().__init__(settings)
         # P1.2: Get default dimensions from settings.yaml
         self.default_dimensions_config = (
@@ -37,6 +43,18 @@ class DecompositionStage(BaseStage):
     async def execute(
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
+        """
+        Performs the decomposition stage by creating dimension nodes and edges linked to a root node in the graph.
+        
+        Retrieves the root node and initial disciplinary tags from the session context. Uses either custom or default decomposition dimensions to generate new dimension nodes, each linked to the root node with a decomposition edge. Updates the graph with these nodes and edges, and returns a summary, metrics, and context update. If the root node is missing or not found, returns a failure output with an error message.
+        
+        Args:
+            graph: The graph to which decomposition dimension nodes and edges will be added.
+            current_session_data: Session data containing accumulated context and operational parameters.
+        
+        Returns:
+            A StageOutput containing a summary of the decomposition, metrics on nodes and edges created, and a context update with the IDs of created dimension nodes.
+        """
         self._log_start(
             current_session_data.session_id
         )  # Import InitializationStage here to access its stage_name

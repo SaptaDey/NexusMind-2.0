@@ -171,6 +171,12 @@ class ASRGoTGraph(TimestampedModel):
         self.touch()
 
     def get_statistics(self) -> GraphStatistics:
+        """
+        Returns a summary of the graph's statistics, including counts of nodes, edges, hyperedges, and layers.
+        
+        Returns:
+            A GraphStatistics instance with the current counts of nodes, edges, hyperedges, and layers in the graph.
+        """
         return GraphStatistics(
             node_count=len(self.nodes),
             edge_count=len(self.edges),
@@ -179,22 +185,42 @@ class ASRGoTGraph(TimestampedModel):
         )
 
     def get_neighbors(self, node_id: str) -> list[str]:
+        """
+        Returns a list of neighbor node IDs for the specified node.
+        
+        If the node does not exist in the graph, returns an empty list.
+        """
         if node_id not in self.nx_graph:
             return []
         return list(self.nx_graph.neighbors(node_id))
 
     def get_predecessors(self, node_id: str) -> list[str]:
+        """
+        Returns a list of predecessor node IDs for the specified node.
+        
+        If the node does not exist in the graph, returns an empty list.
+        """
         if node_id not in self.nx_graph:
             return []
         return list(self.nx_graph.predecessors(node_id))
 
     def get_successors(self, node_id: str) -> list[str]:
+        """
+        Returns a list of successor node IDs for the given node.
+        
+        If the node does not exist in the graph, returns an empty list.
+        """
         if node_id not in self.nx_graph:
             return []
         return list(self.nx_graph.successors(node_id))
 
     def to_serializable_dict(self) -> dict[str, Any]:
-        """Converts graph to a dict suitable for API responses (like GraphStateSchema)"""
+        """
+        Serializes the graph into a dictionary format suitable for API responses.
+        
+        Returns:
+            A dictionary containing the graph's ID, serialized nodes, edges, hyperedges, layers, metadata, statistics, and timestamps.
+        """
         return {
             "id": self.id,
             "nodes": [

@@ -52,9 +52,9 @@ class HypothesisStage(BaseStage):
         self, dimension_node: Node, hypo_index: int, initial_query: str
     ) -> dict[str, Any]:
         """
-        Generates content for a single hypothesis.
-        In a real system, this would involve more sophisticated generation,
-        possibly using an LLM or rule-based systems based on the dimension and query.
+        Generates the content for a single hypothesis node based on a dimension node and query.
+        
+        Creates a hypothesis label, selects a plan type, defines falsification criteria, optionally assigns bias flags, estimates impact score, and determines disciplinary tags. Returns a dictionary containing all generated hypothesis attributes.
         """
         # Placeholder content generation
         dim_label = dimension_node.label
@@ -124,6 +124,14 @@ class HypothesisStage(BaseStage):
     async def execute(
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
+        """
+        Asynchronously generates hypothesis nodes for each dimension node in the graph.
+        
+        For each dimension node identified from the previous decomposition stage, this method creates a configurable number of hypothesis nodes, each enriched with metadata such as plans, falsification criteria, bias flags, impact scores, and disciplinary tags. Each hypothesis node is linked to its parent dimension node via an edge. The method aggregates and returns a summary, metrics, and context update for downstream processing.
+        
+        Returns:
+            A StageOutput containing a summary of the hypotheses generated, relevant metrics, and an updated context with the IDs of all created hypothesis nodes.
+        """
         self._log_start(current_session_data.session_id)
 
         # GoTProcessor now stores the dictionary from next_stage_context_update directly.

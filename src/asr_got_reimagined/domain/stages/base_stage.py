@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from loguru import logger  # type: ignore
 from pydantic import BaseModel, Field
@@ -7,18 +7,18 @@ from pydantic import BaseModel, Field
 from src.asr_got_reimagined.config import (
     Settings,  # To access ASRGoTDefaultParams if needed by stages
 )
-from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
 from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
+from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
 
 
 class StageOutput(BaseModel):
     """Standard output structure for each stage."""
 
     summary: str
-    metrics: Dict[str, Any] = Field(default_factory=dict)
+    metrics: dict[str, Any] = Field(default_factory=dict)
     # Optional: Data to be passed to the next stage or stored in the session context
     # This can be more specific in subclasses if needed.
-    next_stage_context_update: Dict[str, Any] = Field(default_factory=dict)
+    next_stage_context_update: dict[str, Any] = Field(default_factory=dict)
 
 
 class BaseStage(ABC):

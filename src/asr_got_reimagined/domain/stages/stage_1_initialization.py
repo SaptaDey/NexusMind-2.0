@@ -1,10 +1,17 @@
 from loguru import logger
 
 from src.asr_got_reimagined.config import Settings
-from src.asr_got_reimagined.domain.models.common import ConfidenceVector, EpistemicStatus
-from src.asr_got_reimagined.domain.models.graph_elements import Node, NodeMetadata, NodeType
-from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
+from src.asr_got_reimagined.domain.models.common import (
+    ConfidenceVector,
+    EpistemicStatus,
+)
 from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
+from src.asr_got_reimagined.domain.models.graph_elements import (
+    Node,
+    NodeMetadata,
+    NodeType,
+)
+from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
 
 from .base_stage import BaseStage, StageOutput
 

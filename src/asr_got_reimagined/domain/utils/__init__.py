@@ -15,7 +15,11 @@ from .metadata_helpers import (  # Placeholder for complex metadata operations
 )
 
 __all__ = [
-    "bayesian_update_confidence", "calculate_information_gain",
-    "detect_communities", "calculate_node_centrality",
-    "assess_falsifiability_score", "detect_potential_biases", "calculate_semantic_similarity"
+    "assess_falsifiability_score",
+    "bayesian_update_confidence",
+    "calculate_information_gain",
+    "calculate_node_centrality",
+    "calculate_semantic_similarity",
+    "detect_communities",
+    "detect_potential_biases",
 ]

@@ -1,16 +1,16 @@
 import random
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 from loguru import logger
 from pydantic import BaseModel, Field, ValidationError
 
 from src.asr_got_reimagined.config import Settings
+from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.models.graph_elements import (
     Node,
     NodeType,
 )
 from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
-from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 
 from .base_stage import BaseStage, StageOutput
 from .stage_6_subgraph_extraction import (  # To get subgraph definitions
@@ -40,7 +40,7 @@ class OutputSection(BaseModel):
     )
     referenced_subgraph_name: Optional[str] = None
     # Optional: List of node IDs or claims made in this section for traceability (P1.6)
-    related_node_ids: List[str] = Field(default_factory=list)
+    related_node_ids: list[str] = Field(default_factory=list)
     # P1.6: Annotate claims with node IDs & edge types
     # This could be part of the 'content' or a more structured field.
 
@@ -48,8 +48,8 @@ class OutputSection(BaseModel):
 class ComposedOutput(BaseModel):  # This will be the main "final_composed_answer"
     title: str
     executive_summary: str
-    sections: List[OutputSection] = Field(default_factory=list)
-    citations: List[CitationItem] = Field(default_factory=list)
+    sections: list[OutputSection] = Field(default_factory=list)
+    citations: list[CitationItem] = Field(default_factory=list)
     reasoning_trace_appendix_summary: Optional[str] = None  # P1.6
     # P1.6: Numeric node labels (handled by graph serialization if needed)
     # P1.6: Verbatim queries in metadata (handled by node metadata)
@@ -68,8 +68,8 @@ class CompositionStage(BaseStage):
 
     async def _generate_executive_summary(
         self,
-        graph: ASRGoTGraph,
-        extracted_subgraphs: List[ExtractedSubgraph],
+        # graph: ASRGoTGraph, # Marked as unused by Ruff
+        extracted_subgraphs: list[ExtractedSubgraph],
         initial_query: str,
     ) -> str:
         """
@@ -89,8 +89,9 @@ class CompositionStage(BaseStage):
         return summary
 
     async def _format_node_as_claim(
-        self, node: Node, graph: ASRGoTGraph
-    ) -> Tuple[str, Optional[CitationItem]]:
+        self,
+        node: Node,  # graph: ASRGoTGraph, # Marked as unused by Ruff
+    ) -> tuple[str, Optional[CitationItem]]:
         """
         Formats a node (e.g., hypothesis, key evidence) as a claim string and prepares a citation.
         P1.6: Annotate claims with node IDs & edge types.
@@ -114,35 +115,38 @@ class CompositionStage(BaseStage):
 
     async def _generate_section_from_subgraph(
         self, graph: ASRGoTGraph, subgraph_def: ExtractedSubgraph
-    ) -> Tuple[OutputSection, List[CitationItem]]:
+    ) -> tuple[OutputSection, list[CitationItem]]:
         """
         Generates content for one output section based on an extracted subgraph.
         Placeholder - LLM or template-based generation would be used.
         """
         section_title = f"Analysis: {subgraph_def.name.replace('_', ' ').title()}"
-        content_parts: List[str] = [
+        content_parts: list[str] = [
             f"This section discusses findings from the '{subgraph_def.name}' subgraph, which focuses on: {subgraph_def.description}.\n"
         ]
-        citations: List[CitationItem] = []
-        related_node_ids_for_section: List[str] = list(
+        citations: list[CitationItem] = []
+        related_node_ids_for_section: list[str] = list(
             subgraph_def.node_ids
         )  # Start with all nodes in subgraph
 
         # Highlight a few key nodes from the subgraph (e.g., high confidence/impact)
-        key_nodes_in_subgraph: List[Node] = []
+        key_nodes_in_subgraph: list[Node] = []
         for node_id in subgraph_def.node_ids:
             node = graph.get_node(node_id)
-            if node:
-                # Prioritize HYPOTHESIS or EVIDENCE or IBN nodes for claims
-                if node.type in [
+            if (
+                node
+                and node.type
+                in [
                     NodeType.HYPOTHESIS,
                     NodeType.EVIDENCE,
                     NodeType.INTERDISCIPLINARY_BRIDGE,
-                ] and (
+                ]
+                and (
                     node.confidence.average_confidence > 0.6
                     or (node.metadata.impact_score or 0) > 0.6
-                ):
-                    key_nodes_in_subgraph.append(node)
+                )
+            ):
+                key_nodes_in_subgraph.append(node)
 
         key_nodes_in_subgraph.sort(
             key=lambda n: (
@@ -154,7 +158,7 @@ class CompositionStage(BaseStage):
         for i, node in enumerate(
             key_nodes_in_subgraph[:3]
         ):  # Max 3 key claims per section for this placeholder
-            claim_text, citation = await self._format_node_as_claim(node, graph)
+            claim_text, citation = await self._format_node_as_claim(node) # Removed graph
             content_parts.append(f"Key Point {i + 1}: {claim_text}")
             if citation:
                 citations.append(citation)
@@ -197,12 +201,18 @@ class CompositionStage(BaseStage):
         self._log_start(current_session_data.session_id)
 
         # GoTProcessor now stores the dictionary from next_stage_context_update directly.
-        subgraph_extraction_data_from_context = current_session_data.accumulated_context.get(SubgraphExtractionStage.stage_name, {})
-        extracted_subgraphs_data: List[Dict] = subgraph_extraction_data_from_context.get(
-            "extracted_subgraphs_definitions", []
+        subgraph_extraction_data_from_context = (
+            current_session_data.accumulated_context.get(
+                SubgraphExtractionStage.stage_name, {}
+            )
         )
-        
-        extracted_subgraphs: List[ExtractedSubgraph] = []
+        extracted_subgraphs_data: list[dict] = (
+            subgraph_extraction_data_from_context.get(
+                "extracted_subgraphs_definitions", []
+            )
+        )
+
+        extracted_subgraphs: list[ExtractedSubgraph] = []
         if extracted_subgraphs_data:
             try:
                 extracted_subgraphs = [
@@ -236,12 +246,12 @@ class CompositionStage(BaseStage):
                 },
             )
 
-        all_citations: List[CitationItem] = []
-        output_sections: List[OutputSection] = []
+        all_citations: list[CitationItem] = []
+        output_sections: list[OutputSection] = []
 
         # 1. Generate Executive Summary
         exec_summary = await self._generate_executive_summary(
-            graph, extracted_subgraphs, initial_query
+            extracted_subgraphs, initial_query # Removed graph
         )
 
         # 2. Generate sections from each subgraph
@@ -253,10 +263,12 @@ class CompositionStage(BaseStage):
                 output_sections.append(section)
                 all_citations.extend(section_citations)
             except Exception as e:
-                logger.error(f"Error generating section for subgraph '{subgraph_def.name}': {e}")
+                logger.error(
+                    f"Error generating section for subgraph '{subgraph_def.name}': {e}"
+                )
 
         # Deduplicate citations by id (simplified)
-        final_citations_map: Dict[str, CitationItem] = {}
+        final_citations_map: dict[str, CitationItem] = {}
         for cit in all_citations:
             key = str(cit.id)
             if key not in final_citations_map:

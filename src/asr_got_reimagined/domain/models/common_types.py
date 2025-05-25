@@ -3,8 +3,9 @@ Common type definitions to avoid circular imports.
 Provides type definitions used across multiple modules.
 """
 
-from typing import Any, Dict, List, Optional
 import uuid
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -15,9 +16,9 @@ class GoTProcessorSessionData(BaseModel):
     query: str
     graph_state: Optional[Any] = None
     final_answer: Optional[str] = None
-    final_confidence_vector: List[float] = Field(default=[0.5, 0.5, 0.5, 0.5])
-    accumulated_context: Dict[str, Any] = Field(default_factory=dict)
-    stage_outputs_trace: List[Dict[str, Any]] = Field(default_factory=list)
+    final_confidence_vector: list[float] = Field(default=[0.5, 0.5, 0.5, 0.5])
+    accumulated_context: dict[str, Any] = Field(default_factory=dict)
+    stage_outputs_trace: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ComposedOutput(BaseModel):
@@ -25,5 +26,5 @@ class ComposedOutput(BaseModel):
 
     executive_summary: str
     detailed_report: Optional[str] = None
-    key_findings: List[str] = Field(default_factory=list)
-    confidence_assessment: Optional[Dict[str, Any]] = None
+    key_findings: list[str] = Field(default_factory=list)
+    confidence_assessment: Optional[dict[str, Any]] = None

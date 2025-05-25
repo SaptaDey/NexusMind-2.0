@@ -1,6 +1,6 @@
 import datetime
 import random
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 from loguru import logger  # type: ignore
 
@@ -9,10 +9,11 @@ from src.asr_got_reimagined.domain.models.common import (
     ConfidenceVector,
     EpistemicStatus,
 )
+from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.models.graph_elements import (
     Edge,
-    EdgeType,
     EdgeMetadata,
+    EdgeType,
     Hyperedge,
     HyperedgeMetadata,
     InformationTheoreticMetrics,
@@ -23,7 +24,6 @@ from src.asr_got_reimagined.domain.models.graph_elements import (
     StatisticalPower,
 )
 from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
-from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.utils.math_helpers import (
     bayesian_update_confidence,
     calculate_information_gain,
@@ -53,14 +53,14 @@ class EvidenceStage(BaseStage):
         )
 
     async def _select_hypothesis_to_evaluate(
-        self, graph: ASRGoTGraph, hypothesis_node_ids: List[str]
+        self, graph: ASRGoTGraph, hypothesis_node_ids: list[str]
     ) -> Optional[Node]:
         """
         Selects the next hypothesis for evidence gathering.
         P1.4: based on multi-dimensional confidence-to-cost ratio (P1.5) & potential impact (P1.28).
         Simplified: selects a hypothesis, perhaps one with high uncertainty or impact.
         """
-        eligible_hypotheses: List[Node] = []
+        eligible_hypotheses: list[Node] = []
         for hypo_id in hypothesis_node_ids:
             hypo_node = graph.get_node(hypo_id)
             if hypo_node and hypo_node.type == NodeType.HYPOTHESIS:
@@ -90,9 +90,9 @@ class EvidenceStage(BaseStage):
     async def _execute_hypothesis_plan(
         self,
         hypothesis_node: Node,
-        graph: ASRGoTGraph,
-        session_data: GoTProcessorSessionData,
-    ) -> List[Dict[str, Any]]:
+        # graph: ASRGoTGraph, # Marked as unused by Ruff
+        # session_data: GoTProcessorSessionData, # Marked as unused by Ruff
+    ) -> list[dict[str, Any]]:
         """
         Simulates executing the plan associated with a hypothesis to find/generate evidence.
         P1.4: executing plans...
@@ -105,13 +105,15 @@ class EvidenceStage(BaseStage):
 
         # Placeholder: Generate 1-2 pieces of mock evidence
         num_evidence_pieces = random.randint(1, 2)
-        generated_evidence_data: List[Dict[str, Any]] = []
+        generated_evidence_data: list[dict[str, Any]] = []
 
-        for i in range(num_evidence_pieces):            # Simulate evidence properties
+        for i in range(num_evidence_pieces):  # Simulate evidence properties
             supports_hypothesis = (
                 random.random() > 0.25
             )  # 75% chance of supportive evidence
-            evidence_strength = random.uniform(0.4, 0.9)  # CertaintyScore is Annotated[float]
+            evidence_strength = random.uniform(
+                0.4, 0.9
+            )  # CertaintyScore is Annotated[float]
             stat_power_val = random.uniform(0.5, 0.95)
             stat_power = StatisticalPower(
                 value=stat_power_val, method_description="Simulated statistical power."
@@ -156,7 +158,7 @@ class EvidenceStage(BaseStage):
         self,
         graph: ASRGoTGraph,
         hypothesis_node: Node,
-        evidence_data: Dict[str, Any],
+        evidence_data: dict[str, Any],
         iteration: int,
         evidence_index: int,
     ) -> Optional[Node]:
@@ -247,7 +249,8 @@ class EvidenceStage(BaseStage):
             hypothesis_node.label, evidence_node.label
         )
         if similarity < self.ibn_similarity_threshold:
-            logger.debug(    f"IBN not created between {evidence_node.id} and {hypothesis_node.id}: similarity {similarity:.2f} < {self.ibn_similarity_threshold}"
+            logger.debug(
+                f"IBN not created between {evidence_node.id} and {hypothesis_node.id}: similarity {similarity:.2f} < {self.ibn_similarity_threshold}"
             )
             return None
 
@@ -312,10 +315,10 @@ class EvidenceStage(BaseStage):
         self,
         graph: ASRGoTGraph,
         hypothesis_node: Node,
-        related_evidence_nodes: List[Node],
-    ) -> List[str]:
+        related_evidence_nodes: list[Node],
+    ) -> list[str]:
         """P1.9: Create Hyperedges"""
-        created_hyperedge_ids: List[str] = []
+        created_hyperedge_ids: list[str] = []
         # Simplified: If multiple pieces of evidence (e.g., >=2) jointly support/contradict a hypothesis non-additively.
         # True non-additivity is hard to detect without deeper semantic understanding.
         # Placeholder: if >= N evidences support a hypothesis, consider a hyperedge.
@@ -374,7 +377,9 @@ class EvidenceStage(BaseStage):
                 )
         return created_hyperedge_ids
 
-    async def _apply_temporal_decay_and_patterns(self, graph: ASRGoTGraph):
+    async def _apply_temporal_decay_and_patterns(
+        self,
+    ):  # graph: ASRGoTGraph removed (unused)
         """P1.18: Apply temporal decay. P1.25: Detect temporal patterns."""
         # Placeholder for temporal decay logic
         # Iterate through evidence nodes, check timestamps, potentially reduce impact/confidence of older evidence.
@@ -385,7 +390,7 @@ class EvidenceStage(BaseStage):
         )
         pass
 
-    async def _adapt_graph_topology(self, graph: ASRGoTGraph):
+    async def _adapt_graph_topology(self):  # graph: ASRGoTGraph removed (unused)
         """P1.22: Dynamically adapt graph topology."""
         # Placeholder for more complex topology adaptations like community detection,
         # creating summary nodes for dense clusters, etc.
@@ -399,8 +404,10 @@ class EvidenceStage(BaseStage):
     ) -> StageOutput:
         self._log_start(current_session_data.session_id)
         # GoTProcessor now stores the dictionary from next_stage_context_update directly.
-        hypothesis_data_from_context = current_session_data.accumulated_context.get(HypothesisStage.stage_name, {})
-        hypothesis_node_ids: List[str] = hypothesis_data_from_context.get(
+        hypothesis_data_from_context = current_session_data.accumulated_context.get(
+            HypothesisStage.stage_name, {}
+        )
+        hypothesis_node_ids: list[str] = hypothesis_data_from_context.get(
             "hypothesis_node_ids", []
         )
 
@@ -422,7 +429,7 @@ class EvidenceStage(BaseStage):
         hyperedges_created_total = 0
         iteration = -1  # Default value in case no iterations are run
 
-        processed_hypotheses_this_stage: Set[str] = (
+        processed_hypotheses_this_stage: set[str] = (
             set()
         )  # Track to avoid re-processing in one stage run
 
@@ -452,14 +459,15 @@ class EvidenceStage(BaseStage):
             # P1.4: Execute plan for h*
             # This returns a list of dicts, each representing a piece of found evidence data
             found_evidence_data_list = await self._execute_hypothesis_plan(
-                hypothesis_to_evaluate, graph, current_session_data
+                hypothesis_to_evaluate
             )
             if not found_evidence_data_list:
-                logger.debug(        f"No new evidence found for hypothesis '{hypothesis_to_evaluate.label}'."
+                logger.debug(
+                    f"No new evidence found for hypothesis '{hypothesis_to_evaluate.label}'."
                 )
                 continue
 
-            related_evidence_nodes_for_current_hypo: List[Node] = []
+            related_evidence_nodes_for_current_hypo: list[Node] = []
 
             for ev_idx, ev_data in enumerate(found_evidence_data_list):
                 # P1.4: Create evidence nodes E_r and link to h* (P1.10, P1.24, P1.25 for edge types)
@@ -523,9 +531,9 @@ class EvidenceStage(BaseStage):
 
         # P1.4 actions after loop (or potentially within, if dynamic):
         # Apply temporal decay (P1.18) & detect temporal patterns (P1.25)
-        await self._apply_temporal_decay_and_patterns(graph)
+        await self._apply_temporal_decay_and_patterns() # Removed graph
         # Dynamically adapt graph topology (P1.22)
-        await self._adapt_graph_topology(graph)
+        await self._adapt_graph_topology() # Removed graph
 
         summary = (
             f"Evidence integration completed over {iteration + 1 if self.max_iterations > 0 and hypothesis_node_ids else 0} iterations. "
@@ -544,7 +552,7 @@ class EvidenceStage(BaseStage):
         }
         # No specific context update strictly needed for next stage unless defined
         # The graph itself has been modified, which is the primary output.
-        context_update: Dict[str, Any] = {
+        context_update: dict[str, Any] = {
             "evidence_integration_completed": True,
             "evidence_nodes_added_count": evidence_nodes_created_total,
         }

@@ -1,15 +1,15 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from loguru import logger
 from pydantic import BaseModel, Field, ValidationError
 
 from src.asr_got_reimagined.config import Settings
 from src.asr_got_reimagined.domain.models.common import ConfidenceVector
+from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.models.graph_elements import (
     NodeType,
 )
 from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
-from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 
 from .base_stage import BaseStage, StageOutput
 from .stage_7_composition import (  # To access composed output
@@ -25,7 +25,7 @@ class AuditCheckResult(BaseModel):
         default="NOT_RUN", examples=["PASS", "WARNING", "FAIL", "NOT_APPLICABLE"]
     )
     message: str
-    details: Optional[Dict[str, Any]] = None
+    details: Optional[dict[str, Any]] = None
 
 
 class ReflectionStage(BaseStage):
@@ -245,27 +245,24 @@ class ReflectionStage(BaseStage):
             )
 
     # Placeholder checks for P1.7 items not yet deeply implemented in prior stages
-    async def _check_causal_claim_validity(
-        self, graph: ASRGoTGraph
-    ) -> AuditCheckResult:  # P1.24
+    async def _check_causal_claim_validity(self) -> AuditCheckResult:  # P1.24
+        # graph: ASRGoTGraph, # Marked as unused
         return AuditCheckResult(
             check_name="causal_claim_validity",
             status="NOT_RUN",
             message="Causal claim validity check not fully implemented.",
         )
 
-    async def _check_temporal_consistency(
-        self, graph: ASRGoTGraph
-    ) -> AuditCheckResult:  # P1.18, P1.25
+    async def _check_temporal_consistency(self) -> AuditCheckResult:  # P1.18, P1.25
+        # graph: ASRGoTGraph, # Marked as unused
         return AuditCheckResult(
             check_name="temporal_consistency",
             status="NOT_RUN",
             message="Temporal consistency check not fully implemented.",
         )
 
-    async def _check_collaboration_attributions(
-        self, graph: ASRGoTGraph
-    ) -> AuditCheckResult:  # P1.29
+    async def _check_collaboration_attributions(self) -> AuditCheckResult:  # P1.29
+        # graph: ASRGoTGraph, # Marked as unused
         return AuditCheckResult(
             check_name="collaboration_attributions_check",
             status="NOT_RUN",
@@ -273,7 +270,8 @@ class ReflectionStage(BaseStage):
         )
 
     async def _calculate_final_confidence(
-        self, audit_results: List[AuditCheckResult], graph: ASRGoTGraph
+        self,
+        audit_results: list[AuditCheckResult],  # graph: ASRGoTGraph # Marked as unused
     ) -> ConfidenceVector:
         """
         Calculates a final overall confidence vector based on audit results and graph state.
@@ -357,11 +355,13 @@ class ReflectionStage(BaseStage):
             except Exception as e:
                 logger.error(f"Unexpected error parsing ComposedOutput: {e}")
 
-        audit_results: List[AuditCheckResult] = []
+        audit_results: list[AuditCheckResult] = []
 
         # Perform P1.7 audit checks
         try:
-            audit_results.append(await self._check_high_confidence_impact_coverage(graph))
+            audit_results.append(
+                await self._check_high_confidence_impact_coverage(graph)
+            )
         except Exception as e:
             logger.error(f"Error in high_confidence_impact_coverage check: {e}")
         try:
@@ -384,19 +384,19 @@ class ReflectionStage(BaseStage):
             logger.error(f"Error in statistical_rigor_of_evidence check: {e}")
         try:
             audit_results.append(
-                await self._check_causal_claim_validity(graph)
+                await self._check_causal_claim_validity() # Removed graph
             )  # Placeholder
         except Exception as e:
             logger.error(f"Error in causal_claim_validity check: {e}")
         try:
             audit_results.append(
-                await self._check_temporal_consistency(graph)
+                await self._check_temporal_consistency() # Removed graph
             )  # Placeholder
         except Exception as e:
             logger.error(f"Error in temporal_consistency check: {e}")
         try:
             audit_results.append(
-                await self._check_collaboration_attributions(graph)
+                await self._check_collaboration_attributions() # Removed graph
             )  # Placeholder
         except Exception as e:
             logger.error(f"Error in collaboration_attributions_check: {e}")
@@ -407,7 +407,7 @@ class ReflectionStage(BaseStage):
         # Calculate final overall confidence (P1.5 style vector for the whole process)
         try:
             final_confidence_vector = await self._calculate_final_confidence(
-                active_audit_results, graph
+                active_audit_results # Removed graph
             )
         except Exception as e:
             logger.error(f"Error calculating final confidence vector: {e}")

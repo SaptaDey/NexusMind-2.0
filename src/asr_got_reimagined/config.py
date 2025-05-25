@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional, Type # Added Type for settings_cls hint
+import sys # For type checking PydanticBaseSettingsSource
 
 import yaml
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 
 # Load the YAML configuration file
 config_file_path = Path(__file__).parent.parent.parent / "config" / "settings.yaml"
@@ -25,18 +26,18 @@ class DecompositionDimension(BaseModel):
 
 
 class ASRGoTDefaultParams(BaseModel):
-    initial_confidence: List[float] = Field(default=[0.9, 0.9, 0.9, 0.9])
+    initial_confidence: list[float] = Field(default=[0.9, 0.9, 0.9, 0.9])
     initial_layer: str = Field(default="root_layer")
-    default_decomposition_dimensions: List[DecompositionDimension] = Field(
+    default_decomposition_dimensions: list[DecompositionDimension] = Field(
         default_factory=list
     )
-    dimension_confidence: List[float] = Field(default=[0.8, 0.8, 0.8, 0.8])
+    dimension_confidence: list[float] = Field(default=[0.8, 0.8, 0.8, 0.8])
     hypotheses_per_dimension: HypothesisParams = Field(
         default_factory=HypothesisParams, alias="hypotheses_per_dimension"
     )
-    hypothesis_confidence: List[float] = Field(default=[0.5, 0.5, 0.5, 0.5])
-    default_disciplinary_tags: List[str] = Field(default_factory=list)
-    default_plan_types: List[str] = Field(default_factory=list)
+    hypothesis_confidence: list[float] = Field(default=[0.5, 0.5, 0.5, 0.5])
+    default_disciplinary_tags: list[str] = Field(default_factory=list)
+    default_plan_types: list[str] = Field(default_factory=list)
     evidence_max_iterations: int = Field(default=5)
     pruning_confidence_threshold: float = Field(default=0.2)
     pruning_impact_threshold: float = Field(default=0.3)
@@ -52,7 +53,7 @@ class LayerDefinition(BaseModel):
 
 class ASRGoTConfig(BaseModel):
     default_parameters: ASRGoTDefaultParams = Field(default_factory=ASRGoTDefaultParams)
-    layers: Dict[str, LayerDefinition] = Field(default_factory=dict)
+    layers: dict[str, LayerDefinition] = Field(default_factory=dict)
 
 
 # --- Models for MCP Settings ---
@@ -77,7 +78,7 @@ class ClaudeAPIConfig(BaseModel):
 
 class KnowledgeDomain(BaseModel):
     name: str
-    keywords: List[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
     description: Optional[str] = None
 
 
@@ -86,7 +87,9 @@ class AppSettings(BaseModel):
     name: str = Field(default="NexusMind")
     version: str = Field(default="0.1.0")
     host: str = Field(default="0.0.0.0")
-    port: int = Field(default=8000)  # Can be overridden by APP__PORT environment variable
+    port: int = Field(
+        default=8000
+    )  # Can be overridden by APP__PORT environment variable
     log_level: str = Field(default="INFO")
     # debug: bool = False
 
@@ -96,8 +99,8 @@ class Settings(BaseSettings):
     asr_got: ASRGoTConfig = Field(default_factory=ASRGoTConfig)
     mcp_settings: MCPSettings = Field(default_factory=MCPSettings)
     claude_api: Optional[ClaudeAPIConfig] = None  # Optional section
-    knowledge_domains: List[KnowledgeDomain] = Field(default_factory=list)
-    
+    knowledge_domains: list[KnowledgeDomain] = Field(default_factory=list)
+
     model_config = SettingsConfigDict(
         env_nested_delimiter="__",  # e.g., APP__HOST to override app.host
         # Add other sources if needed, e.g., .env file
@@ -105,25 +108,47 @@ class Settings(BaseSettings):
         # env_file_encoding = 'utf-8',
         extra="ignore",  # Ignore extra fields from YAML if any
     )
-    
+
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls,
-        init_settings,
-        env_settings,
-        dotenv_settings,
-        file_secret_settings,
-    ):
-        def yaml_source(*args) -> dict[str, Any]:
-            # Return the already loaded yaml_config directly
-            return yaml_config
+        settings_cls: Type[BaseSettings], # Re-added settings_cls
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        
+        # Define your custom source function
+        # It needs to match the expected signature, though its args might not be used if it's simple
+        # For pydantic-settings v2, it's typically (settings_cls: Type[BaseSettings]) -> Dict[str, Any]
+        # However, since yaml_config is already loaded, we can wrap it simply.
+        
+        class YamlConfigSettingsSource(PydanticBaseSettingsSource):
+            def __init__(self, settings_cls: Type[BaseSettings]):
+                super().__init__(settings_cls)
+                self._yaml_config = yaml_config # Use pre-loaded config
+
+            def get_field_value(self, field: Field, field_name: str) -> tuple[Any, str] | None:
+                # This method is required by PydanticBaseSettingsSource if you want to customize field-level loading.
+                # For a simple dict source, often just providing __call__ is enough.
+                # Let's try with __call__ first, if it fails, we might need this.
+                return None # Not using field-level logic from YAML here
+
+            def __call__(self) -> dict[str, Any]:
+                return self._yaml_config
+            
+            def prepare_field_value(self, field_name: str, field: Field, value: Any, value_is_complex: bool) -> Any:
+                 # This method is called by Pydantic to prepare the field value.
+                 # We don't need custom preparation for YAML simple values.
+                return value
+
 
         return (
             init_settings,
             env_settings,
             dotenv_settings,
-            yaml_source,
+            YamlConfigSettingsSource(settings_cls), # Pass settings_cls here
             file_secret_settings,
         )
 

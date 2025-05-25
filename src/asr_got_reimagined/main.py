@@ -1,10 +1,11 @@
+import os
+import sys
+
 import uvicorn
 from loguru import logger  # Import logger if you want to log here too
-import sys
-import os
 
 # Add src directory to Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from src.asr_got_reimagined.app_setup import create_app
 from src.asr_got_reimagined.config import settings

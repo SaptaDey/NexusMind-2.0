@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from loguru import logger
 
@@ -14,7 +14,9 @@ def assess_falsifiability_score(
     return 0.5 if criteria else 0.0
 
 
-def detect_potential_biases(node_data: Dict[str, Any]) -> List[Any]:  # List[BiasFlag]
+def detect_potential_biases() -> list[
+    Any
+]:  # node_data: Dict[str, Any] removed (unused), List[BiasFlag]
     logger.warning(
         "Bias detection (P1.17) not fully implemented. Returning placeholder."
     )

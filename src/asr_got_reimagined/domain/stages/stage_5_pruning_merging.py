@@ -1,8 +1,8 @@
-from typing import List, Set, Tuple
-
+from typing import Optional # Added Optional
 from loguru import logger
 
 from src.asr_got_reimagined.config import Settings
+from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.models.graph_elements import (
     Edge,
     Node,
@@ -10,7 +10,6 @@ from src.asr_got_reimagined.domain.models.graph_elements import (
     RevisionRecord,
 )
 from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
-from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.utils.metadata_helpers import (
     calculate_semantic_similarity,  # Using our placeholder
 )
@@ -63,7 +62,7 @@ class PruningMergingStage(BaseStage):
 
     async def _prune_nodes(self, graph: ASRGoTGraph) -> int:
         """Prunes nodes based on criteria."""
-        nodes_to_prune_ids: Set[str] = set()
+        nodes_to_prune_ids: set[str] = set()
         for node_id, node_obj in list(
             graph.nodes.items()
         ):  # Iterate over a copy for safe removal
@@ -106,8 +105,8 @@ class PruningMergingStage(BaseStage):
         # 4. Merging involves transferring edges, combining metadata, updating confidence.
 
         merged_nodes_count = 0
-        potential_merge_pairs: List[
-            Tuple[str, str, float]
+        potential_merge_pairs: list[
+            tuple[str, str, float]
         ] = []  # (node1_id, node2_id, overlap_score)
 
         # Iterate over comparable nodes (e.g., hypotheses, evidence)
@@ -151,7 +150,7 @@ class PruningMergingStage(BaseStage):
         # Sort pairs by overlap score (descending) to merge strongest overlaps first
         potential_merge_pairs.sort(key=lambda x: x[2], reverse=True)
 
-        merged_away_ids: Set[str] = (
+        merged_away_ids: set[str] = (
             set()
         )  # Keep track of nodes that have been merged into others
 
@@ -159,34 +158,39 @@ class PruningMergingStage(BaseStage):
             if node1_id in merged_away_ids or node2_id in merged_away_ids:
                 continue  # One of the nodes has already been merged
 
-            node1 = graph.get_node(node1_id)
-            node2 = graph.get_node(node2_id)
+            # Correctly get Optional nodes and then use them after None check
+            current_node1: Optional[Node] = graph.get_node(node1_id)
+            current_node2: Optional[Node] = graph.get_node(node2_id)
 
-            if not node1 or not node2:  # Should not happen if IDs are managed correctly
+            if not current_node1 or not current_node2:
                 continue
+            
+            # Now current_node1 and current_node2 are confirmed non-None (Node type)
 
             # Determine which node to keep (target) and which to merge away (source)
             # Simple rule: keep the one with higher average confidence, then higher impact.
             # More sophisticated rules could consider creation date, number of connections, etc.
+            keep_node: Node 
+            merge_away_node: Node
             keep_node, merge_away_node = (
-                (node1, node2)
+                (current_node1, current_node2)
                 if (
-                    node1.confidence.average_confidence
-                    > node2.confidence.average_confidence
+                    current_node1.confidence.average_confidence
+                    > current_node2.confidence.average_confidence
                     or (
-                        node1.confidence.average_confidence
-                        == node2.confidence.average_confidence
-                        and (node1.metadata.impact_score or 0)
-                        >= (node2.metadata.impact_score or 0)
+                        current_node1.confidence.average_confidence
+                        == current_node2.confidence.average_confidence
+                        and (current_node1.metadata.impact_score or 0)
+                        >= (current_node2.metadata.impact_score or 0)
                     )
                 )
-                else (node2, node1)
+                else (current_node2, current_node1)
             )
 
             logger.info(
                 f"Merging node '{merge_away_node.label}' (ID: {merge_away_node.id}) into "
                 f"'{keep_node.label}' (ID: {keep_node.id}). Overlap: {overlap_score:.2f}"
-            )            # 1. Re-wire edges: Point edges from/to merge_away_node to keep_node
+            )  # 1. Re-wire edges: Point edges from/to merge_away_node to keep_node
             # This requires iterating through graph.edges and graph.nx_graph
             # This is a complex step and needs careful handling in ASRGoTGraph for robust implementation.
             # For now, simplified in ASRGoTGraph.remove_node, but true merge needs more.
@@ -247,7 +251,7 @@ class PruningMergingStage(BaseStage):
                 )
             # Update confidence - e.g., weighted average or max, needs careful thought based on P1.14 principles
             # Take the maximum value for each confidence component
-            
+
             # Calculate max values for each component
             new_emp = max(
                 keep_node.confidence.empirical_support,
@@ -265,7 +269,7 @@ class PruningMergingStage(BaseStage):
                 keep_node.confidence.robustness,
                 merge_away_node.confidence.robustness,
             )
-            
+
             # Update the confidence attributes directly instead of creating a new object
             keep_node.confidence.empirical_support = new_emp
             keep_node.confidence.coherence = new_coherence

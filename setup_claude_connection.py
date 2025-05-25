@@ -6,12 +6,12 @@ This script:
 2. Displays instructions for connecting with Claude Desktop
 """
 
-import requests
 import json
+import logging
 import os
 import sys
-import time
-import logging
+
+import requests
 
 # Configuration
 SERVER_URL = "http://localhost:8000"
@@ -51,21 +51,21 @@ def test_mcp_initialize():
             "process_id": 12345
         }
     }
-    
+
     try:
         response = requests.post(
             MCP_ENDPOINT,
             json=init_payload,
             headers={"Content-Type": "application/json"}
         )
-        
+
         if response.status_code == 200:
             result = response.json()
-            if "result" in result and result["result"]:
-                logger.info(f"✅ MCP endpoint initialized successfully")
-                logger.info(f"   Server name: NexusMind MCP Server")
-                logger.info(f"   Server version: 0.1.0")
-                logger.info(f"   MCP version: 2024-11-05")
+            if result.get("result"):
+                logger.info("✅ MCP endpoint initialized successfully")
+                logger.info("   Server name: NexusMind MCP Server")
+                logger.info("   Server version: 0.1.0")
+                logger.info("   MCP version: 2024-11-05")
                 return True
             else:
                 logger.error(f"❌ MCP endpoint returned an error: {json.dumps(result.get('error', {}), indent=2)}")
@@ -83,21 +83,21 @@ def check_config_file():
     if not os.path.exists(CONFIG_FILE):
         logger.error(f"❌ MCP configuration file not found: {CONFIG_FILE}")
         return False
-    
+
     try:
-        with open(CONFIG_FILE, 'r') as f:
+        with open(CONFIG_FILE) as f:
             config = json.load(f)
-        
+
         # Validate essential fields
         if (
             "connection" in config and
             "endpoint" in config["connection"] and
             config["connection"]["endpoint"] == MCP_ENDPOINT
         ):
-            logger.info(f"✅ MCP configuration file is valid")
+            logger.info("✅ MCP configuration file is valid")
             return True
         else:
-            logger.warning(f"⚠️  MCP configuration file has issues:")
+            logger.warning("⚠️  MCP configuration file has issues:")
             if "connection" not in config:
                 logger.warning("   Missing 'connection' field")
             elif "endpoint" not in config["connection"]:
@@ -106,7 +106,7 @@ def check_config_file():
                 logger.warning(f"   Endpoint mismatch: {config['connection']['endpoint']} vs {MCP_ENDPOINT}")
             return False
     except json.JSONDecodeError:
-        logger.error(f"❌ MCP configuration file is not valid JSON")
+        logger.error("❌ MCP configuration file is not valid JSON")
         return False
     except Exception as e:
         logger.error(f"❌ Error checking MCP configuration: {e}")
@@ -135,28 +135,28 @@ def display_instructions():
 
 def main():
     logger.info("\n=== NexusMind MCP Setup ===\n")
-    
+
     # Step 1: Check if server is running
     logger.info("Step 1: Checking if NexusMind server is running...")
     if not check_health():
         logger.warning("\n⚠️  WARNING: Server not running. Please start the server and try again.")
         logger.warning("   Docker command: docker-compose up -d")
         sys.exit(1)
-    
+
     # Step 2: Test MCP endpoint
     logger.info("\nStep 2: Testing MCP endpoint...")
     if not test_mcp_initialize():
         logger.warning("\n⚠️  WARNING: MCP endpoint not working properly.")
         logger.warning("   Please check the server logs for errors.")
-    
+
     # Step 3: Check config file
     logger.info("\nStep 3: Checking MCP configuration file...")
     check_config_file()
-    
+
     # Step 4: Display instructions
     logger.info("\nStep 4: Connection instructions...")
     display_instructions()
-    
+
     logger.info("\nSetup complete! You can now connect Claude Desktop to the NexusMind server.")
     logger.info("Test the integration by asking a scientific reasoning question.")
 

@@ -1,11 +1,9 @@
-from typing import Any, Dict
-
 from loguru import logger
 
 # from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # If needed
 
 
-def detect_communities(graph_nx: Any) -> Dict[str, int]:  # graph_nx: nx.Graph
+def detect_communities() -> dict[str, int]:  # graph_nx: Any removed (unused)
     logger.warning(
         "Community detection (P1.22) not fully implemented. Returning placeholder."
     )
@@ -15,7 +13,9 @@ def detect_communities(graph_nx: Any) -> Dict[str, int]:  # graph_nx: nx.Graph
     return {}
 
 
-def calculate_node_centrality(graph_nx: Any, node_id: str) -> Dict[str, float]:
+def calculate_node_centrality() -> dict[
+    str, float
+]:  # graph_nx: Any, node_id: str removed (unused)
     logger.warning(
         "Node centrality (P1.22) not fully implemented. Returning placeholder."
     )

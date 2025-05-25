@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Request, HTTPException
-import uvicorn
-import os  # Import os module
-from pydantic import BaseModel, ValidationError
-from typing import Dict, Any, Optional, List, Union
 import json
 import logging
+import os  # Import os module
+from typing import Any, Dict, List, Optional, Union
+
+import uvicorn
+from fastapi import FastAPI, Request
+from pydantic import BaseModel, ValidationError
 
 app = FastAPI()
 
@@ -78,7 +79,7 @@ async def mcp_handler(request: Request):
             }
         elif method == "shutdown":
             return {
-                "jsonrpc": "2.0", 
+                "jsonrpc": "2.0",
                 "id": req_id,
                 "result": None
             }
@@ -110,7 +111,7 @@ async def mcp_handler(request: Request):
             "id": None,
             "error": {
                 "code": -32603,
-                "message": f"Internal error: {str(e)}"
+                "message": f"Internal error: {e!s}"
             }
         }
 
@@ -127,5 +128,5 @@ if __name__ == "__main__":
         server_port = int(port_str)
     else:
         logger.info(f"PORT environment variable not set or invalid, defaulting to {server_port}")
-    
+
     uvicorn.run(app, host="0.0.0.0", port=server_port)

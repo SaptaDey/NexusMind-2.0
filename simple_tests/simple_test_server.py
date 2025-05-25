@@ -1,8 +1,8 @@
 """
 A very simple FastAPI server for testing Docker networking.
 """
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 
 # Create a simple FastAPI app
 app = FastAPI()

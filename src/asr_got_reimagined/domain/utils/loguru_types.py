@@ -2,9 +2,16 @@
 Type stubs for loguru to help with static type checking.
 This file provides type annotations for the loguru module to suppress import and type errors.
 """
-from typing import Any, Callable, List, TypeVar, overload
 
-T = TypeVar('T')
+from typing import (
+    Any,
+    Callable,
+    TypeVar,
+    overload,
+)  # Removed List
+
+T = TypeVar("T")  # Defined T
+
 
 class Logger:
     """Type stub for loguru.Logger class."""
@@ -42,22 +49,31 @@ class Logger:
         ...
 
     @overload
-    def catch(self, exception: Callable[..., T]) -> Callable[..., T]:
-        ...
+    def catch(
+        self, exception: Callable[..., T]
+    ) -> Callable[..., T]:  # T should be defined now
+        ...  # type: ignore[empty-body]
 
     @overload
-    def catch(self, exception: List[Exception] = ..., *,
-              default: Any = ...,
-              message: str = ...,
-              onerror: Callable[..., Any] = ...,
-              level: str = ...,
-              reraise: bool = ...,
-              exclude: List[Exception] = ...) -> Callable[[Callable[..., T]], Callable[..., T]]:
-        ...
+    def catch(
+        self,
+        exception: list[Exception] = ...,
+        *,  # Changed List to list
+        default: Any = ...,
+        message: str = ...,
+        onerror: Callable[..., Any] = ...,
+        level: str = ...,
+        reraise: bool = ...,
+        exclude: list[Exception] = ...,
+    ) -> Callable[
+        [Callable[..., T]], Callable[..., T]
+    ]:  # Changed List to list, T should be defined
+        ...  # type: ignore[empty-body]
 
     def catch(self, *args: Any, **kwargs: Any) -> Any:
         """Catch exceptions in a function and log them."""
-        ...
+        ...  # type: ignore[empty-body]
+
 
 # Create a global logger instance
 logger = Logger()

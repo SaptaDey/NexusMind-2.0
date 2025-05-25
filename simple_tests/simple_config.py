@@ -1,9 +1,8 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import yaml
-from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings
+from pydantic import BaseModel
 
 # Load the YAML configuration file
 config_file_path = Path(__file__).parent.parent.parent / "config" / "settings.yaml"

@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict, List, Optional, Set, TypeVar
+from typing import Any, Optional, TypeVar
 
 import networkx as nx
 from loguru import logger
@@ -30,22 +30,22 @@ class ASRGoTGraph(TimestampedModel):
 
     id: str = Field(default_factory=lambda: f"graph-{uuid.uuid4()}")
     # We store domain model instances in dictionaries for quick access by ID
-    nodes: Dict[str, Node] = Field(default_factory=dict)
-    edges: Dict[str, Edge] = Field(default_factory=dict)  # Edge ID to Edge object
-    hyperedges: Dict[str, Hyperedge] = Field(default_factory=dict)
+    nodes: dict[str, Node] = Field(default_factory=dict)
+    edges: dict[str, Edge] = Field(default_factory=dict)  # Edge ID to Edge object
+    hyperedges: dict[str, Hyperedge] = Field(default_factory=dict)
 
     # Layer structure (P1.23)
-    layers: Dict[str, Set[str]] = Field(
+    layers: dict[str, set[str]] = Field(
         default_factory=dict
     )  # Layer name to set of node_ids
-    
+
     # Internal NetworkX graph for topology and algorithms
     # It will store node IDs and edge IDs (or tuples for edges)
     # Node attributes in nx_graph can point back to Node objects or store lightweight data
     nx_graph: nx.MultiDiGraph = Field(default_factory=nx.MultiDiGraph, exclude=True)
 
     # Metadata about the graph itself, e.g., current stage, overall query
-    graph_metadata: Dict[str, Any] = Field(default_factory=dict)
+    graph_metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("nx_graph", mode="before")
     @classmethod
@@ -178,22 +178,22 @@ class ASRGoTGraph(TimestampedModel):
             layer_count=len(self.layers),
         )
 
-    def get_neighbors(self, node_id: str) -> List[str]:
+    def get_neighbors(self, node_id: str) -> list[str]:
         if node_id not in self.nx_graph:
             return []
         return list(self.nx_graph.neighbors(node_id))
 
-    def get_predecessors(self, node_id: str) -> List[str]:
+    def get_predecessors(self, node_id: str) -> list[str]:
         if node_id not in self.nx_graph:
             return []
         return list(self.nx_graph.predecessors(node_id))
 
-    def get_successors(self, node_id: str) -> List[str]:
+    def get_successors(self, node_id: str) -> list[str]:
         if node_id not in self.nx_graph:
             return []
         return list(self.nx_graph.successors(node_id))
 
-    def to_serializable_dict(self) -> Dict[str, Any]:
+    def to_serializable_dict(self) -> dict[str, Any]:
         """Converts graph to a dict suitable for API responses (like GraphStateSchema)"""
         return {
             "id": self.id,

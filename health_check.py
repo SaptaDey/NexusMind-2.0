@@ -3,6 +3,7 @@ Simple health check script for the NexusMind server.
 """
 import requests
 
+
 def check_health():
     """Check the health endpoint of the NexusMind server."""
     try:

@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict, List
+from typing import Any
 
 from loguru import logger
 
@@ -8,6 +8,7 @@ from src.asr_got_reimagined.domain.models.common import (
     ConfidenceVector,
     EpistemicStatus,
 )
+from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.models.graph_elements import (
     BiasFlag,
     Edge,
@@ -20,7 +21,6 @@ from src.asr_got_reimagined.domain.models.graph_elements import (
     Plan,
 )
 from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
-from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 
 from .base_stage import BaseStage, StageOutput
 
@@ -50,7 +50,7 @@ class HypothesisStage(BaseStage):
 
     async def _generate_hypothesis_content(
         self, dimension_node: Node, hypo_index: int, initial_query: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generates content for a single hypothesis.
         In a real system, this would involve more sophisticated generation,
@@ -100,7 +100,9 @@ class HypothesisStage(BaseStage):
             )
 
         # P1.28: Potential impact estimate
-        impact_score = random.uniform(0.2, 0.9)  # Use the raw float value for ImpactScore type
+        impact_score = random.uniform(
+            0.2, 0.9
+        )  # Use the raw float value for ImpactScore type
 
         # P1.8: Tag with disciplinary provenance (simplified selection)
         num_tags = random.randint(1, min(2, len(self.default_disciplinary_tags_config)))
@@ -125,12 +127,16 @@ class HypothesisStage(BaseStage):
         self._log_start(current_session_data.session_id)
 
         # GoTProcessor now stores the dictionary from next_stage_context_update directly.
-        decomposition_data_from_context = current_session_data.accumulated_context.get(DecompositionStage.stage_name, {})
-        dimension_node_ids: List[str] = decomposition_data_from_context.get(
+        decomposition_data_from_context = current_session_data.accumulated_context.get(
+            DecompositionStage.stage_name, {}
+        )
+        dimension_node_ids: list[str] = decomposition_data_from_context.get(
             "dimension_node_ids", []
         )
         initial_query = current_session_data.query
-        operational_params = current_session_data.accumulated_context.get("operational_params", {})
+        operational_params = current_session_data.accumulated_context.get(
+            "operational_params", {}
+        )
 
         if not dimension_node_ids:
             logger.warning(
@@ -147,7 +153,7 @@ class HypothesisStage(BaseStage):
                 },
             )
 
-        all_hypothesis_node_ids: List[str] = []
+        all_hypothesis_node_ids: list[str] = []
         nodes_created_count = 0
         edges_created_count = 0
 

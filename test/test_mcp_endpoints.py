@@ -2,9 +2,9 @@
 Test script for the NexusMind MCP server endpoints.
 """
 import json
+from typing import Any, Dict, Optional
+
 import requests
-import sys
-from typing import Dict, Any, Optional
 
 MCP_SERVER_URL = "http://localhost:8000/mcp"  # The MCP endpoint
 
@@ -25,19 +25,19 @@ def test_initialize_endpoint() -> Dict[str, Any]:
             "process_id": 12345
         }
     }
-    
+
     try:
         print(f"Sending request to {MCP_SERVER_URL}...")
         response = requests.post(
-            MCP_SERVER_URL, 
+            MCP_SERVER_URL,
             json=payload,
             headers={"Content-Type": "application/json"}
         )
-        
+
         if response.status_code == 200:
             result = response.json()
             print(f"Success! Response: {json.dumps(result, indent=2)}")
-            
+
             # Add assertions to verify the correctness of the initialize endpoint response
             assert result["jsonrpc"] == "2.0", "Invalid JSON-RPC version"
             assert result["id"] == "test-init-1", "Invalid response ID"
@@ -45,7 +45,7 @@ def test_initialize_endpoint() -> Dict[str, Any]:
             assert result["result"]["server_name"] == "NexusMind MCP Server", "Invalid server name"
             assert result["result"]["server_version"] == "0.1.0", "Invalid server version"
             assert result["result"]["mcp_version"] == "2024-11-05", "Invalid MCP version"
-            
+
             return result
         else:
             print(f"Error: HTTP Status {response.status_code}")
@@ -73,19 +73,19 @@ def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
             }
         }
     }
-    
+
     try:
         print(f"Sending query to {MCP_SERVER_URL}...")
         response = requests.post(
-            MCP_SERVER_URL, 
+            MCP_SERVER_URL,
             json=payload,
             headers={"Content-Type": "application/json"}
         )
-        
+
         if response.status_code == 200:
             result = response.json()
             print(f"Success! Answer: {json.dumps(result.get('result', {}).get('answer', 'No answer'), indent=2)}")
-            
+
             # Add assertions to verify the correctness of the asr_got.query endpoint response
             assert result["jsonrpc"] == "2.0", "Invalid JSON-RPC version"
             assert result["id"] == "test-query-1", "Invalid response ID"
@@ -96,7 +96,7 @@ def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
             assert "confidence_vector" in result["result"], "Missing confidence vector in response"
             assert "execution_time_ms" in result["result"], "Missing execution time in response"
             assert "session_id" in result["result"], "Missing session ID in response"
-            
+
             return result
         else:
             print(f"Error: HTTP Status {response.status_code}")
@@ -117,15 +117,15 @@ def test_shutdown() -> Dict[str, Any]:
         "method": "shutdown",
         "params": {}
     }
-    
+
     try:
         print(f"Sending shutdown request to {MCP_SERVER_URL}...")
         response = requests.post(
-            MCP_SERVER_URL, 
+            MCP_SERVER_URL,
             json=payload,
             headers={"Content-Type": "application/json"}
         )
-        
+
         if response.status_code == 200:
             result = response.json()
             print(f"Success! Response: {json.dumps(result, indent=2)}")
@@ -144,15 +144,15 @@ def run_all_tests():
     """
     # First test the initialize endpoint
     init_response = test_initialize_endpoint()
-    
+
     if "error" not in init_response:
         # If initialization succeeded, test the query endpoint
         session_id = "test-session-" + str(hash(json.dumps(init_response)))[0:8]
         query_response = test_asr_got_query(session_id)
-        
+
         # Don't actually shut down the server in normal testing
         # test_shutdown()
-    
+
     print("\n=== Tests Complete ===")
 
 if __name__ == "__main__":

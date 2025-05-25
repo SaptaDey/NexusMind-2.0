@@ -48,6 +48,7 @@ pytest-asyncio = "^0.23.0" # For testing async code
 ruff = "^0.4.0"            # Linter and formatter
 pre-commit = "^3.7.0"      # For running checks before commit
 mypy = "^1.10.0"           # Static type checker
+types-pyyaml = "^6.0.12.20250516"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

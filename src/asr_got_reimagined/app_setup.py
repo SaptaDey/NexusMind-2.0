@@ -1,19 +1,22 @@
-﻿import sys
 import os
+import sys
 from contextlib import asynccontextmanager
-
-# Add src directory to Python path if not already there
-src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger  # type: ignore
 
-from src.asr_got_reimagined.api.routes.mcp import mcp_router
-from src.asr_got_reimagined.simple_config import settings
-from src.asr_got_reimagined.domain.services.got_processor import GoTProcessor
+# Add src directory to Python path if not already there
+# This must be done before other project imports
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+from src.asr_got_reimagined.api.routes.mcp import mcp_router  # noqa: E402
+from src.asr_got_reimagined.domain.services.got_processor import (  # noqa: E402
+    GoTProcessor,
+)
+from src.asr_got_reimagined.simple_config import settings  # noqa: E402
 
 
 @asynccontextmanager
@@ -56,7 +59,9 @@ def create_app() -> FastAPI:
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
         colorize=True,
     )
-    logger.info("Logger configured with level: {}", settings.app.log_level.upper())    # Create FastAPI app with lifespan
+    logger.info(
+        "Logger configured with level: {}", settings.app.log_level.upper()
+    )  # Create FastAPI app with lifespan
     app = FastAPI(
         title=settings.app.name,
         version=settings.app.version,
@@ -83,7 +88,7 @@ def create_app() -> FastAPI:
 
     # Add health check endpoint
     @app.get("/health", tags=["Health"])
-    async def health_check():  # noqa: F811, F401
+    async def health_check():
         logger.debug("Health check endpoint was called.")  # type: ignore
         return {"status": "healthy", "version": settings.app.version}
 

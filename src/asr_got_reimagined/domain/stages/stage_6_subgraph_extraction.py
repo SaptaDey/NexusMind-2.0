@@ -1,12 +1,12 @@
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 from loguru import logger
 from pydantic import BaseModel, Field  # For defining subgraph criteria structure
 
 from src.asr_got_reimagined.config import Settings
+from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.domain.models.graph_elements import Node, NodeType
 from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
-from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 
 from .base_stage import BaseStage, StageOutput
 
@@ -18,10 +18,10 @@ class SubgraphCriterion(BaseModel):
     # Filters - all conditions must be met for a node to be included initially
     min_avg_confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)  # P1.5
     min_impact_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)  # P1.28
-    node_types: Optional[List[NodeType]] = None  # P1.6
-    include_disciplinary_tags: Optional[List[str]] = None  # P1.8 (any of these)
-    exclude_disciplinary_tags: Optional[List[str]] = None
-    layer_ids: Optional[List[str]] = None  # P1.23 (any of these layers)
+    node_types: Optional[list[NodeType]] = None  # P1.6
+    include_disciplinary_tags: Optional[list[str]] = None  # P1.8 (any of these)
+    exclude_disciplinary_tags: Optional[list[str]] = None
+    layer_ids: Optional[list[str]] = None  # P1.23 (any of these layers)
     is_knowledge_gap: Optional[bool] = None  # P1.15
     # temporal_recency_days: Optional[int] = None # P1.18 (e.g., created in last X days) - complex to implement here fully
     # edge_pattern_to_match: Optional[Dict[str, Any]] = None # P1.10, P1.24, P1.25 - very complex
@@ -35,11 +35,11 @@ class SubgraphCriterion(BaseModel):
 class ExtractedSubgraph(BaseModel):
     name: str
     description: str
-    node_ids: List[str]
+    node_ids: list[str]
     # We might store the actual NetworkX subgraph later, or just node IDs for composition
     # For now, just node_ids to keep it simple for context passing.
     # subgraph_nx: Optional[Any] = None # Could hold nx.Graph
-    metrics: Dict[str, Any] = Field(default_factory=dict)
+    metrics: dict[str, Any] = Field(default_factory=dict)
 
 
 class SubgraphExtractionStage(BaseStage):
@@ -49,7 +49,7 @@ class SubgraphExtractionStage(BaseStage):
         super().__init__(settings)
         # P1.6: Subgraph extraction criteria can be complex and data-driven.
         # For now, define some default strategies. These could also come from config or operational_params.
-        self.default_extraction_criteria: List[SubgraphCriterion] = [
+        self.default_extraction_criteria: list[SubgraphCriterion] = [
             SubgraphCriterion(
                 name="high_confidence_core",
                 description="Nodes with high average confidence and impact, focusing on hypotheses and evidence.",
@@ -105,16 +105,20 @@ class SubgraphExtractionStage(BaseStage):
         ):
             return False
 
-        if criterion.include_disciplinary_tags:
-            if not node.metadata.disciplinary_tags.intersection(
+        if (
+            criterion.include_disciplinary_tags
+            and not node.metadata.disciplinary_tags.intersection(
                 set(criterion.include_disciplinary_tags)
-            ):
-                return False
-        if criterion.exclude_disciplinary_tags:
-            if node.metadata.disciplinary_tags.intersection(
+            )
+        ):
+            return False
+        if (
+            criterion.exclude_disciplinary_tags
+            and node.metadata.disciplinary_tags.intersection(
                 set(criterion.exclude_disciplinary_tags)
-            ):
-                return False
+            )
+        ):
+            return False
 
         # Placeholder for temporal_recency_days (P1.18)
         # if criterion.temporal_recency_days is not None:
@@ -127,20 +131,20 @@ class SubgraphExtractionStage(BaseStage):
         self, graph: ASRGoTGraph, criterion: SubgraphCriterion
     ) -> ExtractedSubgraph:
         """Extracts one subgraph based on a single criterion."""
-        seed_node_ids: Set[str] = set()
+        seed_node_ids: set[str] = set()
         for node_id, node_obj in graph.nodes.items():
             if self._node_matches_criteria(node_obj, criterion):
                 seed_node_ids.add(node_id)
 
-        final_subgraph_node_ids: Set[str] = set(seed_node_ids)
+        final_subgraph_node_ids: set[str] = set(seed_node_ids)
 
         # Expand to include neighbors if depth > 0
         current_frontier = set(seed_node_ids)
         for _ in range(criterion.include_neighbors_depth):
-            next_frontier: Set[str] = set()
+            next_frontier: set[str] = set()
             if not current_frontier:
                 break
-            for node_id in current_frontier:                # Use graph.nx_graph for neighbor finding
+            for node_id in current_frontier:  # Use graph.nx_graph for neighbor finding
                 if graph.nx_graph.has_node(node_id):
                     for neighbor_id in graph.nx_graph.neighbors(node_id):  # Outgoing
                         if neighbor_id not in final_subgraph_node_ids:
@@ -156,7 +160,9 @@ class SubgraphExtractionStage(BaseStage):
 
         # Induce subgraph in NetworkX to get edges, or manually collect edges
         # For now, we just return node IDs. The Composition stage can use these.
-        num_nodes = len(final_subgraph_node_ids)        # Could calculate num_edges if we induce the subgraph here
+        num_nodes = len(
+            final_subgraph_node_ids
+        )  # Could calculate num_edges if we induce the subgraph here
         # induced_nx_subgraph = graph.nx_graph.subgraph(final_subgraph_node_ids)
         # num_edges = induced_nx_subgraph.number_of_edges()
 
@@ -174,10 +180,12 @@ class SubgraphExtractionStage(BaseStage):
         self._log_start(current_session_data.session_id)
 
         # Allow operational parameters to override or add to default criteria
-        operational_params = current_session_data.accumulated_context.get("operational_params", {})
+        operational_params = current_session_data.accumulated_context.get(
+            "operational_params", {}
+        )
         custom_criteria_input = operational_params.get("subgraph_extraction_criteria")
 
-        criteria_to_use: List[SubgraphCriterion] = []
+        criteria_to_use: list[SubgraphCriterion] = []
         if isinstance(custom_criteria_input, list):
             try:
                 criteria_to_use = [
@@ -197,7 +205,7 @@ class SubgraphExtractionStage(BaseStage):
                 f"Using {len(criteria_to_use)} default subgraph extraction criteria."
             )
 
-        extracted_subgraphs_results: List[ExtractedSubgraph] = []
+        extracted_subgraphs_results: list[ExtractedSubgraph] = []
         for criterion in criteria_to_use:
             if graph.get_statistics().node_count == 0:  # No nodes to process
                 logger.warning(
@@ -209,7 +217,9 @@ class SubgraphExtractionStage(BaseStage):
                 if subgraph_result.node_ids:  # Only add if non-empty
                     extracted_subgraphs_results.append(subgraph_result)
             except Exception as e:
-                logger.error(f"Error extracting subgraph for criterion '{criterion.name}': {e}")
+                logger.error(
+                    f"Error extracting subgraph for criterion '{criterion.name}': {e}"
+                )
                 continue
 
         summary = f"Subgraph extraction complete. Extracted {len(extracted_subgraphs_results)} subgraphs based on defined criteria."

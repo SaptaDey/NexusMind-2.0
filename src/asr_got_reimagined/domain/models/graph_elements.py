@@ -1,9 +1,9 @@
 import datetime
 import uuid  # For generating default IDs
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional  # Ensure Set is NOT imported here
 
-from pydantic import BaseModel, Field, field_validator, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from .common import (
     CertaintyScore,
@@ -83,7 +83,7 @@ class EdgeType(str, Enum):
 # --- Metadata Sub-Models (aligning with P1.12) ---
 class FalsificationCriteria(BaseModel):  # P1.16
     description: str
-    testable_conditions: List[str] = Field(default_factory=list)
+    testable_conditions: list[str] = Field(default_factory=list)
     # potential_null_results: Optional[str] = None
 
 
@@ -99,7 +99,7 @@ class RevisionRecord(BaseModel):
     timestamp: datetime.datetime = Field(default_factory=datetime.datetime.now)
     user_or_process: str  # Who/what made the change
     action: str  # e.g., "created", "updated_confidence", "merged", "pruned"
-    changes_made: Dict[
+    changes_made: dict[
         str, Any
     ]  # e.g., {"confidence.empirical_support": {"old": 0.5, "new": 0.7}}
     reason: Optional[str] = None
@@ -112,20 +112,20 @@ class Plan(BaseModel):  # P1.3 (for hypotheses)
     estimated_duration: Optional[float] = Field(
         default=0.0, ge=0.0
     )  # Abstract time unit
-    required_resources: List[str] = Field(default_factory=list)
+    required_resources: list[str] = Field(default_factory=list)
     # status: str = Field(default="pending", examples=["pending", "in_progress", "completed", "failed"])
 
 
 class InterdisciplinaryInfo(BaseModel):  # P1.8 (metadata for IBNs)
-    source_disciplines: Set[str] = Field(default_factory=set)
-    target_disciplines: Set[str] = Field(default_factory=set)
+    source_disciplines: set[str] = Field(default_factory=set)
+    target_disciplines: set[str] = Field(default_factory=set)
     bridging_concept: Optional[str] = None
 
 
 class CausalMetadata(BaseModel):  # P1.24 (metadata for causal edges)
     strength: Optional[CertaintyScore] = None  # Strength of causal claim
     mechanism_description: Optional[str] = None
-    confounders_identified: List[str] = Field(default_factory=list)
+    confounders_identified: list[str] = Field(default_factory=list)
     experimental_support: Optional[bool] = None  # True if supported by experiment
     # counterfactual_reasoning: Optional[str] = None
 
@@ -176,12 +176,12 @@ class NodeMetadata(TimestampedModel):  # Aligns with P1.12 for nodes
         None  # P1.0, P1.1 etc. Source document/rule for this parameter
     )
     epistemic_status: EpistemicStatus = Field(default=EpistemicStatus.UNKNOWN)
-    disciplinary_tags: Set[str] = Field(default_factory=set)  # P1.8, P1.12
+    disciplinary_tags: set[str] = Field(default_factory=set)  # P1.8, P1.12
     falsification_criteria: Optional[FalsificationCriteria] = None  # P1.16, P1.12
-    bias_flags: List[BiasFlag] = Field(default_factory=list)  # P1.17, P1.12
-    revision_history: List[RevisionRecord] = Field(default_factory=list)  # P1.12
+    bias_flags: list[BiasFlag] = Field(default_factory=list)  # P1.17, P1.12
+    revision_history: list[RevisionRecord] = Field(default_factory=list)  # P1.12
     layer_id: Optional[str] = None  # P1.23, P1.12
-    # topology_metrics: Optional[Dict[str, float]] = None # P1.22, P1.12 (calculated dynamically)
+    # topology_metrics: Optional[dict[str, float]] = None # P1.22, P1.12 (calculated dynamically)
     statistical_power: Optional[StatisticalPower] = (
         None  # P1.26, P1.12 (esp. for Evidence nodes)
     )
@@ -189,14 +189,14 @@ class NodeMetadata(TimestampedModel):  # Aligns with P1.12 for nodes
     impact_score: Optional[ImpactScore] = Field(
         default=0.1
     )  # P1.28, P1.12 default to low impact
-    attribution: List[Attribution] = Field(default_factory=list)  # P1.29, P1.12
+    attribution: list[Attribution] = Field(default_factory=list)  # P1.29, P1.12
     plan: Optional[Plan] = None  # P1.3 (for Hypothesis nodes)
     interdisciplinary_info: Optional[InterdisciplinaryInfo] = None  # For IBNs
     # additional_properties: Dict[str, Any] = Field(default_factory=dict) # For extensibility
 
     # For knowledge gap nodes (P1.15)
     is_knowledge_gap: bool = False
-    research_questions_generated: List[str] = Field(default_factory=list)
+    research_questions_generated: list[str] = Field(default_factory=list)
 
 
 class Node(TimestampedModel):
@@ -206,7 +206,7 @@ class Node(TimestampedModel):
     confidence: ConfidenceVector = Field(default_factory=ConfidenceVector)
     metadata: NodeMetadata = Field(default_factory=NodeMetadata)
 
-    @field_serializer('confidence')
+    @field_serializer("confidence")
     def serialize_confidence_to_list(self, v: ConfidenceVector, _info):
         return v.to_list()
 
@@ -249,9 +249,9 @@ class EdgeMetadata(TimestampedModel):  # Aligns with P1.12 for edges
     weight: Optional[float] = Field(default=1.0)  # For weighted graph algorithms
     causal_metadata: Optional[CausalMetadata] = None  # P1.24
     temporal_metadata: Optional[TemporalMetadata] = None  # P1.25
-    attribution: List[Attribution] = Field(default_factory=list)  # P1.29
-    revision_history: List[RevisionRecord] = Field(default_factory=list)
-    # additional_properties: Dict[str, Any] = Field(default_factory=dict)
+    attribution: list[Attribution] = Field(default_factory=list)  # P1.29
+    revision_history: list[RevisionRecord] = Field(default_factory=list)
+    # additional_properties: dict[str, Any] = Field(default_factory=dict)
 
 
 class Edge(TimestampedModel):
@@ -262,7 +262,10 @@ class Edge(TimestampedModel):
     # Edge specific confidence separate from node confidences, as per P1.12 for Edges
     # P1.10 also implies edges can have confidence.
     confidence: Optional[CertaintyScore] = Field(default=0.7)
-    metadata: EdgeMetadata = Field(default_factory=EdgeMetadata)    # To allow Edge instances to be added to sets or used as dict keys (e.g. by source, target, type)
+    metadata: EdgeMetadata = Field(
+        default_factory=EdgeMetadata
+    )  # To allow Edge instances to be added to sets or used as dict keys (e.g. by source, target, type)
+
     def __hash__(self):
         return hash((self.id, self.source_id, self.target_id, self.type))
 
@@ -280,16 +283,16 @@ class Edge(TimestampedModel):
 class HyperedgeMetadata(TimestampedModel):  # Aligns with P1.9 & P1.12
     description: Optional[str] = None
     relationship_descriptor: str  # Describes the N-ary relationship
-    attribution: List[Attribution] = Field(default_factory=list)  # P1.29
-    revision_history: List[RevisionRecord] = Field(default_factory=list)
+    attribution: list[Attribution] = Field(default_factory=list)  # P1.29
+    revision_history: list[RevisionRecord] = Field(default_factory=list)
     layer_id: Optional[str] = None  # P1.23
-    # additional_properties: Dict[str, Any] = Field(default_factory=dict)
+    # additional_properties: dict[str, Any] = Field(default_factory=dict)
 
 
 class Hyperedge(TimestampedModel):  # P1.9
     id: str = Field(default_factory=lambda: f"hyperedge-{uuid.uuid4()}")
     # A hyperedge connects a set of nodes. |E_h| > 2 is typical but can be 2 for typed N-ary.
-    node_ids: Set[str] = Field(..., min_length=2)
+    node_ids: set[str] = Field(..., min_length=2)
     # Confidence in the hyper-relationship itself
     confidence_vector: ConfidenceVector = Field(
         default_factory=ConfidenceVector
@@ -297,7 +300,7 @@ class Hyperedge(TimestampedModel):  # P1.9
     metadata: HyperedgeMetadata = Field(...)
 
     @field_validator("node_ids")
-    def check_min_nodes(cls, v: Set[str]) -> Set[str]:
+    def check_min_nodes(cls, v: set[str]) -> set[str]:  # Ensure this is lowercase 'set'
         if (
             len(v) < 2
         ):  # P1.9 stated |Eh| > 2, but often hyperedges also model pairs with specific semantics

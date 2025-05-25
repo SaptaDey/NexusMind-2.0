@@ -1,9 +1,12 @@
-from typing import List, Optional
+from typing import Optional
 
 from loguru import logger
 
 from src.asr_got_reimagined.domain.models.common import CertaintyScore, ConfidenceVector
-from src.asr_got_reimagined.domain.models.graph_elements import EdgeType, StatisticalPower
+from src.asr_got_reimagined.domain.models.graph_elements import (
+    EdgeType,
+    StatisticalPower,
+)
 
 
 def bayesian_update_confidence(
@@ -73,7 +76,7 @@ def bayesian_update_confidence(
 
 
 def calculate_information_gain(
-    prior_distribution: List[float], posterior_distribution: List[float]
+    prior_distribution: list[float], posterior_distribution: list[float]
 ) -> float:
     """
     Placeholder for calculating information gain (e.g., KL divergence reduction). P1.27.

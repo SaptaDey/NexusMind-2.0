@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from fastapi import APIRouter, HTTPException, Request
 from loguru import logger
@@ -16,7 +16,6 @@ from src.asr_got_reimagined.api.schemas import (
     MCPInitializeResult,
     ShutdownParams,
 )
-from src.asr_got_reimagined.simple_config import settings
 from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
 from src.asr_got_reimagined.domain.services.got_processor import (
     GoTProcessor,
@@ -152,7 +151,7 @@ async def handle_asr_got_query(
                     try:
                         trace_lines = []
                         for item in session_data_result.stage_outputs_trace:
-                            if hasattr(item, '__dict__'):
+                            if hasattr(item, "__dict__"):
                                 s = item.__dict__
                                 trace_lines.append(
                                     f"Stage {s.get('stage_number', 'N/A')}. {s.get('stage_name', 'Unknown Stage')}: {s.get('summary', 'N/A')} ({s.get('duration_ms', 0)}ms)"
@@ -193,13 +192,17 @@ async def handle_asr_got_query(
             # Create a fallback response
             query_result = MCPASRGoTQueryResult(
                 answer="Sorry, there was an error processing this query, but I'll try to provide a response.",
-                reasoning_trace_summary=f"Error in processing: {str(ae)}",
+                reasoning_trace_summary=f"Error in processing: {ae!s}",
                 graph_state_full=None,
                 confidence_vector=[0.1, 0.1, 0.1, 0.1],  # Low confidence due to error
                 execution_time_ms=0,
-                session_id=getattr(session_data_result, 'session_id', f"error-session-{request_id}"),
+                session_id=getattr(
+                    session_data_result, "session_id", f"error-session-{request_id}"
+                ),
             )
-            logger.warning(f"Returning fallback response for ID: {request_id} after error")
+            logger.warning(
+                f"Returning fallback response for ID: {request_id} after error"
+            )
             return JSONRPCResponse(id=request_id, result=query_result)
         except Exception as e2:
             # If even our fallback fails, return the original error
@@ -230,7 +233,7 @@ async def handle_shutdown(
 
 @mcp_router.post("")
 async def mcp_endpoint_handler(
-    request_payload: JSONRPCRequest[Dict[str, Any]], http_request: Request
+    request_payload: JSONRPCRequest[dict[str, Any]], http_request: Request
 ):
     logger.debug(
         "MCP Endpoint received raw request: method={}, id={}",

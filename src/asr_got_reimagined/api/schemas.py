@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar, Union
+from typing import Any, Generic, Literal, Optional, TypeVar, Union
 
 from pydantic import BaseModel, Field, validator
 
@@ -48,7 +48,7 @@ class JSONRPCResponse(BaseModel, Generic[T, E]):
 
     @validator("error", always=True)
     def check_result_error_conditions(
-        cls, error_value: Optional[JSONRPCErrorObject[E]], values: Dict[str, Any]
+        cls, error_value: Optional[JSONRPCErrorObject[E]], values: dict[str, Any]
     ) -> Optional[JSONRPCErrorObject[E]]:
         result_value = values.get("result")
 
@@ -76,7 +76,7 @@ class MCPInitializeClientInfo(BaseModel):
     client_version: Optional[str] = Field(
         default=None, description="Version of the client application"
     )
-    supported_mcp_versions: Optional[List[str]] = Field(
+    supported_mcp_versions: Optional[list[str]] = Field(
         default_factory=list,
         description="MCP versions supported by the client, defaults to empty list",
     )
@@ -105,8 +105,8 @@ class MCPInitializeResult(BaseModel):
 # Params for "asr_got.query" method
 class MCPQueryContext(BaseModel):
     conversation_id: Optional[str] = Field(default=None)
-    history: Optional[List[Dict[str, Any]]] = Field(default=None)
-    user_preferences: Optional[Dict[str, Any]] = Field(default=None)
+    history: Optional[list[dict[str, Any]]] = Field(default=None)
+    user_preferences: Optional[dict[str, Any]] = Field(default=None)
 
 
 class MCPQueryOperationalParams(BaseModel):
@@ -132,10 +132,10 @@ class GraphNodeSchema(BaseModel):
     node_id: str = Field(..., examples=["n0"])
     label: str = Field(..., examples=["Task Understanding"])
     type: str = Field(..., examples=["root"])
-    confidence: Optional[List[float]] = Field(
+    confidence: Optional[list[float]] = Field(
         default=None, examples=[0.9, 0.85, 0.92, 0.88]
     )
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphEdgeSchema(BaseModel):
@@ -144,29 +144,29 @@ class GraphEdgeSchema(BaseModel):
     target: str = Field(..., examples=["dim1"])
     edge_type: str = Field(..., examples=["decomposition"])
     confidence: Optional[float] = Field(default=None, examples=[0.9])
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphHyperedgeSchema(BaseModel):
     edge_id: str
-    nodes: List[str]
+    nodes: list[str]
     confidence: Optional[float] = Field(default=None)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphStateSchema(BaseModel):
-    nodes: List[GraphNodeSchema] = Field(default_factory=list)
-    edges: List[GraphEdgeSchema] = Field(default_factory=list)
-    hyperedges: List[GraphHyperedgeSchema] = Field(default_factory=list)
-    layers: Optional[Dict[str, List[str]]] = Field(default=None)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    nodes: list[GraphNodeSchema] = Field(default_factory=list)
+    edges: list[GraphEdgeSchema] = Field(default_factory=list)
+    hyperedges: list[GraphHyperedgeSchema] = Field(default_factory=list)
+    layers: Optional[dict[str, list[str]]] = Field(default=None)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class MCPASRGoTQueryResult(BaseModel):
     answer: str
     reasoning_trace_summary: Optional[str] = Field(default=None)
     graph_state_full: Optional[GraphStateSchema] = Field(default=None)
-    confidence_vector: Optional[List[float]] = Field(
+    confidence_vector: Optional[list[float]] = Field(
         default=None, examples=[0.7, 0.6, 0.8, 0.75]
     )
     execution_time_ms: Optional[int] = Field(default=None)
@@ -178,7 +178,7 @@ class GoTQueryInput(BaseModel):
     query: str = Field(
         ..., description="The natural language query or problem statement"
     )
-    config_override: Optional[Dict[str, Any]] = Field(
+    config_override: Optional[dict[str, Any]] = Field(
         default=None,
         description="Optional overrides for NexusMind parameters for this query",
     )
@@ -198,7 +198,7 @@ class GoTQueryProgressParams(BaseModel):
     status: str
     message: Optional[str] = Field(default=None)
     progress_percentage: Optional[float] = Field(default=None, ge=0.0, le=100.0)
-    intermediate_results: Optional[List[GoTQueryThoughtStep]] = Field(default=None)
+    intermediate_results: Optional[list[GoTQueryThoughtStep]] = Field(default=None)
 
 
 class GoTQueryProgressNotification(JSONRPCRequest[GoTQueryProgressParams]):
@@ -208,9 +208,9 @@ class GoTQueryProgressNotification(JSONRPCRequest[GoTQueryProgressParams]):
 class GoTQueryFinalResult(BaseModel):
     session_id: str
     final_answer: str
-    confidence_vector: Optional[List[float]] = Field(default=None)
-    supporting_evidence_ids: Optional[List[str]] = Field(default=None)
-    full_graph_summary: Optional[Dict[str, Any]] = Field(default=None)
+    confidence_vector: Optional[list[float]] = Field(default=None)
+    supporting_evidence_ids: Optional[list[str]] = Field(default=None)
+    full_graph_summary: Optional[dict[str, Any]] = Field(default=None)
 
 
 # --- Standard MCP Notification/Request structures ---

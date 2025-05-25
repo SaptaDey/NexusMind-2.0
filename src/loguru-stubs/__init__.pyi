@@ -1,4 +1,5 @@
-from typing import Any, TypeVar, overload, Callable, Union
+from typing import Any, Callable, TypeVar, Union, overload
+
 # No need to import unused modules
 
 _T = TypeVar("_T")
@@ -13,10 +14,10 @@ class Logger:
     def log(self, __level: int, __message: str, *args: Any, **kwargs: Any) -> None: ...
     def remove(self, __handler_id: int = ...) -> None: ...
     def add(self, sink: Any, **kwargs: Any) -> int: ...
-    
+
     @overload
     def catch(self, function: Callable[..., _T]) -> Callable[..., _T]: ...
-    
+
     @overload
     def catch(
         self,
@@ -27,9 +28,10 @@ class Logger:
         message: str = ...,
         onerror: Callable[..., Any] = ...,
     ) -> Callable[[Callable[..., _T]], Callable[..., _T]]: ...
-    
-    def catch(self, *args: Any, **kwargs: Any) -> Any: ...
-    
+
+# Removed the non-overload decorated 'catch' method for stub file compliance
+# def catch(self, *args: Any, **kwargs: Any) -> Any: ...
+
 logger: Logger = ...
 
 def configure(**kwargs: Any) -> None: ...

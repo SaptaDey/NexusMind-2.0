@@ -6,28 +6,29 @@ Run this script after making changes to ensure consistent type checking behavior
 import os
 import re
 import sys
+
 # Unused import removed
 # from pathlib import Path
 
 
 def add_type_ignore_to_loguru_imports(filepath: str) -> None:
     """Add '# type: ignore' to loguru import statements to silence type checking errors."""
-    with open(filepath, 'r', encoding='utf-8') as file:
+    with open(filepath, encoding='utf-8') as file:
         content = file.read()
-        
+
     # Add type: ignore to loguru imports
-    content = re.sub(r'from loguru import logger(?!\s+#\s+type:\s+ignore)', 
-                    'from loguru import logger  # type: ignore', 
+    content = re.sub(r'from loguru import logger(?!\s+#\s+type:\s+ignore)',
+                    'from loguru import logger  # type: ignore',
                     content)
-    
+
     # Add type: ignore comments to logger method calls
-    content = re.sub(r'(logger\.(debug|info|warning|error|critical))', 
-                    r'\1  # type: ignore', 
+    content = re.sub(r'(logger\.(debug|info|warning|error|critical))',
+                    r'\1  # type: ignore',
                     content)
-    
+
     with open(filepath, 'w', encoding='utf-8') as file:
         file.write(content)
-    
+
     print(f"Updated {filepath}")
 
 
@@ -50,13 +51,13 @@ def main():
         base_dir = sys.argv[1]
     else:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    
+
     src_dir = os.path.join(base_dir, 'src')
-    
+
     if not os.path.exists(src_dir):
         print(f"Error: Source directory '{src_dir}' not found.")
         return
-    
+
     # Process each Python file
     for python_file in find_python_files(src_dir):
         add_type_ignore_to_loguru_imports(python_file)

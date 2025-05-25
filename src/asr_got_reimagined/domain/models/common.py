@@ -1,12 +1,12 @@
 import datetime
 from enum import Enum
-from typing import Annotated, List
+from typing import Annotated
 
 from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
 
 # Helper for probability distributions (list of floats summing to 1.0)
-def _validate_probability_distribution(v: List[float]) -> List[float]:
+def _validate_probability_distribution(v: list[float]) -> list[float]:
     if not v:  # Empty list is valid if optional, but if provided, must sum to 1
         return v
     if not all(0.0 <= p <= 1.0 for p in v):
@@ -20,7 +20,7 @@ def _validate_probability_distribution(v: List[float]) -> List[float]:
 
 
 ProbabilityDistribution = Annotated[
-    List[float], BeforeValidator(_validate_probability_distribution)
+    list[float], BeforeValidator(_validate_probability_distribution)
 ]
 
 
@@ -32,7 +32,7 @@ class ConfidenceVector(BaseModel):
     methodological_rigor: float = Field(default=0.5, ge=0.0, le=1.0)
     consensus_alignment: float = Field(default=0.5, ge=0.0, le=1.0)
 
-    def to_list(self) -> List[float]:
+    def to_list(self) -> list[float]:
         return [
             self.empirical_support,
             self.theoretical_basis,
@@ -41,7 +41,7 @@ class ConfidenceVector(BaseModel):
         ]
 
     @classmethod
-    def from_list(cls, values: List[float]) -> "ConfidenceVector":
+    def from_list(cls, values: list[float]) -> "ConfidenceVector":
         if len(values) != 4:
             raise ValueError("Confidence list must have exactly 4 values.")
         return cls(
@@ -74,7 +74,7 @@ class TimestampedModel(BaseModel):
 
 # Standardized way to represent a probability distribution for discrete outcomes
 class DiscreteProbabilityDistribution(BaseModel):
-    outcomes: List[str]  # The labels for each probability
+    outcomes: list[str]  # The labels for each probability
     probabilities: ProbabilityDistribution
 
     @field_validator("probabilities")

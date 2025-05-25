@@ -25,7 +25,7 @@ class GoTProcessor:
         Instantiates and returns the ordered list of all processing stage classes for the ASR-GoT pipeline.
         
         Returns:
-            A list of initialized stage instances in the required execution order.
+            A list of eight initialized stage objects, each corresponding to a specific step in the query processing pipeline. Logs a warning if the expected number of stages is not met.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
@@ -67,16 +67,18 @@ class GoTProcessor:
         initial_context: Optional[dict[str, Any]] = None,
     ) -> GoTProcessorSessionData:
         """
-        Processes a natural language query through the ASR-GoT pipeline, executing each stage in sequence and managing session state, context, error handling, and result extraction.
+        Processes a natural language query through the ASR-GoT pipeline, executing each stage in sequence and managing session state, context, and error handling.
         
         Args:
             query: The natural language query to process.
-            session_id: Optional session identifier to continue or manage a session.
+            session_id: Optional session identifier for continuing or managing a session.
             operational_params: Optional parameters to control processing behavior.
             initial_context: Optional initial context to seed the processing.
         
         Returns:
-            GoTProcessorSessionData containing the accumulated context, graph state, stage trace, final answer, and confidence vector for the processed query.
+            GoTProcessorSessionData containing the final answer, confidence vector, accumulated context, graph state, and a trace of stage outputs.
+        
+        This method initializes or continues a session, orchestrates the execution of all processing stages, logs detailed input and output information for each stage, handles errors (especially during initialization), and compiles the final results and metrics for the query.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,

@@ -10,10 +10,11 @@ MCP_SERVER_URL = "http://localhost:8000/mcp"  # The MCP endpoint
 
 def test_initialize_endpoint() -> Dict[str, Any]:
     """
-    Sends a test JSON-RPC request to the MCP server's initialize endpoint and validates the response.
+    Sends a JSON-RPC initialize request to the MCP server and validates the response.
     
     Returns:
-        The parsed JSON response from the server if successful, or a dictionary containing error information if the request fails or the response is invalid.
+        The parsed JSON response from the server if successful, or a dictionary
+        containing error details if the request fails or the response is invalid.
     """
     print("\n=== Testing Initialize Endpoint ===")
     payload = {
@@ -66,7 +67,7 @@ def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
         session_id: Optional session identifier to include in the request.
     
     Returns:
-        The parsed JSON response from the server if successful, or a dictionary containing error information on failure.
+        The parsed JSON response from the server if successful, or a dictionary containing error details on failure.
     """
     print("\n=== Testing ASR-GoT Query Endpoint ===")
     payload = {
@@ -117,10 +118,10 @@ def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
 
 def test_shutdown() -> Dict[str, Any]:
     """
-    Sends a JSON-RPC request to the MCP server's shutdown endpoint and returns the response.
+    Sends a JSON-RPC shutdown request to the MCP server and returns the parsed response.
     
     Returns:
-        The parsed JSON response from the server if the request is successful, or a dictionary containing error information if the request fails or an exception occurs.
+        The parsed JSON response from the server if successful, or a dictionary with error details if the request fails.
     """
     print("\n=== Testing Shutdown Endpoint ===")
     payload = {
@@ -152,9 +153,9 @@ def test_shutdown() -> Dict[str, Any]:
 
 def run_all_tests():
     """
-    Executes the MCP server endpoint tests in sequence.
+    Executes the MCP endpoint test suite in sequence.
     
-    Runs the initialization test, and if successful, proceeds to test the ASR GOT query endpoint using a generated session ID. Prints a completion message after all tests.
+    Runs the initialization test, then the ASR query test if initialization succeeds, using a generated session ID. Prints a completion message after all tests.
     """
     # First test the initialize endpoint
     init_response = test_initialize_endpoint()

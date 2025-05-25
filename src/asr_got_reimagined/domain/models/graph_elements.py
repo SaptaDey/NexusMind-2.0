@@ -209,14 +209,14 @@ class Node(TimestampedModel):
     @field_serializer("confidence")
     def serialize_confidence_to_list(self, v: ConfidenceVector, _info):
         """
-        Serializes the confidence vector to a list representation.
+        Converts a ConfidenceVector to a list representation for serialization.
         
         Args:
-            v: The confidence vector to serialize.
+            v: The ConfidenceVector instance to serialize.
             _info: Additional serialization context (unused).
         
         Returns:
-            A list representation of the confidence vector.
+            A list representing the confidence vector values.
         """
         return v.to_list()
 
@@ -279,8 +279,6 @@ class Edge(TimestampedModel):
     def __hash__(self):
         """
         Returns a hash value based on the edge's ID, source ID, target ID, and type.
-        
-        Enables use of the edge in hash-based collections and ensures uniqueness by these attributes.
         """
         return hash((self.id, self.source_id, self.target_id, self.type))
 

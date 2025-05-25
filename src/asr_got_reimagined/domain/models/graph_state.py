@@ -175,7 +175,7 @@ class ASRGoTGraph(TimestampedModel):
         Returns a summary of the graph's statistics, including counts of nodes, edges, hyperedges, and layers.
         
         Returns:
-            A GraphStatistics instance with the current counts of nodes, edges, hyperedges, and layers in the graph.
+            A GraphStatistics instance with the current counts for nodes, edges, hyperedges, and layers.
         """
         return GraphStatistics(
             node_count=len(self.nodes),
@@ -208,7 +208,7 @@ class ASRGoTGraph(TimestampedModel):
         """
         Returns a list of successor node IDs for the given node.
         
-        If the node does not exist in the graph, returns an empty list.
+        If the node is not present in the graph, returns an empty list.
         """
         if node_id not in self.nx_graph:
             return []
@@ -216,10 +216,12 @@ class ASRGoTGraph(TimestampedModel):
 
     def to_serializable_dict(self) -> dict[str, Any]:
         """
-        Serializes the graph into a dictionary format suitable for API responses.
+        Serializes the graph into a dictionary suitable for API responses.
+        
+        The returned dictionary includes the graph's ID, lists of serialized nodes, edges, and hyperedges, layer assignments, metadata, statistics, and ISO-formatted timestamps. The internal NetworkX graph is excluded from the output.
         
         Returns:
-            A dictionary containing the graph's ID, serialized nodes, edges, hyperedges, layers, metadata, statistics, and timestamps.
+            A dictionary representation of the graph for external consumption.
         """
         return {
             "id": self.id,

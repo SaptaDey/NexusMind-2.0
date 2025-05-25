@@ -52,9 +52,17 @@ class HypothesisStage(BaseStage):
         self, dimension_node: Node, hypo_index: int, initial_query: str
     ) -> dict[str, Any]:
         """
-        Generates the content for a single hypothesis node based on a dimension node and query.
+        Generates the content dictionary for a single hypothesis based on a dimension node and query.
         
-        Creates a hypothesis label, selects a plan type, defines falsification criteria, optionally assigns bias flags, estimates impact score, and determines disciplinary tags. Returns a dictionary containing all generated hypothesis attributes.
+        The generated content includes a hypothesis label, an evaluation plan, falsification criteria, optional bias flags, an estimated impact score, and a set of disciplinary tags. Randomization is used for plan type, bias flag assignment, impact score, and disciplinary tags to simulate diverse hypothesis characteristics.
+        
+        Args:
+            dimension_node: The dimension node from which the hypothesis is derived.
+            hypo_index: The index of the hypothesis for this dimension.
+            initial_query: The original query string guiding hypothesis generation.
+        
+        Returns:
+            A dictionary containing the hypothesis label, plan, falsification criteria, bias flags, impact score, and disciplinary tags.
         """
         # Placeholder content generation
         dim_label = dimension_node.label
@@ -127,10 +135,10 @@ class HypothesisStage(BaseStage):
         """
         Asynchronously generates hypothesis nodes for each dimension node in the graph.
         
-        For each dimension node identified from the previous decomposition stage, this method creates a configurable number of hypothesis nodes, each enriched with metadata such as plans, falsification criteria, bias flags, impact scores, and disciplinary tags. Each hypothesis node is linked to its parent dimension node via an edge. The method aggregates and returns a summary, metrics, and context update for downstream processing.
+        For each dimension node identified from the previous decomposition stage, creates a configurable number of hypothesis nodes with associated metadata, links them to their parent dimension via edges, and updates the graph. Returns a summary, metrics, and context update containing all generated hypothesis node IDs.
         
         Returns:
-            A StageOutput containing a summary of the hypotheses generated, relevant metrics, and an updated context with the IDs of all created hypothesis nodes.
+            A StageOutput object containing a summary of the operation, metrics on hypotheses and edges created, and a context update with the IDs of all generated hypothesis nodes.
         """
         self._log_start(current_session_data.session_id)
 

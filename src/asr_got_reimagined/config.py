@@ -125,9 +125,15 @@ class Settings(BaseSettings):
         # However, since yaml_config is already loaded, we can wrap it simply.
         
         """
-        Customizes the order and sources from which Pydantic loads settings, inserting a YAML-based source.
+        Customizes the order and sources from which Pydantic loads settings.
         
-        This method defines a custom settings source that loads configuration from a pre-parsed YAML file and integrates it into the Pydantic settings loading sequence. The YAML source is placed after dotenv and before file secret sources, allowing environment variables and dotenv files to override YAML values, while file secrets have the highest precedence.
+        Inserts a YAML-based settings source, using a pre-loaded configuration dictionary, into the settings source priority after dotenv settings. This allows settings to be loaded from initialization, environment variables, dotenv files, the YAML file, and file secrets, in that order.
+        
+        Args:
+            settings_cls: The Pydantic settings class being configured.
+        
+        Returns:
+            A tuple of settings sources in the desired order for Pydantic to use.
         """
         class YamlConfigSettingsSource(PydanticBaseSettingsSource):
             def __init__(self, settings_cls: Type[BaseSettings]):

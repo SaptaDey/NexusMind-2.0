@@ -43,7 +43,7 @@ def test_mcp_initialize():
     Sends an initialize request to the MCP endpoint to verify its availability.
     
     Returns:
-        True if the MCP endpoint responds successfully to the initialize request; False otherwise.
+        True if the MCP endpoint responds successfully with a result; False otherwise.
     """
     init_payload = {
         "jsonrpc": "2.0",
@@ -87,8 +87,8 @@ def check_config_file():
     """
     Validates the existence and structure of the MCP configuration file.
     
-    Checks if the MCP configuration file exists, is valid JSON, and contains the required
-    'connection' and 'endpoint' fields with the correct endpoint value.
+    Checks if the configuration file exists, is valid JSON, and contains the required
+    'connection' and 'endpoint' fields with the expected endpoint value.
     
     Returns:
         True if the configuration file is present and valid; False otherwise.
@@ -148,9 +148,9 @@ def display_instructions():
 
 def main():
     """
-    Runs the NexusMind MCP setup process, performing server checks, endpoint tests, configuration validation, and displaying connection instructions.
+    Runs the NexusMind MCP setup process, performing server checks, configuration validation, and displaying connection instructions.
     
-    This function orchestrates the setup workflow, ensuring the server is running, the MCP endpoint is operational, the configuration file is valid, and guiding the user through connecting Claude Desktop to the NexusMind server.
+    Executes a sequence of steps to verify server health, test the MCP endpoint, validate the MCP configuration file, and provide instructions for connecting Claude Desktop to the NexusMind server. Exits the program if the server is not running.
     """
     logger.info("\n=== NexusMind MCP Setup ===\n")
 

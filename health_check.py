@@ -8,12 +8,7 @@ def check_health():
     """
     Checks the health status of the NexusMind server by querying its health endpoint.
     
-    Sends an HTTP GET request to 'http://localhost:8000/health' and returns True if
-    the server responds with status code 200, otherwise returns False. Handles
-    connection errors gracefully.
-    	
-    Returns:
-        True if the server is healthy; False otherwise.
+    Sends an HTTP GET request to 'http://localhost:8000/health' and returns True if the server responds with status code 200, otherwise returns False. Handles connection errors gracefully.
     """
     try:
         response = requests.get("http://localhost:8000/health")

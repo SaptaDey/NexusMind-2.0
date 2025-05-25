@@ -55,6 +55,9 @@ class JSONRPCResponse(BaseModel, Generic[T, E]):
         
         Raises:
             ValueError: If both "result" and "error" are present, or if neither is present.
+        
+        Returns:
+            The error object if present; otherwise, None.
         """
         result_value = values.get("result")
 

@@ -11,7 +11,7 @@ def assess_falsifiability_score(
     """
     Returns a placeholder falsifiability score based on the presence of criteria.
     
-    If criteria is provided, returns 0.5; otherwise, returns 0.0. Intended as a stub for a more comprehensive falsifiability assessment.
+    If criteria is provided, returns 0.5; otherwise, returns 0.0. This function does not perform a full assessment and serves as a stub for future implementation.
     """
     logger.warning(
         "Falsifiability assessment (P1.16) not fully implemented. Returning placeholder."

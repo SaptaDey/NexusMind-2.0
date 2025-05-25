@@ -64,11 +64,8 @@ class PruningMergingStage(BaseStage):
         """
         Removes nodes from the graph that meet pruning criteria for low confidence and low impact.
         
-        Nodes are identified for pruning if they fall below configured thresholds for confidence and impact, as determined by `_should_prune_node`. For each pruned node, a revision record is appended to its metadata to document the action. Returns the total number of nodes pruned.
+        Nodes are identified for pruning if they fall below configured confidence and impact thresholds, as determined by `_should_prune_node`. Each pruned node has its removal recorded in its revision history. Returns the total number of nodes pruned.
          
-        Args:
-            graph: The ASRGoTGraph instance from which nodes will be pruned.
-        
         Returns:
             The number of nodes removed from the graph.
         """
@@ -104,12 +101,15 @@ class PruningMergingStage(BaseStage):
 
     async def _merge_nodes(self, graph: ASRGoTGraph) -> int:
         """
-        Merges highly similar nodes in the graph based on semantic similarity.
+        Merges highly similar nodes in the graph based on semantic overlap.
         
-        Compares pairs of nodes of the same type (HYPOTHESIS or EVIDENCE) and merges those whose semantic similarity exceeds the configured threshold. The merge process rewires all edges from the merged-away node to the kept node, combines metadata (including disciplinary tags and descriptions), updates confidence components to the maximum values from both nodes, and records a revision history entry. Nodes already merged in previous steps are skipped. Returns the number of node pairs merged.
-         
+        Nodes of the same type (hypothesis or evidence) are compared for semantic similarity. Pairs exceeding the configured semantic overlap threshold are merged by retaining the node with higher confidence and impact, transferring edges, combining metadata, and updating confidence scores. The merged-away node is removed from the graph.
+        
+        Args:
+            graph: The ASRGoTGraph instance to process.
+        
         Returns:
-            The number of node pairs that were merged.
+            The number of node pairs merged.
         """
         # This is a complex operation. A simplified approach:
         # 1. Group nodes by type (hypotheses with hypotheses, evidence with evidence).

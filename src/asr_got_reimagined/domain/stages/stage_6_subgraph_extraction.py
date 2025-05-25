@@ -49,7 +49,7 @@ class SubgraphExtractionStage(BaseStage):
         """
         Initializes the subgraph extraction stage with default extraction criteria.
         
-        Defines a set of default subgraph extraction strategies, each specifying filters such as minimum confidence, impact score, node types, and neighbor inclusion depth. These defaults guide how subgraphs are identified and extracted from the input graph.
+        Defines a set of default SubgraphCriterion instances specifying strategies for extracting subgraphs, such as focusing on high-confidence nodes, key hypotheses, or knowledge gaps. These defaults can be overridden by operational parameters or configuration.
         """
         super().__init__(settings)
         # P1.6: Subgraph extraction criteria can be complex and data-driven.
@@ -87,10 +87,10 @@ class SubgraphExtractionStage(BaseStage):
 
     def _node_matches_criteria(self, node: Node, criterion: SubgraphCriterion) -> bool:
         """
-        Determines whether a node satisfies all conditions specified in a subgraph extraction criterion.
+        Determines whether a node satisfies all filtering conditions specified by a subgraph extraction criterion.
         
         Returns:
-            True if the node meets every filter in the criterion; otherwise, False.
+            True if the node meets all criterion filters such as confidence, impact score, node type, layer ID, knowledge gap status, and disciplinary tag inclusion/exclusion; otherwise, False.
         """
         if (
             criterion.min_avg_confidence is not None
@@ -141,9 +141,9 @@ class SubgraphExtractionStage(BaseStage):
         self, graph: ASRGoTGraph, criterion: SubgraphCriterion
     ) -> ExtractedSubgraph:
         """
-        Extracts a subgraph from the graph based on a single extraction criterion.
+        Extracts a subgraph from the input graph based on the specified criterion.
         
-        The method identifies seed nodes matching the provided criterion, then expands the subgraph by including neighbors up to the specified depth. Both outgoing and incoming neighbors are considered during expansion. Returns an `ExtractedSubgraph` containing the selected node IDs and summary metrics.
+        Identifies seed nodes that match the criterion, then expands the subgraph by including neighbors up to the configured depth. Returns an ExtractedSubgraph containing the selected node IDs and relevant metrics.
         """
         seed_node_ids: set[str] = set()
         for node_id, node_obj in graph.nodes.items():
@@ -192,16 +192,16 @@ class SubgraphExtractionStage(BaseStage):
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
         """
-        Executes the subgraph extraction stage, generating subgraphs based on defined or custom criteria.
+        Executes the subgraph extraction stage, generating subgraphs based on specified criteria.
         
-        This method processes the input graph using either default or custom extraction criteria, extracting subgraphs that match each criterion. It aggregates extraction results, computes summary metrics, and prepares context updates for downstream pipeline stages.
+        This method applies either default or custom extraction criteria to the input graph, extracting subgraphs that match each criterion. It aggregates the results, compiles extraction metrics, and prepares context updates for downstream processing. Extraction continues for all criteria even if some fail, and empty graphs are skipped.
         
         Args:
-            graph: The input graph from which subgraphs are to be extracted.
-            current_session_data: Session data containing context and operational parameters.
+            graph: The input ASRGoTGraph to extract subgraphs from.
+            current_session_data: Session data containing operational parameters and context.
         
         Returns:
-            A StageOutput containing a summary, extraction metrics, and context updates with serialized subgraph definitions.
+            A StageOutput object containing a summary, extraction metrics, and context updates with the extracted subgraph definitions.
         """
         self._log_start(current_session_data.session_id)
 

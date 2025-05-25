@@ -17,17 +17,9 @@ def bayesian_update_confidence(
     edge_type: Optional[EdgeType] = None,  # P1.10, P1.24, P1.25 for context
 ) -> ConfidenceVector:
     """
-    Performs a simplified Bayesian-inspired update on a ConfidenceVector using new evidence.
+    Performs a simplified Bayesian-inspired update on a confidence vector based on new evidence.
     
-    The update adjusts each component of the confidence vector toward 1.0 if the evidence supports the hypothesis, or toward 0.0 if it contradicts, scaled by a weight derived from evidence strength, statistical power, and edge type. The resulting confidence values are clamped between 0 and 1.
-    
-    Args:
-        prior_confidence: The current confidence vector representing the hypothesis.
-        evidence_strength: A float between 0 and 1 indicating the reliability or strength of the new evidence.
-        evidence_supports_hypothesis: Whether the evidence supports (True) or contradicts (False) the hypothesis.
-    
-    Returns:
-        A new ConfidenceVector with updated confidence values reflecting the influence of the evidence.
+    The update adjusts each component of the confidence vector toward 1.0 if the evidence supports the hypothesis, or toward 0.0 if it contradicts, scaled by a weight derived from evidence strength, statistical power, and edge type. Returns a new confidence vector reflecting the updated values.
     """
     # This is a highly simplified placeholder. True Bayesian updates involve likelihoods, priors, etc.
     # and updating probability distributions, not just scores.
@@ -80,14 +72,7 @@ def calculate_information_gain(
     """
     Calculates a simplified information gain between prior and posterior probability distributions.
     
-    The function returns the average absolute difference between corresponding elements of the prior and posterior distributions. If the distributions have different lengths, it returns 0.0.
-    
-    Args:
-        prior_distribution: The probability distribution before observing new evidence.
-        posterior_distribution: The probability distribution after observing new evidence.
-    
-    Returns:
-        The average absolute change in probability between the two distributions.
+    Returns the average absolute difference between corresponding elements of the two distributions. If the distributions differ in length, returns 0.0.
     """
     # Simplified: sum of absolute changes in probability for now
     if len(prior_distribution) != len(posterior_distribution):

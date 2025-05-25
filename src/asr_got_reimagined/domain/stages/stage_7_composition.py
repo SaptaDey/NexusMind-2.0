@@ -73,9 +73,14 @@ class CompositionStage(BaseStage):
         initial_query: str,
     ) -> str:
         """
-        Generates a placeholder executive summary describing the extracted subgraphs for a given query.
+        Generates a placeholder executive summary for the analysis based on the initial query and identified subgraphs.
         
-        Summarizes the number and names of subgraphs identified by the ASR-GoT process in relation to the initial query, and highlights a sample of key subgraphs. Intended as a stand-in for a more sophisticated summary.
+        Args:
+            extracted_subgraphs: List of extracted subgraphs to summarize.
+            initial_query: The original query guiding the analysis.
+        
+        Returns:
+            A summary string referencing the initial query and highlighting key subgraphs.
         """
         num_subgraphs = len(extracted_subgraphs)
         subgraph_names = [sg.name for sg in extracted_subgraphs]
@@ -98,10 +103,10 @@ class CompositionStage(BaseStage):
         Formats a graph node as a claim statement and generates a corresponding citation.
         
         Args:
-            node: The graph node to be formatted as a claim.
+            node: The node to be formatted as a claim.
         
         Returns:
-            A tuple containing the formatted claim string (with a citation reference) and the generated CitationItem.
+            A tuple containing the formatted claim string (with citation reference) and the generated CitationItem.
         """
         claim_text = (
             f"Claim based on Node {node.id} ('{node.label}', Type: {node.type.value}): "
@@ -124,9 +129,9 @@ class CompositionStage(BaseStage):
         self, graph: ASRGoTGraph, subgraph_def: ExtractedSubgraph
     ) -> tuple[OutputSection, list[CitationItem]]:
         """
-        Generates an output section and associated citations for a given extracted subgraph.
+        Generates an output section summarizing key findings from an extracted subgraph.
         
-        Analyzes the subgraph to identify and summarize key nodes (such as hypotheses, evidence, or interdisciplinary bridges) with high confidence or impact. Formats up to three key nodes as claims with citations. If no qualifying nodes are found, adds a placeholder statement. Returns the constructed output section and a list of citations.
+        Analyzes the provided subgraph to identify and highlight up to three key nodes based on confidence and impact score. Each key node is formatted as a claim and may include a citation. If no high-impact nodes are found, a placeholder statement is added. Returns the constructed output section and a list of citations for the section.
         """
         section_title = f"Analysis: {subgraph_def.name.replace('_', ' ').title()}"
         content_parts: list[str] = [
@@ -207,16 +212,12 @@ class CompositionStage(BaseStage):
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
         """
-        Assembles the final composed output from extracted subgraphs and session data.
+        Executes the composition stage to generate a structured composed output from extracted subgraphs.
         
-        This asynchronous method generates an executive summary, detailed output sections, and citations based on extracted subgraphs from the previous processing stage. If no subgraphs are available, it produces a minimal output. The method also appends a reasoning trace summary and packages all results into a `StageOutput` for downstream consumption.
-        
-        Args:
-            graph: The ASR-GoT graph containing all nodes and edges.
-            current_session_data: The current session's data, including accumulated context and the initial query.
+        This method retrieves extracted subgraph definitions from the previous processing stage, parses them, and generates an executive summary, detailed output sections, and citations for each subgraph. If no subgraphs are found, it produces a minimal output. The method also compiles a reasoning trace appendix summary and packages all results into a `StageOutput` for downstream consumption.
         
         Returns:
-            A `StageOutput` containing the composed output, summary, metrics, and updated context for the next stage.
+            StageOutput: The result of the composition stage, including a summary, metrics, and the composed output in the context update.
         """
         self._log_start(current_session_data.session_id)
 

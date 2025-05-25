@@ -8,18 +8,18 @@ from pydantic import BaseModel, BeforeValidator, Field, field_validator
 # Helper for probability distributions (list of floats summing to 1.0)
 def _validate_probability_distribution(v: list[float]) -> list[float]:
     """
-    Validates that a list of floats represents a valid probability distribution.
+    Validates that a list of floats represents a probability distribution.
     
-    Checks that all values are between 0.0 and 1.0. Allows empty lists and does not require the sum to be exactly 1.0, permitting normalization elsewhere. Raises a ValueError if any probability is out of range.
+    Checks that all values are between 0.0 and 1.0. Allows empty lists and does not enforce that the sum equals 1.0, assuming normalization may occur elsewhere.
     
     Args:
-        v: List of floats to validate as probabilities.
+        v: List of floats to validate.
     
     Returns:
-        The validated list of probabilities.
+        The validated list of floats if all values are within the valid range.
     
     Raises:
-        ValueError: If any probability is not between 0.0 and 1.0.
+        ValueError: If any value is outside the range [0.0, 1.0].
     """
     if not v:  # Empty list is valid if optional, but if provided, must sum to 1
         return v
@@ -63,10 +63,10 @@ class ConfidenceVector(BaseModel):
         Creates a ConfidenceVector instance from a list of four float values.
         
         Args:
-            values: A list of four floats representing empirical support, theoretical basis, methodological rigor, and consensus alignment, respectively.
+            values: A list of four floats representing empirical support, theoretical basis, methodological rigor, and consensus alignment, in that order.
         
         Returns:
-            A ConfidenceVector instance with fields populated from the input list.
+            A ConfidenceVector initialized with the provided values.
         
         Raises:
             ValueError: If the input list does not contain exactly four elements.

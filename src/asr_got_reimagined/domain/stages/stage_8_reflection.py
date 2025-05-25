@@ -212,7 +212,7 @@ class ReflectionStage(BaseStage):
         """
         Evaluates the statistical rigor of evidence nodes based on statistical power.
         
-        Assesses all evidence nodes in the graph and determines the proportion that meet or exceed a statistical power threshold of 0.7. Returns PASS if the proportion meets the minimum required ratio, WARNING otherwise, and NOT_APPLICABLE if there are no evidence nodes.
+        Assesses all evidence nodes in the graph and determines the proportion that meet or exceed a statistical power threshold of 0.7. Returns a PASS if the proportion meets the configured minimum ratio, WARNING if it does not, or NOT_APPLICABLE if there are no evidence nodes.
         """
         evidence_nodes = [
             n for n in graph.nodes.values() if n.type == NodeType.EVIDENCE
@@ -263,7 +263,7 @@ class ReflectionStage(BaseStage):
     async def _check_temporal_consistency(self) -> AuditCheckResult:  # P1.18, P1.25
         # graph: ASRGoTGraph, # Marked as unused
         """
-        Returns a placeholder audit result indicating that the temporal consistency check is not implemented.
+        Returns an audit check result indicating that the temporal consistency check is not implemented.
         """
         return AuditCheckResult(
             check_name="temporal_consistency",
@@ -274,7 +274,7 @@ class ReflectionStage(BaseStage):
     async def _check_collaboration_attributions(self) -> AuditCheckResult:  # P1.29
         # graph: ASRGoTGraph, # Marked as unused
         """
-        Returns a placeholder audit result indicating that the collaboration attributions check is not implemented.
+        Returns an audit check result indicating that the collaboration attributions check is not implemented.
         """
         return AuditCheckResult(
             check_name="collaboration_attributions_check",
@@ -287,9 +287,9 @@ class ReflectionStage(BaseStage):
         audit_results: list[AuditCheckResult],  # graph: ASRGoTGraph # Marked as unused
     ) -> ConfidenceVector:
         """
-        Calculates the final confidence vector by adjusting baseline values according to audit check results.
+        Computes the final confidence vector by adjusting baseline values according to audit results.
         
-        The method starts with neutral confidence values and modifies specific components based on the outcomes of relevant audit checks, such as hypothesis falsifiability, bias assessment, and statistical rigor. All confidence values are clamped between 0.0 and 1.0.
+        The method applies heuristic adjustments to the empirical support and methodological rigor components of the confidence vector based on the outcomes of relevant audit checks, such as hypothesis falsifiability, bias assessment, and statistical rigor. All values are clamped between 0.0 and 1.0.
         
         Args:
             audit_results: List of audit check results to inform confidence adjustments.
@@ -361,16 +361,14 @@ class ReflectionStage(BaseStage):
         self, graph: ASRGoTGraph, current_session_data: GoTProcessorSessionData
     ) -> StageOutput:
         """
-        Executes the ReflectionStage by performing a series of audit checks on the provided graph and session data, then aggregates the results into a final confidence assessment.
-        
-        Runs multiple quality and integrity audits on the ASRGoTGraph, including confidence coverage, bias assessment, knowledge gap handling, falsifiability, and statistical rigor. Aggregates audit outcomes, computes a final confidence vector, and prepares a summary and metrics for downstream processing.
+        Executes the reflection stage by performing a series of audit checks on the provided graph and session data, then computes and returns a summary, metrics, and context updates including the final confidence vector.
         
         Args:
-            graph: The ASRGoTGraph object to be audited.
-            current_session_data: Session data containing accumulated context and outputs.
+            graph: The ASRGoTGraph to be audited.
+            current_session_data: The current session's data, including accumulated context.
         
         Returns:
-            A StageOutput object containing a summary, metrics, and context updates reflecting the audit results and final confidence vector.
+            A StageOutput containing a summary of audit results, computed metrics, and context updates with the final confidence vector and audit check results.
         """
         self._log_start(current_session_data.session_id)
 

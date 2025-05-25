@@ -12,7 +12,13 @@ import sys
 
 
 def add_type_ignore_to_loguru_imports(filepath: str) -> None:
-    """Add '# type: ignore' to loguru import statements to silence type checking errors."""
+    """
+    Appends '# type: ignore' to loguru import statements and logger method calls in a file.
+    
+    Reads the specified Python file, adds type ignore comments to 'from loguru import logger'
+    imports and to logger method calls (debug, info, warning, error, critical) to suppress
+    type checking errors, and writes the changes back to the file.
+    """
     with open(filepath, encoding='utf-8') as file:
         content = file.read()
 
@@ -45,7 +51,11 @@ def find_python_files(start_dir: str):
 
 
 def main():
-    """Main function to run the script."""
+    """
+    Processes all Python files in the project's 'src' directory to add type ignore comments for loguru imports and logger method calls.
+    
+    If a base directory is provided as a command-line argument, it is used; otherwise, the script determines the base directory relative to its own location. Prints an error and exits if the 'src' directory does not exist.
+    """
     # Get the base directory of the project
     if len(sys.argv) > 1:
         base_dir = sys.argv[1]

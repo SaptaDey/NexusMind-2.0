@@ -22,8 +22,15 @@ def find_python_files(directory: str) -> List[str]:
 
 def fix_imports_in_file(file_path: str) -> int:
     """
-    Fix imports in a Python file by adding 'src.' prefix to 'asr_got_reimagined' imports.
-    Returns the number of imports fixed.
+    Adds the 'src.' prefix to 'asr_got_reimagined' import statements in a Python file.
+    
+    Scans the specified file for import statements involving 'asr_got_reimagined' that are not already prefixed with 'src.', updates them in place, and returns the number of imports modified.
+    
+    Args:
+        file_path: Path to the Python file to process.
+    
+    Returns:
+        The number of import statements updated.
     """
     with open(file_path, encoding='utf-8') as f:
         content = f.read()
@@ -42,7 +49,11 @@ def fix_imports_in_file(file_path: str) -> int:
     return num_replacements
 
 def main() -> None:
-    """Main function to find and fix Python imports."""
+    """
+    Scans all Python files in the source directory and fixes import statements lacking the 'src.' prefix.
+    
+    Finds all Python files under the source directory, applies import corrections to each, and reports the total number of fixes made.
+    """
     python_files = find_python_files(SRC_DIR)
     total_fixes = 0
 

@@ -5,7 +5,14 @@ import re
 
 
 def add_type_annotations(file_path: str) -> None:
-    """Add type annotations to a Python file."""
+    """
+    Adds specific type annotations to variables in a Python file in place.
+    
+    This function updates the given file by adding `List[str]` type annotations to
+    variables named `dimension_labels` and `dimension_node_ids` when initialized as
+    empty lists, and adds a `List[Dict[str, Any]]` type annotation to the variable
+    `dimensions_to_create`, preserving its assigned value.
+    """
     with open(file_path, encoding='utf-8') as file:
         content = file.read()
 

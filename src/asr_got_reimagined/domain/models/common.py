@@ -7,6 +7,20 @@ from pydantic import BaseModel, BeforeValidator, Field, field_validator
 
 # Helper for probability distributions (list of floats summing to 1.0)
 def _validate_probability_distribution(v: list[float]) -> list[float]:
+    """
+    Validates that a list of floats represents a valid probability distribution.
+    
+    Checks that all values are between 0.0 and 1.0. Allows empty lists and does not require the sum to be exactly 1.0, permitting normalization elsewhere. Raises a ValueError if any probability is out of range.
+    
+    Args:
+        v: List of floats to validate as probabilities.
+    
+    Returns:
+        The validated list of probabilities.
+    
+    Raises:
+        ValueError: If any probability is not between 0.0 and 1.0.
+    """
     if not v:  # Empty list is valid if optional, but if provided, must sum to 1
         return v
     if not all(0.0 <= p <= 1.0 for p in v):
@@ -33,6 +47,9 @@ class ConfidenceVector(BaseModel):
     consensus_alignment: float = Field(default=0.5, ge=0.0, le=1.0)
 
     def to_list(self) -> list[float]:
+        """
+        Returns the confidence vector as a list of four float values in a fixed order.
+        """
         return [
             self.empirical_support,
             self.theoretical_basis,
@@ -42,6 +59,18 @@ class ConfidenceVector(BaseModel):
 
     @classmethod
     def from_list(cls, values: list[float]) -> "ConfidenceVector":
+        """
+        Creates a ConfidenceVector instance from a list of four float values.
+        
+        Args:
+            values: A list of four floats representing empirical support, theoretical basis, methodological rigor, and consensus alignment, respectively.
+        
+        Returns:
+            A ConfidenceVector instance with fields populated from the input list.
+        
+        Raises:
+            ValueError: If the input list does not contain exactly four elements.
+        """
         if len(values) != 4:
             raise ValueError("Confidence list must have exactly 4 values.")
         return cls(

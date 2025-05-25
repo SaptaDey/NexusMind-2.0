@@ -11,7 +11,11 @@ from asr_got_reimagined.domain.services.got_processor import GoTProcessor
 from asr_got_reimagined.config import settings # Use the global settings instance
 
 async def main(): # Renamed back to main as per instruction
-    """The main function to be profiled."""
+    """
+    Runs a profiling workload by processing a sample query with GoTProcessor asynchronously.
+    
+    Initializes a GoTProcessor instance with global settings, constructs a sample query about climate change and ocean acidification, and processes it with specified operational parameters and an empty context. Prints a truncated summary of the final answer after processing.
+    """
     print("Initializing GoTProcessor...")
     processor = GoTProcessor(settings=settings)
     

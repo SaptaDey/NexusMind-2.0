@@ -50,6 +50,12 @@ class JSONRPCResponse(BaseModel, Generic[T, E]):
     def check_result_error_conditions(
         cls, error_value: Optional[JSONRPCErrorObject[E]], values: dict[str, Any]
     ) -> Optional[JSONRPCErrorObject[E]]:
+        """
+        Validates that a JSON-RPC response contains either a result or an error, but not both.
+        
+        Raises:
+            ValueError: If both "result" and "error" are present, or if neither is present.
+        """
         result_value = values.get("result")
 
         if result_value is not None and error_value is not None:

@@ -18,7 +18,12 @@ _neo4j_settings: Optional[Neo4jSettings] = None
 _driver: Optional[Driver] = None
 
 def get_neo4j_settings() -> Neo4jSettings:
-    """Returns the Neo4j settings, initializing them if necessary."""
+    """
+    Retrieves the singleton Neo4jSettings instance, initializing it on first access.
+    
+    Returns:
+        Neo4jSettings: The configuration settings for connecting to the Neo4j database.
+    """
     global _neo4j_settings
     if _neo4j_settings is None:
         logger.info("Initializing Neo4j settings.")
@@ -72,7 +77,12 @@ def execute_query(
     Executes a Cypher query using a session from the driver.
 
     Args:
-        query: The Cypher query string.
+        """
+    Returns a singleton Neo4j driver instance, initializing it if necessary.
+    
+    Initializes the Neo4j driver with credentials from configuration if no driver exists or the existing driver is closed. Verifies connectivity before returning the driver. Raises an exception if connection fails.
+    """
+    query: The Cypher query string.
         parameters: Optional dictionary of parameters for the query.
         database: Optional name of the database to use. If None, uses default from settings.
         tx_type: Type of transaction ('read' or 'write'). Defaults to 'read'.

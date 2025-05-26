@@ -8,7 +8,7 @@ def add_type_annotations(file_path: str) -> None:
     """
     Adds type annotations to specific variable assignments in a Python file.
     
-    Reads the specified file, updates assignments of certain variables to include type hints for static type checking, and writes the changes back to the file. Only variables named `dimension_labels`, `dimension_node_ids`, and `dimensions_to_create` are affected.
+    Reads the given file, updates assignments of `dimension_labels` and `dimension_node_ids` to include `List[str]` type hints, and modifies `dimensions_to_create` to use `List[Dict[str, Any]]` as its type annotation. The changes are written back to the original file.
     """
     with open(file_path, encoding='utf-8') as file:
         content = file.read()

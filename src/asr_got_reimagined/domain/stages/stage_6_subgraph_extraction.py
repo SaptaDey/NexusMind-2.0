@@ -41,6 +41,11 @@ class SubgraphExtractionStage(BaseStage):
     stage_name: str = "SubgraphExtractionStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the subgraph extraction stage and sets up default extraction criteria.
+        
+        The default criteria target high-confidence core nodes, key hypotheses with support, and identified knowledge gaps, each with specific filters and neighbor expansion depth.
+        """
         super().__init__(settings)
         self.default_extraction_criteria: List[SubgraphCriterion] = [
             SubgraphCriterion(name="high_confidence_core", description="Nodes with high average confidence and impact.",
@@ -57,7 +62,16 @@ class SubgraphExtractionStage(BaseStage):
         ]
 
     def _build_cypher_conditions_for_criterion(self, criterion: SubgraphCriterion, params: Dict[str, Any]) -> List[str]:
-        """Builds a list of Cypher WHERE conditions based on the criterion."""
+        """
+        Constructs Cypher WHERE clause conditions and parameter bindings from a subgraph extraction criterion.
+        
+        Args:
+            criterion: The subgraph extraction criterion specifying filters for node selection.
+            params: Dictionary to which Cypher parameter values will be added.
+        
+        Returns:
+            A list of Cypher condition strings to be combined in a WHERE clause for node filtering.
+        """
         conditions: List[str] = []
         # Assuming an overall average confidence property like 'confidence_overall_avg'
         # This needs to be calculated and stored by previous stages or derived if not present.
@@ -102,7 +116,14 @@ class SubgraphExtractionStage(BaseStage):
         return conditions
 
     def _format_neo4j_node(self, neo4j_node_map: Dict[str, Any]) -> Dict[str, Any]:
-        """Formats a Neo4j node map (properties map + id + labels) into the desired output structure."""
+        """
+        Formats a Neo4j node dictionary into a standardized structure with `id`, `labels`, and `properties` keys.
+        
+        If the input contains explicit `id`, `labels`, and `properties` keys, these are used directly. Otherwise, all keys except `id` and `labels` are treated as properties, with a default label of `["Node"]` if none is provided.
+        
+        Returns:
+            A dictionary with the node's ID, list of labels, and a dictionary of properties.
+        """
         # Neo4j driver typically returns nodes as a Node object or a map.
         # Assuming execute_query returns a map like structure from APOC results or direct props.
         # If it's a direct Neo4j Node object, access props via `neo4j_node_map.items()`, labels via `neo4j_node_map.labels`.
@@ -145,7 +166,15 @@ class SubgraphExtractionStage(BaseStage):
 
 
     def _format_neo4j_relationship(self, neo4j_rel_map: Dict[str, Any]) -> Dict[str, Any]:
-        """Formats a Neo4j relationship map into the desired output structure."""
+        """
+        Formats a Neo4j relationship map into a standardized dictionary with keys for ID, type, source and target node IDs, and properties.
+        
+        Args:
+            neo4j_rel_map: A dictionary representing a Neo4j relationship, as returned by Cypher or APOC procedures.
+        
+        Returns:
+            A dictionary containing the relationship's ID, type, source and target node IDs, and properties.
+        """
         # Similar to nodes, depends on how relationships are returned.
         # APOC typically returns relationship objects or maps.
         # Target: {"id": "rel1", "type": "REL_TYPE", "source_id": "src_id", "target_id": "tgt_id", "properties": {...}}
@@ -176,6 +205,17 @@ class SubgraphExtractionStage(BaseStage):
     async def _extract_single_subgraph_from_neo4j(
         self, criterion: SubgraphCriterion
     ) -> ExtractedSubgraphData:
+        """
+        Extracts a subgraph from Neo4j based on the provided extraction criterion.
+        
+        The method identifies seed nodes matching the criterion, expands the subgraph to include neighbors up to the specified depth using APOC procedures, and collects all nodes and relationships within the resulting subgraph. The extracted data is formatted and returned as an `ExtractedSubgraphData` object containing node and relationship details, along with extraction metrics.
+        
+        Args:
+            criterion: The subgraph extraction criterion specifying filters and neighbor expansion depth.
+        
+        Returns:
+            An `ExtractedSubgraphData` instance containing the extracted nodes, relationships, and associated metrics.
+        """
         seed_node_ids: Set[str] = set()
         params: Dict[str, Any] = {}
         conditions = self._build_cypher_conditions_for_criterion(criterion, params)
@@ -281,6 +321,17 @@ class SubgraphExtractionStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph removed
     ) -> StageOutput:
+        """
+        Executes the subgraph extraction stage using Neo4j and returns the results.
+        
+        Retrieves subgraph extraction criteria from the session context or uses defaults, then extracts subgraphs from Neo4j for each criterion. Aggregates extracted subgraphs, computes metrics, and prepares a context update containing the results.
+        
+        Args:
+            current_session_data: The session data containing operational parameters and context.
+        
+        Returns:
+            A StageOutput object with a summary, extraction metrics, and a context update containing the extracted subgraphs.
+        """
         self._log_start(current_session_data.session_id)
         operational_params = current_session_data.accumulated_context.get("operational_params", {})
         custom_criteria_input = operational_params.get("subgraph_extraction_criteria")

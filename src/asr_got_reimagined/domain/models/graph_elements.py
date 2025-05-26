@@ -209,14 +209,14 @@ class Node(TimestampedModel):
     @field_serializer("confidence")
     def serialize_confidence_to_list(self, v: ConfidenceVector, _info):
         """
-        Converts a ConfidenceVector to a list representation for serialization.
+        Converts the confidence vector to a list for serialization.
         
         Args:
-            v: The ConfidenceVector instance to serialize.
-            _info: Additional serialization context (unused).
+            v: The ConfidenceVector instance to convert.
+            _info: Serialization context (unused).
         
         Returns:
-            A list representing the confidence vector values.
+            A list of confidence values.
         """
         return v.to_list()
 
@@ -283,6 +283,12 @@ class Edge(TimestampedModel):
         return hash((self.id, self.source_id, self.target_id, self.type))
 
     def __eq__(self, other: Any) -> bool:
+        """
+        Checks equality with another Edge based on ID, source ID, target ID, and type.
+        
+        Returns:
+            True if the other object is an Edge with matching ID, source ID, target ID, and type; otherwise, False.
+        """
         if isinstance(other, Edge):
             return (
                 self.id == other.id

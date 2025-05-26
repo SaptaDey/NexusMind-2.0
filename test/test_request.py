@@ -3,7 +3,11 @@ import json
 
 
 def make_request(host, port, path, method="GET", body=None, headers=None):
-    """Make HTTP request and return response."""
+    """
+    Performs an HTTP request to the specified host, port, and path using the given method, body, and headers.
+    
+    Prints the HTTP response status and content. Errors encountered during the request are printed. The connection is closed after the request completes.
+    """
     conn = http.client.HTTPConnection(host, port)
 
     if headers is None:

@@ -47,7 +47,10 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """
-    Creates and configures the FastAPI application instance.
+    Initializes and configures the FastAPI application with logging, middleware, health check, and routing.
+    
+    Returns:
+        The fully configured FastAPI application instance.
     """
     # Configure logger
     logger.remove()
@@ -89,6 +92,12 @@ def create_app() -> FastAPI:
     # Add health check endpoint
     @app.get("/health", tags=["Health"])
     async def health_check():
+        """
+        Handles the /health endpoint to report application health status.
+        
+        Returns:
+            A JSON object containing the application's health status and version.
+        """
         logger.debug("Health check endpoint was called.")  # type: ignore
         return {"status": "healthy", "version": settings.app.version}
 

@@ -1,0 +1,49 @@
+from typing import Any, Dict, List
+from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query
+
+async def fetch_dimension_records(params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Fetch records from the dimension table based on provided parameters.
+    """
+    query = "MATCH (d:Dimension {id: $id}) RETURN d"
+    return await execute_query(query, params, tx_type="read")
+
+
+async def fetch_fact_records(params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Fetch records from the fact table based on provided parameters.
+    """
+    query = "SELECT * FROM fact_table WHERE key = :key"
+    return await execute_query(query, params, tx_type="read")
+
+
+async def upsert_processed_data(records: List[Dict[str, Any]]) -> None:
+    """
+    Upsert processed data into the processed_data table.
+    """
+    query = """
+    MERGE (p:ProcessedData {col1: $col1})
+    SET p.col2 = $col2, p.col3 = $col3
+    """
+    for record in records:
+        await execute_query(query, record, tx_type="write")
+
+
+async def run_stage(params: Dict[str, Any]) -> None:
+    """
+    Orchestrate the full pipeline stage: fetch, process, and upsert data.
+    """
+    dim_records = await fetch_dimension_records(params)
+    fact_records = await fetch_fact_records(params)
+
+    # Example processing logic: combine dimension and fact records
+    processed: List[Dict[str, Any]] = []
+    for dim, fact in zip(dim_records, fact_records):
+        combined = {
+            "col1": dim.get("id"),
+            "col2": fact.get("value"),
+            "col3": True  # placeholder for additional processing
+        }
+        processed.append(combined)
+
+    await upsert_processed_data(processed)

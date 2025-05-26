@@ -124,6 +124,17 @@ class Settings(BaseSettings):
         # For pydantic-settings v2, it's typically (settings_cls: Type[BaseSettings]) -> Dict[str, Any]
         # However, since yaml_config is already loaded, we can wrap it simply.
         
+        """
+        Customizes the order and sources from which Pydantic loads settings.
+        
+        Inserts a YAML-based settings source, using a pre-loaded configuration dictionary, into the settings source priority after dotenv settings. This allows settings to be loaded from initialization, environment variables, dotenv files, the YAML file, and file secrets, in that order.
+        
+        Args:
+            settings_cls: The Pydantic settings class being configured.
+        
+        Returns:
+            A tuple of settings sources in the desired order for Pydantic to use.
+        """
         class YamlConfigSettingsSource(PydanticBaseSettingsSource):
             def __init__(self, settings_cls: Type[BaseSettings]):
                 super().__init__(settings_cls)

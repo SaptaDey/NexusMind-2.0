@@ -17,18 +17,9 @@ def bayesian_update_confidence(
     edge_type: Optional[EdgeType] = None,  # P1.10, P1.24, P1.25 for context
 ) -> ConfidenceVector:
     """
-    Simplified Bayesian-inspired update for a ConfidenceVector.
-    P1.14: Apply Bayesian updates... considering evidence reliability (P1.26 power) and edge type.
-
-    Args:
-        prior_confidence: The current confidence vector of the hypothesis.
-        evidence_strength: A score (0-1) indicating the strength/reliability of the new evidence.
-        evidence_supports_hypothesis: Boolean indicating if evidence supports or contradicts.
-        statistical_power: Statistical power of the evidence.
-        edge_type: Type of edge connecting evidence to hypothesis, can influence update.
-
-    Returns:
-        A new ConfidenceVector with updated values.
+    Performs a simplified Bayesian-inspired update on a confidence vector based on new evidence.
+    
+    The update adjusts each component of the confidence vector toward 1.0 if the evidence supports the hypothesis, or toward 0.0 if it contradicts, scaled by a weight derived from evidence strength, statistical power, and edge type. Returns a new confidence vector reflecting the updated values.
     """
     # This is a highly simplified placeholder. True Bayesian updates involve likelihoods, priors, etc.
     # and updating probability distributions, not just scores.
@@ -79,8 +70,9 @@ def calculate_information_gain(
     prior_distribution: list[float], posterior_distribution: list[float]
 ) -> float:
     """
-    Placeholder for calculating information gain (e.g., KL divergence reduction). P1.27.
-    This would compare the uncertainty before and after evidence.
+    Calculates a simplified information gain between prior and posterior probability distributions.
+    
+    Returns the average absolute difference between corresponding elements of the two distributions. If the distributions differ in length, returns 0.0.
     """
     # Simplified: sum of absolute changes in probability for now
     if len(prior_distribution) != len(posterior_distribution):

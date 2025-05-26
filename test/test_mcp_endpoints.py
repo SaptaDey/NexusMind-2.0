@@ -10,7 +10,11 @@ MCP_SERVER_URL = "http://localhost:8000/mcp"  # The MCP endpoint
 
 def test_initialize_endpoint() -> Dict[str, Any]:
     """
-    Test the initialize endpoint of the MCP server.
+    Sends a JSON-RPC initialize request to the MCP server and validates the response.
+    
+    Returns:
+        The parsed JSON response from the server if successful, or a dictionary
+        containing error details if the request fails or the response is invalid.
     """
     print("\n=== Testing Initialize Endpoint ===")
     payload = {
@@ -57,7 +61,13 @@ def test_initialize_endpoint() -> Dict[str, Any]:
 
 def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
     """
-    Test the asr_got.query endpoint with a simple scientific question.
+    Sends a test JSON-RPC request to the asr_got.query endpoint with a scientific question.
+    
+    Args:
+        session_id: Optional session identifier to include in the request.
+    
+    Returns:
+        The parsed JSON response from the server if successful, or a dictionary containing error details on failure.
     """
     print("\n=== Testing ASR-GoT Query Endpoint ===")
     payload = {
@@ -108,7 +118,10 @@ def test_asr_got_query(session_id: Optional[str] = None) -> Dict[str, Any]:
 
 def test_shutdown() -> Dict[str, Any]:
     """
-    Test the shutdown endpoint.
+    Sends a JSON-RPC shutdown request to the MCP server and returns the parsed response.
+    
+    Returns:
+        The parsed JSON response from the server if successful, or a dictionary with error details if the request fails.
     """
     print("\n=== Testing Shutdown Endpoint ===")
     payload = {
@@ -140,7 +153,9 @@ def test_shutdown() -> Dict[str, Any]:
 
 def run_all_tests():
     """
-    Run all MCP endpoint tests in sequence.
+    Executes the MCP endpoint test suite in sequence.
+    
+    Runs the initialization test, then the ASR query test if initialization succeeds, using a generated session ID. Prints a completion message after all tests.
     """
     # First test the initialize endpoint
     init_response = test_initialize_endpoint()

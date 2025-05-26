@@ -7,6 +7,12 @@ import requests
 
 
 def test_mcp_server():
+    """
+    Sends a test "initialize" request to the local MCP server and verifies its response.
+    
+    Returns:
+        True if the server responds with the expected MCP initialization fields; False otherwise.
+    """
     print("Testing NexusMind MCP Server...")
 
     # The initialize request payload

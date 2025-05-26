@@ -1,0 +1,61 @@
+import logging
+from datetime import datetime
+from typing import List
+
+from asr_got_reimagined.db import execute_query
+from asr_got_reimagined.domain.models import AudioMetadata, TranscriptRecord
+from asr_got_reimagined.infrastructure.transcription import transcribe_audio
+
+logger = logging.getLogger(__name__)
+
+async def fetch_audio_metadata(audio_id: str) -> AudioMetadata:
+    """
+    Retrieve metadata for a given audio clip from the database.
+    """
+    query = "SELECT * FROM audio_metadata WHERE id = :audio_id"
+    params = {"audio_id": audio_id}
+    results = await execute_query(query, params, tx_type="read")
+    if not results:
+        raise ValueError(f"No metadata found for audio_id {audio_id}")
+    record = results[0]
+    return AudioMetadata(**record)
+
+async def save_transcript(audio_id: str, transcript: str) -> None:
+    """
+    Persist the generated transcript into the database, upserting on conflict.
+    """
+    query = """
+        INSERT INTO transcripts (audio_id, transcript, updated_at)
+        VALUES (:audio_id, :transcript, :updated_at)
+        ON CONFLICT (audio_id) DO UPDATE
+          SET transcript = :transcript,
+              updated_at = :updated_at
+    """
+    params = {
+        "audio_id": audio_id,
+        "transcript": transcript,
+        "updated_at": datetime.utcnow(),
+    }
+    await execute_query(query, params, tx_type="write")
+
+async def run_transcription_stage(audio_id: str) -> TranscriptRecord:
+    """
+    Orchestrates the transcription pipeline: load metadata,
+    run the transcription engine, save the result, and
+    return a domain record.
+    """
+    logger.info("Starting transcription stage for audio_id=%s", audio_id)
+    metadata = await fetch_audio_metadata(audio_id)
+
+    # Invoke external transcription engine
+    transcript_text = await transcribe_audio(metadata.file_path)
+
+    await save_transcript(audio_id, transcript_text)
+
+    record = TranscriptRecord(
+        audio_id=audio_id,
+        transcript=transcript_text,
+        created_at=datetime.utcnow(),
+    )
+    logger.info("Completed transcription stage for audio_id=%s", audio_id)
+    return record

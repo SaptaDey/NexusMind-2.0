@@ -124,7 +124,7 @@ class ReflectionStage(BaseStage):
 
         gaps_mentioned_in_output = False
         if composed_output:
-            for section in composed_output.sections:
+            for section in (composed_output.sections or []):
                 if "gap" in section.title.lower() or (section.type and "gap" in section.type.lower()):
                     gaps_mentioned_in_output = True; break
         

@@ -44,7 +44,7 @@ services:
     volumes:
       - neo4j_prod_data:/data # Use a separate volume for production data
     environment:
-      NEO4J_AUTH: "${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-changeme}" # Ensure this is changed for actual production
+      NEO4J_AUTH: "${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD}" # No default – must be set in production
       NEO4J_PLUGINS: '["apoc"]' # APOC plugin is required
       NEO4J_dbms_security_procedures_unrestricted: "apoc.*" # Allow all APOC procedures
       NEO4J_dbms_memory_heap_initial__size: "512m" # Example: Set initial heap size

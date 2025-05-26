@@ -8,9 +8,9 @@ import sys
 
 def fix_indentation_issues(filepath: str) -> None:
     """
-    Reformats a Python file to replace tabs with spaces and remove trailing whitespace.
+    Cleans up a Python file by replacing tabs with spaces and removing trailing whitespace.
     
-    Reads the file at the given path, replaces all tab characters with four spaces, strips trailing whitespace from each line, and writes the cleaned content back to the file.
+    Reads the file at the specified path, replaces each tab character with four spaces, strips trailing whitespace from every line, and writes the cleaned content back to the file.
     """
     try:
         with open(filepath, encoding='utf-8') as file:
@@ -44,9 +44,9 @@ def find_python_files(start_dir: str):
 
 def main():
     """
-    Scans all Python files in the project's 'src' directory and fixes their indentation.
+    Scans all Python files in the 'src' directory and corrects their indentation.
     
-    Determines the base directory from the first command-line argument or defaults to the script's parent directory. If the 'src' directory exists, applies indentation fixes to all Python files within it and its subdirectories.
+    Determines the base directory from the first command-line argument or defaults to the script's parent directory. If the 'src' directory exists, recursively applies indentation fixes to all Python files within it.
     """
     # Get the base directory of the project
     if len(sys.argv) > 1:

@@ -14,21 +14,15 @@ from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query
 
 def project_graph_gds(graph_name: str, node_projection: Any, relationship_projection: Any) -> bool:
     """
-    Projects a graph into the GDS catalog using native projection or Cypher projection.
-
-    Native Projection Example: 
-    CALL gds.graph.project(
-        $graph_name, 
-        $node_projection, // e.g., 'NodeLabel' or ['Label1', 'Label2'] or {Label: {properties: ['prop1']}}
-        $relationship_projection // e.g., 'REL_TYPE' or ['REL1', 'REL2'] or {REL_TYPE: {orientation: 'NATURAL', properties: ['weight']}}
-    )
-
-    Cypher Projection Example:
-    CALL gds.graph.project.cypher(
-        $graph_name,
-        'MATCH (n) WHERE n.type IN ["Type1", "Type2"] RETURN id(n) AS id, labels(n) AS labels',
-        'MATCH (n)-[r]->(m) RETURN id(n) AS source, id(m) AS target, type(r) AS type'
-    )
+    Projects a graph into the Neo4j GDS catalog using either native or Cypher projection.
+    
+    Args:
+        graph_name: The name to assign to the projected graph in the GDS catalog.
+        node_projection: Node projection specification, which can be a label, list of labels, or a dictionary for advanced configuration.
+        relationship_projection: Relationship projection specification, which can be a type, list of types, or a dictionary for advanced configuration.
+    
+    Returns:
+        True as a placeholder to indicate the projection was "successful." Actual execution is not performed in this implementation.
     """
     logger.info(f"Attempting to project graph '{graph_name}' into GDS.")
     logger.debug(f"Node projection: {node_projection}")
@@ -72,8 +66,15 @@ def project_graph_gds(graph_name: str, node_projection: Any, relationship_projec
 
 def get_degree_centrality_gds(graph_name: str, node_label_filter: Optional[str] = None, orientation: str = 'UNDIRECTED') -> List[Dict[str, Any]]:
     """
-    Calculates degree centrality for nodes in a projected graph using GDS.
-    Typically uses: CALL gds.degree.stream($graph_name, {configuration}) YIELD nodeId, score
+    Calculates degree centrality scores for nodes in a projected Neo4j GDS graph.
+    
+    Args:
+        graph_name: The name of the projected GDS graph.
+        node_label_filter: Optional node label to restrict the calculation to specific nodes.
+        orientation: The orientation of relationships to consider ('UNDIRECTED', 'NATURAL', or 'REVERSE').
+    
+    Returns:
+        A list of dictionaries containing node IDs and their corresponding degree centrality scores.
     """
     logger.info(f"Calculating degree centrality for GDS graph '{graph_name}' with node label filter '{node_label_filter}', orientation '{orientation}'.")
     
@@ -114,8 +115,9 @@ def get_degree_centrality_gds(graph_name: str, node_label_filter: Optional[str] 
 
 def detect_communities_louvain_gds(graph_name: str, node_label_filter: Optional[str] = None, relationship_type_filter: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Detects communities using the Louvain algorithm in a GDS projected graph.
-    Typically uses: CALL gds.louvain.stream($graph_name, {configuration}) YIELD nodeId, communityId
+    Detects communities in a projected graph using the Louvain algorithm.
+    
+    Optionally filters nodes by label and relationships by type. Returns a list of dictionaries mapping node IDs to their assigned community IDs.
     """
     logger.info(f"Detecting communities (Louvain) for GDS graph '{graph_name}' with node filter '{node_label_filter}', relationship filter '{relationship_type_filter}'.")
 
@@ -149,11 +151,9 @@ def detect_communities_louvain_gds(graph_name: str, node_label_filter: Optional[
 
 def find_shortest_path_gds(graph_name: str, start_node_id: str, end_node_id: str, relationship_type: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Finds the shortest path between two nodes in a GDS projected graph.
-    Typically uses: CALL gds.shortestPath.dijkstra.stream OR gds.alpha.shortestPath.stream
-    Note: Requires nodes to be identified by their GDS internal ID, not application ID, unless mapped.
-          For simplicity, this placeholder assumes application IDs can be used if graph was projected with them as node properties.
-          Or, more commonly, one queries for the GDS ID first.
+    Finds the shortest path between two nodes in a Neo4j GDS projected graph.
+    
+    This placeholder constructs a conceptual Cypher query for the GDS Dijkstra shortest path algorithm, optionally filtering by relationship type. Returns a sample path result with total cost and node application IDs.
     """
     logger.info(f"Finding shortest path in GDS graph '{graph_name}' from '{start_node_id}' to '{end_node_id}'. Relationship type: '{relationship_type}'.")
 
@@ -202,8 +202,13 @@ def find_shortest_path_gds(graph_name: str, start_node_id: str, end_node_id: str
 
 def drop_graph_gds(graph_name: str) -> bool:
     """
-    Removes a graph projection from the GDS catalog.
-    Typically uses: CALL gds.graph.drop($graph_name)
+    Removes a graph projection from the Neo4j GDS catalog by name.
+    
+    Args:
+        graph_name: The name of the graph projection to remove.
+    
+    Returns:
+        True as a placeholder to indicate the drop operation was attempted.
     """
     logger.info(f"Attempting to drop GDS graph projection '{graph_name}'.")
     

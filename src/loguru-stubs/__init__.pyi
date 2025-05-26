@@ -8,26 +8,41 @@ class Logger:
     def debug(self, __message: str, *args: Any, **kwargs: Any) -> None: ...
     def info(self, __message: str, *args: Any, **kwargs: Any) -> None: ...
     def warning(self, __message: str, *args: Any, **kwargs: Any) -> None: ...
-    def error(self, __message: str, *args: Any, **kwargs: Any) -> None: ...
-    def critical(self, __message: str, *args: Any, **kwargs: Any) -> None: ...
-    def exception(self, __message: str, *args: Any, **kwargs: Any) -> None: ...
+    def error(self, __message: str, *args: Any, **kwargs: Any) -> None: """
+Logs a message with severity 'ERROR'.
+
+Use this method to record error events that might still allow the application to continue running.
+"""
+...
+    def critical(self, __message: str, *args: Any, **kwargs: Any) -> None: """
+Logs a message with critical severity.
+
+Use this method to record events that indicate a serious failure or critical error.
+"""
+...
+    def exception(self, __message: str, *args: Any, **kwargs: Any) -> None: """
+Logs a message with exception information at the exception level.
+
+The message can include formatting arguments. If called within an exception handler, exception details are automatically included in the log entry.
+"""
+...
     def log(self, __level: int, __message: str, *args: Any, **kwargs: Any) -> None: """
-Logs a message at the specified integer log level.
+Logs a message with the given severity level.
 
 Args:
-    __level: The severity level as an integer.
-    __message: The message to log.
+    __level: Integer representing the log severity level.
+    __message: The message to be logged.
 """
 ...
     def remove(self, __handler_id: int = ...) -> None: """
-Removes a logging handler by its handler ID.
+Removes a logging handler identified by its handler ID.
 
 Args:
-    __handler_id: The integer identifier of the handler to remove.
+    __handler_id: The integer ID of the handler to be removed.
 """
 ...
     def add(self, sink: Any, **kwargs: Any) -> int: """
-Adds a logging sink with optional configuration and returns its handler ID.
+Adds a logging sink and returns its handler ID.
 
 Args:
 	sink: The destination for log messages, such as a file, stream, or callable.
@@ -39,10 +54,10 @@ Returns:
 
     @overload
     def catch(self, function: Callable[..., _T]) -> Callable[..., _T]: """
-Decorator that wraps a function to automatically catch and log exceptions.
+Decorator that wraps a function to catch and log any exceptions raised during its execution.
 
 Returns:
-    A wrapped function that logs exceptions raised during execution.
+    The wrapped function with automatic exception logging.
 """
 ...
 
@@ -56,17 +71,19 @@ Returns:
         message: str = ...,
         onerror: Callable[..., Any] = ...,
     ) -> Callable[[Callable[..., _T]], Callable[..., _T]]: """
-        Creates a decorator that wraps a function to catch specified exceptions and log them.
+        Creates a decorator that catches specified exceptions in a function and logs them.
+        
+        The decorator logs exceptions of the given type at the specified log level, optionally re-raises them, logs a custom message, and can execute an error handler if provided.
         
         Args:
-        	exception: Exception type or tuple of exception types to catch.
-        	level: Log level to use when logging the exception.
-        	reraise: Whether to re-raise the exception after logging.
-        	message: Message to log when an exception is caught.
-        	onerror: Callable to execute if an exception is caught.
+            exception: The exception type or tuple of types to catch.
+            level: The log level to use when logging the exception.
+            reraise: If True, re-raises the exception after logging.
+            message: Custom message to log when an exception is caught.
+            onerror: Callable to execute if an exception is caught.
         
         Returns:
-        	A decorator that wraps a function, logging and optionally handling exceptions according to the provided parameters.
+            A decorator that wraps a function, logging and optionally handling exceptions as specified.
         """
         ...
 
@@ -76,9 +93,9 @@ Returns:
 logger: Logger = ...
 
 def configure(**kwargs: Any) -> None: """
-Configures the logging system with the provided keyword arguments.
+Configures the logging system using the specified keyword arguments.
 
-Args:
-	**kwargs: Arbitrary configuration options for the logging system.
+The provided options allow customization of logging behavior, such as formatting,
+handlers, or other logging-related settings.
 """
 ...

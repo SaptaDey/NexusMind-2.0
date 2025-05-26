@@ -66,10 +66,10 @@ async def handle_asr_got_query(
     """
     Processes an ASR-GoT query via JSON-RPC and returns the result or an error response.
     
-    Handles the "asr_got.query" method by forwarding the query and parameters to the GoTProcessor, optionally including graph state and reasoning trace in the response. Converts and validates returned data, measures execution time, and provides robust error handling with fallback responses in case of processing failures.
+    Handles the "asr_got.query" method by forwarding the query and parameters to the GoTProcessor. Optionally includes graph state and reasoning trace in the response, converting and validating returned data as needed. Measures execution time and provides robust error handling, including fallback responses if processing fails.
     
     Returns:
-        A JSON-RPC response containing the ASR-GoT query result, including the answer, optional reasoning trace summary, graph state, confidence vector, execution time, and session ID. On error, returns a JSON-RPC error response with details.
+        A JSON-RPC response containing the ASR-GoT query result, which may include the answer, reasoning trace summary, graph state, confidence vector, execution time, and session ID. On error, returns a JSON-RPC error response with details.
     """
     logger.info(
         "MCP asr_got.query request received for query: '{}'",
@@ -244,9 +244,9 @@ async def mcp_endpoint_handler(
     request_payload: JSONRPCRequest[dict[str, Any]], http_request: Request
 ):
     """
-    Handles incoming MCP JSON-RPC requests and dispatches them to the appropriate method handler.
+    Handles MCP JSON-RPC requests by dispatching to the appropriate method handler.
     
-    Parses the method and parameters from the request payload, invokes the corresponding handler for "initialize", "asr_got.query", or "shutdown" methods, and returns a JSON-RPC response. Returns a JSON-RPC error for unsupported methods or invalid parameters. Exceptions are logged and mapped to appropriate JSON-RPC error responses.
+    Parses the method and parameters from the incoming JSON-RPC request, then invokes the corresponding handler for "initialize", "asr_got.query", or "shutdown". Returns a JSON-RPC response with the result or an error response for unsupported methods, invalid parameters, or internal exceptions.
     """
     logger.debug(
         "MCP Endpoint received raw request: method={}, id={}",

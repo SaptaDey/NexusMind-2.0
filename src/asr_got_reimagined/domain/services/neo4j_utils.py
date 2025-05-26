@@ -59,10 +59,15 @@ def close_neo4j_driver() -> None:
         logger.info("Closing Neo4j driver.")
         _driver.close()
         _driver = None
+    def close_neo4j_driver() -> None:
+    """Closes the Neo4j driver instance if it's open."""
+    global _driver
+    if _driver is not None and not _driver.closed():
+        logger.info("Closing Neo4j driver.")
+        _driver.close()
+        _driver = None
     else:
         logger.info("Neo4j driver is already closed or not initialized.")
-
-    import asyncio
 
     # --- Query Execution ---
     async def execute_query(
@@ -130,6 +135,10 @@ def close_neo4j_driver() -> None:
         raise
     except Exception as e:
         logger.error(f"Unexpected error executing Cypher query on database '{db_name}': {e}")
+        logger.error(f"Query: {query}, Parameters: {parameters}")
+        raise  # Re-raise any other unexpected exception
+
+    return records
         logger.error(f"Query: {query}, Parameters: {parameters}")
         raise  # Re-raise any other unexpected exception
 

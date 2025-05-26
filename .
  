@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Script to remove legacy directories at the git repository root
+dirs=(
+  "git/c__"
+  "git/simple_tests"
+  "git/test"
+)
+
+for dir in "${dirs[@]}"; do
+  if [ -d "$dir" ]; then
+    echo "Removing legacy directory: $dir"
+    rm -rf "$dir"
+  else
+    echo "Directory not found (skipping): $dir"
+  fi
+done
+
+echo ""
+echo "Directories remaining in git/:"
+ls -1 git

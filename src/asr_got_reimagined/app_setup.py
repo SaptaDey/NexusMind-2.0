@@ -48,10 +48,9 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """
     Creates and configures the FastAPI application with logging, CORS, health check, and routing.
-    
 
     Initializes the logger, sets up CORS middleware based on allowed origins from settings, attaches a GoTProcessor instance to the application state, defines a health check endpoint, and mounts the MCP router.
-    
+
     Returns:
         The configured FastAPI application instance.
     """
@@ -61,13 +60,13 @@ def create_app() -> FastAPI:
         sys.stderr,
         level=settings.app.log_level.upper(),
         format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-        "<level>{level: <8}</level> | "
-        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+               "<level>{level: <8}</level> | "
+               "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
         colorize=True,
     )
-    logger.info(
-        "Logger configured with level: {}", settings.app.log_level.upper()
-    )  # Create FastAPI app with lifespan
+    logger.info("Logger configured with level: {}", settings.app.log_level.upper())
+
+    # Create FastAPI app with lifespan
     app = FastAPI(
         title=settings.app.name,
         version=settings.app.version,
@@ -87,15 +86,20 @@ def create_app() -> FastAPI:
     if allowed_origins_str == "*":
         allowed_origins = ["*"]
     else:
-        allowed_origins = [origin.strip() for origin in allowed_origins_str.split(',') if origin.strip()]
-        if not allowed_origins: # Default if empty or only whitespace after split
-            logger.warning("APP_CORS_ALLOWED_ORIGINS_STR was not '*' and parsed to empty list. Defaulting to ['*'].")
-            allowed_origins = ["*"] # Default to all if configuration is invalid or empty
+        allowed_origins = [
+            origin.strip() for origin in allowed_origins_str.split(',') if origin.strip()
+        ]
+        if not allowed_origins:  # Default if empty or only whitespace after split
+            logger.warning(
+                "APP_CORS_ALLOWED_ORIGINS_STR was not '*' and parsed to empty list. "
+                "Defaulting to ['*']."
+            )
+            allowed_origins = ["*"]  # Default to all if configuration is invalid or empty
 
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins, # Use the parsed list
+        allow_origins=allowed_origins,  # Use the parsed list
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
         allow_headers=["*"],
@@ -107,7 +111,7 @@ def create_app() -> FastAPI:
     async def health_check():
         """
         Handles the /health endpoint to report application health status.
-        
+
         Returns:
             A JSON object containing the application's health status and version.
         """

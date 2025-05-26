@@ -36,7 +36,10 @@ from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query, Ne
 class GoTProcessor:
     def __init__(self, settings):
         """
-        Initializes a GoTProcessor instance with the provided settings.
+        Initializes the GoTProcessor with the given settings.
+        
+        Args:
+            settings: Configuration parameters used to control processor behavior.
         """
         self.settings = settings
         logger.info("Initializing GoTProcessor")
@@ -47,10 +50,10 @@ class GoTProcessor:
 
     def _initialize_stages(self) -> list[BaseStage]:
         """
-        Instantiates and returns the ordered list of all processing stage classes for the ASR-GoT pipeline.
+        Initializes and returns the ordered list of processing stage instances for the ASR-GoT pipeline.
         
         Returns:
-            A list of eight initialized stage objects, each corresponding to a specific step in the query processing pipeline. Logs a warning if the expected number of stages is not met.
+            A list of eight stage objects, each representing a distinct step in the query processing pipeline. Logs a warning if the number of initialized stages is not exactly eight.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
@@ -92,18 +95,18 @@ class GoTProcessor:
         initial_context: Optional[dict[str, Any]] = None,
     ) -> GoTProcessorSessionData:
         """
-        Processes a natural language query through the ASR-GoT pipeline, executing each stage in sequence and managing session state, context, and error handling.
+        Asynchronously processes a natural language query through all pipeline stages, managing session state, context, error handling, and logging.
+        
+        This method initializes or continues a session, executes each processing stage in order, updates the accumulated context with each stage's output, and handles errors—especially during initialization, where critical failures halt further processing. After all stages, it extracts the final answer and confidence vector from the appropriate stage outputs. The method returns a session data object containing the final answer, confidence vector, accumulated context, and a trace of stage executions.
         
         Args:
             query: The natural language query to process.
-            session_id: Optional session identifier for continuing or managing a session.
-            operational_params: Optional parameters to control processing behavior.
-            initial_context: Optional initial context to seed the processing.
+            session_id: Optional identifier for the session; a new one is generated if not provided.
+            operational_params: Optional dictionary of parameters to control processing behavior.
+            initial_context: Optional dictionary providing initial context for the query.
         
         Returns:
-            GoTProcessorSessionData containing the final answer, confidence vector, accumulated context, graph state, and a trace of stage outputs.
-        
-        This method initializes or continues a session, orchestrates the execution of all processing stages, logs detailed input and output information for each stage, handles errors (especially during initialization), and compiles the final results and metrics for the query.
+            GoTProcessorSessionData containing the final answer, confidence vector, accumulated context, and a trace of stage outputs.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
@@ -400,7 +403,11 @@ class GoTProcessor:
         return current_session_data
 
     async def shutdown_resources(self):
-        """Clean up any resources when shutting down."""
+        """
+        Performs cleanup operations when shutting down the processor.
+        
+        Currently, this method logs the shutdown event. No active resource management is implemented here, but it serves as a placeholder for future cleanup tasks such as closing database connections.
+        """
         logger.info("Shutting down GoTProcessor resources")
         # Example: Close Neo4j driver if it were managed here, though it's managed in neo4j_utils
         # from src.asr_got_reimagined.domain.services.neo4j_utils import close_neo4j_driver

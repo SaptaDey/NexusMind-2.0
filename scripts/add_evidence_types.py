@@ -7,9 +7,9 @@ from pathlib import Path
 
 def add_context_update_type(file_path):
     """
-    Adds missing type annotations for specific variables in a Python file.
+    Adds missing type annotations for `context_update` and `created_hyperedge_ids` in a Python file.
     
-    Scans the target file for assignments to `context_update` and `created_hyperedge_ids` and inserts type annotations if they are not already present.
+    Scans the specified file for assignments to `context_update` and `created_hyperedge_ids`, inserting type annotations if they are not already present. The file is updated in place.
     """
     with open(file_path, encoding='utf-8') as file:
         content = file.read()

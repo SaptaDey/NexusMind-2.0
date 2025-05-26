@@ -19,7 +19,12 @@ _neo4j_settings: Optional[Neo4jSettings] = None
 _driver: Optional[Driver] = None
 
 def get_neo4j_settings() -> Neo4jSettings:
-    """Returns the Neo4j settings, initializing them if necessary."""
+    """
+    Retrieves the singleton Neo4jSettings instance, initializing it on first access.
+    
+    Returns:
+        Neo4jSettings: The configuration settings for the Neo4j connection.
+    """
     global _neo4j_settings
     if _neo4j_settings is None:
         logger.info("Initializing Neo4j settings.")
@@ -30,8 +35,9 @@ def get_neo4j_settings() -> Neo4jSettings:
 # --- Driver Management ---
 def get_neo4j_driver() -> Driver:
     """
-    Initializes and returns a Neo4j driver instance using a singleton pattern.
-    Handles authentication using configured credentials.
+    Returns a singleton Neo4j driver instance, initializing it with configured credentials if necessary.
+    
+    If the driver does not exist or is closed, a new driver is created using the current settings and connectivity is verified. Raises an exception if the connection fails or an unexpected error occurs.
     """
     global _driver
     # Create a driver only if one doesn't yet exist or has been closed
@@ -54,7 +60,11 @@ def get_neo4j_driver() -> Driver:
     return _driver
 
 def close_neo4j_driver() -> None:
-    """Closes the Neo4j driver instance if it's open."""
+    """
+    Closes the Neo4j driver instance if it is open.
+    
+    If the driver is already closed or uninitialized, no action is taken.
+    """
     global _driver
     if _driver is not None and not _driver.closed():
         logger.info("Closing Neo4j driver.")
@@ -100,6 +110,17 @@ def close_neo4j_driver() -> None:
     records: List[Record] = []
 
     def _execute_sync_query() -> List[Record]:
+        """
+        Executes a Cypher query synchronously within a Neo4j session and transaction.
+        
+        Runs the provided query with parameters on the specified database using either a read or write transaction, enforcing a 30-second timeout. Returns all records resulting from the query.
+        
+        Raises:
+            ValueError: If the transaction type is not 'read' or 'write'.
+        
+        Returns:
+            A list of Neo4j Record objects containing the query results.
+        """
         with driver.session(database=db_name) as session:
             logger.debug(f"Executing query on database '{db_name}' with type '{tx_type}': {query[:100]}...")
 

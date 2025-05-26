@@ -77,18 +77,7 @@ def get_degree_centrality_gds(graph_name: str, node_label_filter: Optional[str] 
     """
     logger.info(f"Calculating degree centrality for GDS graph '{graph_name}' with node label filter '{node_label_filter}', orientation '{orientation}'.")
     
-    config_parts = []
-    params_for_query = {"graph_name": graph_name}
-
-    if node_label_filter:
-        config_parts.append("nodeLabels: [$node_label_filter]")
-        params_for_query["node_label_filter"] = node_label_filter
-    
-    config_parts.append(f"orientation: '{orientation.upper()}'") # Ensure orientation is upper, though GDS might be flexible
-    
-    config_str = ", ".join(config_parts)
-    # We use gds.util.asNode(nodeId).id to get our application-specific ID property
-# Build a parameterized config map instead of inlining
+    # Build a parameterized config map instead of inlining
     config = {
         "orientation": orientation.upper(),
     }

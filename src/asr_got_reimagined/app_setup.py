@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """
-    Initializes and configures the FastAPI application with logging, middleware, health check, and routing.
+    Creates and configures the FastAPI application instance with logging, CORS middleware, health check endpoint, and routing.
     
     Returns:
         The fully configured FastAPI application instance.

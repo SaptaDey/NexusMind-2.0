@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from src.asr_got_reimagined.infrastructure.database import execute_query
+from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query
 
 async def fetch_dimension_records(params: Dict[str, Any]) -> List[Dict[str, Any]]:
     """

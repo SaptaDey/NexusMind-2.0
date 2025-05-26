@@ -52,12 +52,14 @@ When you ask a question with the NexusMind integration enabled:
 
 ## Configuration Options
 
-You can modify the `config/claude_mcp_config.json` file to change:
+The `config/claude_mcp_config.json` file defines how NexusMind registers itself with MCP clients like Claude Desktop. It typically includes:
+-   `name`: A short name for the integration (e.g., "nexusmind").
+-   `description`: A brief description of what NexusMind does.
+-   `version`: The version of NexusMind.
+-   `endpoints`: The URL for the MCP endpoint (e.g., `http://localhost:8000/mcp`).
+-   `capabilities`: A list of capabilities the server offers (e.g., "scientific_reasoning").
 
-- The level of detail in the reasoning trace
-- Whether to include the graph state in responses
-- The maximum number of nodes in the response graph
-- The output detail level
+Runtime behaviors, such as whether to include the reasoning trace or full graph state in responses, are typically controlled by parameters sent by the client in the `asr_got.query` request (see the `MCPASRGoTQueryParams` schema in `src/asr_got_reimagined/api/schemas.py` for details like `include_reasoning_trace` and `include_graph_state`). These are not configured in `claude_mcp_config.json`.
 
 ## Status Page
 
@@ -66,4 +68,4 @@ A status page is available to check the connection and test queries:
 open status.html
 ```
 
-For more detailed instructions, see the [Claude Desktop Integration Guide](docs/claude_desktop_integration.md).
+For more detailed instructions, see the [Claude Desktop Integration Guide](claude_desktop_integration.md).

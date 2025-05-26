@@ -16,7 +16,6 @@ from src.asr_got_reimagined.api.schemas import (
     MCPInitializeResult,
     ShutdownParams,
 )
-from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
 from src.asr_got_reimagined.domain.services.got_processor import (
     GoTProcessor,
     GoTProcessorSessionData,
@@ -64,12 +63,12 @@ async def handle_asr_got_query(
     request_id: Optional[Union[str, int]],
 ) -> JSONRPCResponse[MCPASRGoTQueryResult, Any]:
     """
-    Processes an ASR-GoT query via JSON-RPC and returns the result or an error response.
+    Processes an "asr_got.query" JSON-RPC request using the GoTProcessor and returns the result or an error response.
     
-    Handles the "asr_got.query" method by forwarding the query and parameters to the GoTProcessor, optionally including graph state and reasoning trace in the response. Converts and validates returned data, measures execution time, and provides robust error handling with fallback responses in case of processing failures.
+    Forwards the query and parameters to the GoTProcessor, optionally including the graph state and a reasoning trace summary in the response. Converts and validates returned data, measures execution time, and provides robust error handling with fallback responses if processing fails.
     
     Returns:
-        A JSON-RPC response containing the ASR-GoT query result, including the answer, optional reasoning trace summary, graph state, confidence vector, execution time, and session ID. On error, returns a JSON-RPC error response with details.
+        A JSON-RPC response containing the ASR-GoT query result, which may include the answer, reasoning trace summary, graph state, confidence vector, execution time, and session ID. If an error occurs, returns a JSON-RPC error response with diagnostic details.
     """
     logger.info(
         "MCP asr_got.query request received for query: '{}'",
@@ -111,18 +110,6 @@ async def handle_asr_got_query(
             ):
                 if isinstance(session_data_result.graph_state, GraphStateSchema):
                     response_graph_state = session_data_result.graph_state
-                elif isinstance(
-                    session_data_result.graph_state, ASRGoTGraph
-                ) and hasattr(session_data_result.graph_state, "to_serializable_dict"):
-                    try:
-                        serializable_dict = (
-                            session_data_result.graph_state.to_serializable_dict()
-                        )
-                        response_graph_state = GraphStateSchema(**serializable_dict)
-                    except Exception as e_conv:
-                        logger.error(
-                            f"Failed to convert ASRGoTGraph to GraphStateSchema for session {session_data_result.session_id}: {e_conv}"
-                        )
                 elif isinstance(session_data_result.graph_state, dict):
                     try:
                         response_graph_state = GraphStateSchema(

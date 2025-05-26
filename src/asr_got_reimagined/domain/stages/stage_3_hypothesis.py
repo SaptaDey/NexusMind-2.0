@@ -182,7 +182,7 @@ class HypothesisStage(BaseStage):
                     hypo_content = await self._generate_hypothesis_content(
                         dimension_label_for_hypo, dimension_tags_for_hypo, i, initial_query
                     )
-                    hypo_id = f"hypo_{dim_id}_{i}" # Ensure unique ID format
+                    hypo_id = f"hypo_{dim_id}_{current_session_data.session_id}_{i}" # Ensure unique ID format per session
 
                     hypo_metadata = NodeMetadata(
                         description=f"A hypothesis related to dimension: '{dimension_label_for_hypo}'.",

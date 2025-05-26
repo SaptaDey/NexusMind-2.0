@@ -19,7 +19,12 @@ _neo4j_settings: Optional[Neo4jSettings] = None
 _driver: Optional[Driver] = None
 
 def get_neo4j_settings() -> Neo4jSettings:
-    """Returns the Neo4j settings, initializing them if necessary."""
+    """
+    Retrieves the singleton Neo4j settings instance, initializing it on first access.
+    
+    Returns:
+        Neo4jSettings: The configuration object containing Neo4j connection parameters.
+    """
     global _neo4j_settings
     if _neo4j_settings is None:
         logger.info("Initializing Neo4j settings.")
@@ -30,8 +35,9 @@ def get_neo4j_settings() -> Neo4jSettings:
 # --- Driver Management ---
 def get_neo4j_driver() -> Driver:
     """
-    Initializes and returns a Neo4j driver instance using a singleton pattern.
-    Handles authentication using configured credentials.
+    Returns a singleton Neo4j driver instance, initializing and verifying connectivity if needed.
+    
+    If the driver is not yet created or has been closed, this function initializes a new driver using the configured credentials and verifies connectivity. Raises an exception if the connection fails.
     """
     global _driver
     # Create a driver only if one doesn't yet exist or has been closed
@@ -54,7 +60,11 @@ def get_neo4j_driver() -> Driver:
     return _driver
 
 def close_neo4j_driver() -> None:
-    """Closes the Neo4j driver instance if it's open."""
+    """
+    Closes the Neo4j driver if it is open and resets the driver reference.
+    
+    If the driver is already closed or not initialized, no action is taken.
+    """
     global _driver
     if _driver is not None and not _driver.closed():
         logger.info("Closing Neo4j driver.")
@@ -74,7 +84,11 @@ import asyncio
 
 
 def close_neo4j_driver() -> None:
-    """Closes the Neo4j driver instance if it's open."""
+    """
+    Closes the Neo4j driver instance if it is open.
+    
+    If the driver is already closed or not initialized, no action is taken.
+    """
     global _driver
     if _driver is not None and not _driver.closed():
         logger.info("Closing Neo4j driver.")
@@ -117,6 +131,15 @@ def close_neo4j_driver() -> None:
     records: List[Record] = []
 
     def _execute_sync_query() -> List[Record]:
+        """
+        Executes a Cypher query synchronously within a Neo4j session and transaction.
+        
+        Runs the provided query as either a read or write transaction on the specified database,
+        returning all resulting records. Raises a ValueError if the transaction type is invalid.
+        
+        Returns:
+            A list of Record objects resulting from the query execution.
+        """
         with driver.session(database=db_name) as session:
             logger.debug(f"Executing query on database '{db_name}' with type '{tx_type}': {query[:100]}...")
 

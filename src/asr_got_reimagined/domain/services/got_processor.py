@@ -36,7 +36,10 @@ from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query, Ne
 class GoTProcessor:
     def __init__(self, settings):
         """
-        Initializes a GoTProcessor instance with the provided settings.
+        Initializes the GoTProcessor with the specified settings.
+        
+        Args:
+            settings: Configuration parameters for the processor.
         """
         self.settings = settings
         logger.info("Initializing GoTProcessor")
@@ -47,10 +50,10 @@ class GoTProcessor:
 
     def _initialize_stages(self) -> list[BaseStage]:
         """
-        Instantiates and returns the ordered list of all processing stage classes for the ASR-GoT pipeline.
+        Initializes and returns the ordered list of processing stage instances for the ASR-GoT pipeline.
         
         Returns:
-            A list of eight initialized stage objects, each corresponding to a specific step in the query processing pipeline. Logs a warning if the expected number of stages is not met.
+            A list of eight stage objects, each representing a sequential step in the query processing pipeline. Logs a warning if the number of initialized stages is not exactly eight.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
@@ -94,16 +97,16 @@ class GoTProcessor:
         """
         Processes a natural language query through the ASR-GoT pipeline, executing each stage in sequence and managing session state, context, and error handling.
         
+        Initializes or continues a session, incorporates optional context and operational parameters, and orchestrates the ordered execution of all processing stages. Logs detailed input and output for each stage, handles errors—especially during initialization—and compiles the final answer, confidence vector, accumulated context, and a trace of stage outputs. Stages are responsible for their own database interactions.
+        
         Args:
             query: The natural language query to process.
-            session_id: Optional session identifier for continuing or managing a session.
+            session_id: Optional identifier for continuing or managing a session.
             operational_params: Optional parameters to control processing behavior.
             initial_context: Optional initial context to seed the processing.
         
         Returns:
-            GoTProcessorSessionData containing the final answer, confidence vector, accumulated context, graph state, and a trace of stage outputs.
-        
-        This method initializes or continues a session, orchestrates the execution of all processing stages, logs detailed input and output information for each stage, handles errors (especially during initialization), and compiles the final results and metrics for the query.
+            GoTProcessorSessionData containing the final answer, confidence vector, accumulated context, and a trace of stage outputs.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
@@ -400,7 +403,11 @@ class GoTProcessor:
         return current_session_data
 
     async def shutdown_resources(self):
-        """Clean up any resources when shutting down."""
+        """
+        Performs cleanup operations when shutting down the processor.
+        
+        Currently a placeholder; implement resource cleanup here if processor-managed resources are added in the future.
+        """
         logger.info("Shutting down GoTProcessor resources")
         # Example: Close Neo4j driver if it were managed here, though it's managed in neo4j_utils
         # from src.asr_got_reimagined.domain.services.neo4j_utils import close_neo4j_driver

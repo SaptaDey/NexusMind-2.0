@@ -38,6 +38,11 @@ class ReflectionStage(BaseStage):
     stage_name: str = "ReflectionStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the ReflectionStage with audit thresholds and checklist items from settings.
+        
+        Loads threshold parameters for audit checks from default parameters and sets up the list of audit checklist item names.
+        """
         super().__init__(settings)
         self.high_confidence_threshold = self.default_params.get("high_confidence_threshold", 0.7)
         self.high_impact_threshold = self.default_params.get("high_impact_threshold", 0.7)
@@ -51,6 +56,11 @@ class ReflectionStage(BaseStage):
         ]
 
     async def _check_high_confidence_impact_coverage_from_neo4j(self) -> AuditCheckResult:
+        """
+        Performs an audit check to assess the proportion of nodes with high confidence and high impact in the Neo4j database.
+        
+        Queries nodes of types HYPOTHESIS, EVIDENCE, and INTERDISCIPLINARY_BRIDGE, evaluates their average confidence and impact scores, and determines coverage ratios. Returns an AuditCheckResult with status based on whether these ratios meet predefined thresholds.
+        """
         query = """
         MATCH (n:Node)
         WHERE n.type IN ['HYPOTHESIS', 'EVIDENCE', 'INTERDISCIPLINARY_BRIDGE']
@@ -87,6 +97,11 @@ class ReflectionStage(BaseStage):
 
 
     async def _check_bias_flags_assessment_from_neo4j(self) -> AuditCheckResult:
+        """
+        Performs an audit check for bias flags on nodes in the Neo4j database.
+        
+        Queries all nodes with bias flag metadata, counts the number of nodes with any bias flags and those with high severity bias. Returns an audit result with status "FAIL" if high severity bias exceeds the configured threshold, "WARNING" if any bias flags are present, or "PASS" otherwise. Returns "FAIL" with an error message if the query or parsing fails.
+        """
         query = """
         MATCH (n:Node) WHERE n.metadata_bias_flags_json IS NOT NULL
         RETURN n.metadata_bias_flags_json AS bias_flags_json
@@ -112,6 +127,11 @@ class ReflectionStage(BaseStage):
             return AuditCheckResult(check_name="bias_flags_assessment", status="FAIL", message=f"Error processing bias flags: {e}")
 
     async def _check_knowledge_gaps_addressed_from_neo4j(self, composed_output: Optional[ComposedOutput]) -> AuditCheckResult:
+        """
+        Checks whether identified knowledge gaps in the Neo4j graph are addressed in the composed output.
+        
+        If knowledge gap nodes are present in the graph, verifies that the composed output contains sections referencing these gaps. Returns an audit result with status "PASS" if addressed, "WARNING" if not, or "NOT_APPLICABLE" if no knowledge gaps are found in the graph.
+        """
         query = "MATCH (g:Node) WHERE g.metadata_is_knowledge_gap = true RETURN count(g) as gap_nodes_count"
         gap_nodes_present = False
         try:
@@ -134,6 +154,12 @@ class ReflectionStage(BaseStage):
         return AuditCheckResult(check_name="knowledge_gaps_addressed", status=status, message=message)
 
     async def _check_hypothesis_falsifiability_from_neo4j(self) -> AuditCheckResult:
+        """
+        Performs an audit check to assess the proportion of hypotheses with defined falsifiability criteria in the Neo4j database.
+        
+        Returns:
+            An AuditCheckResult indicating the number and ratio of hypotheses with falsifiability criteria, with status set to "PASS", "WARNING", "FAIL", or "NOT_APPLICABLE" based on configured thresholds and query results.
+        """
         query = """
         MATCH (h:Node:HYPOTHESIS) 
         RETURN h.metadata_falsification_criteria_json IS NOT NULL AS has_criteria
@@ -153,6 +179,11 @@ class ReflectionStage(BaseStage):
             return AuditCheckResult(check_name="hypothesis_falsifiability", status="FAIL", message=f"Query error: {e}")
 
     async def _check_statistical_rigor_from_neo4j(self) -> AuditCheckResult:
+        """
+        Evaluates the statistical rigor of evidence nodes in the Neo4j database.
+        
+        Queries all evidence nodes for statistical power information, counts those meeting the minimum power threshold, and returns an audit result with status "PASS" or "WARNING" based on the proportion of adequately powered evidence. Returns "FAIL" if a Neo4j query error occurs, or "NOT_APPLICABLE" if no evidence nodes are found.
+        """
         query = """
         MATCH (e:Node:EVIDENCE) 
         RETURN e.metadata_statistical_power_json AS stat_power_json
@@ -180,13 +211,33 @@ class ReflectionStage(BaseStage):
             return AuditCheckResult(check_name="statistical_rigor_of_evidence", status="FAIL", message=f"Query error: {e}")
 
     async def _check_causal_claim_validity(self) -> AuditCheckResult:
+        """
+        Returns an audit check result indicating that the causal claim validity check is not yet implemented.
+        """
         return AuditCheckResult(check_name="causal_claim_validity", status="NOT_RUN", message="Causal claim validity check (Neo4j) not fully implemented.")
     async def _check_temporal_consistency(self) -> AuditCheckResult:
+        """
+        Returns an audit check result indicating that the temporal consistency check is not yet implemented.
+        """
         return AuditCheckResult(check_name="temporal_consistency", status="NOT_RUN", message="Temporal consistency check (Neo4j) not fully implemented.")
     async def _check_collaboration_attributions(self) -> AuditCheckResult:
+        """
+        Returns an audit check result indicating that the collaboration attributions check is not yet implemented.
+        """
         return AuditCheckResult(check_name="collaboration_attributions_check", status="NOT_RUN", message="Attribution check (Neo4j) not fully implemented.")
 
     async def _calculate_final_confidence(self, audit_results: List[AuditCheckResult]) -> ConfidenceVector:
+        """
+        Calculates the final confidence vector by adjusting baseline values based on audit check results.
+        
+        The method updates components of the confidence vector according to the statuses of the hypothesis falsifiability, bias assessment, and statistical rigor audit checks. Adjustments are applied as increments or decrements, and all values are clamped between 0 and 1.
+        
+        Args:
+            audit_results: List of audit check results to inform confidence adjustments.
+        
+        Returns:
+            A ConfidenceVector with updated empirical support, theoretical basis, methodological rigor, and consensus alignment.
+        """
         final_conf = ConfidenceVector(empirical_support=0.5, theoretical_basis=0.5, methodological_rigor=0.5, consensus_alignment=0.5)
         falsifiability_check = next((r for r in audit_results if r.check_name == "hypothesis_falsifiability"), None)
         bias_check = next((r for r in audit_results if r.check_name == "bias_flags_assessment"), None)
@@ -213,6 +264,10 @@ class ReflectionStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph removed
     ) -> StageOutput:
+        """
+        Executes the reflection stage by running a series of audit checks on Neo4j graph data and composed output, then aggregates results and computes a final confidence vector.
+        
+        Runs multiple asynchronous audit checks, including coverage, bias, knowledge gaps, falsifiability, and statistical rigor, handling exceptions for each. Aggregates audit results, calculates a final confidence vector based on outcomes, and returns a structured stage output with a summary, metrics, and context updates for downstream stages.
         self._log_start(current_session_data.session_id)
         composition_stage_output = current_session_data.accumulated_context.get(CompositionStage.stage_name, {})
         composed_output_dict = composition_stage_output.get("final_composed_output")

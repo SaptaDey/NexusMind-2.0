@@ -12,9 +12,9 @@ from asr_got_reimagined.config import settings # Use the global settings instanc
 
 async def main(): # Renamed back to main as per instruction
     """
-    Runs a profiling session by processing a sample query with GoTProcessor asynchronously.
+    Processes a sample query asynchronously with GoTProcessor and prints a summary of the result.
     
-    Initializes the GoTProcessor with global settings, submits a predefined query about climate change and ocean acidification, and prints a truncated summary of the final answer from the session data.
+    Initializes GoTProcessor using global settings, submits a predefined query about the relationship between climate change and ocean acidification, and outputs the first 200 characters of the final answer from the session data.
     """
     print("Initializing GoTProcessor...")
     processor = GoTProcessor(settings=settings)

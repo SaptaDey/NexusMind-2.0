@@ -46,13 +46,27 @@ class EvidenceStage(BaseStage):
     stage_name: str = "EvidenceStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the EvidenceStage with configuration parameters for evidence integration.
+        
+        Sets the maximum number of evidence integration iterations, the similarity threshold for creating Interdisciplinary Bridge Nodes (IBNs), and the minimum number of nodes required to consider hyperedge creation, using values from the provided settings.
+        """
         super().__init__(settings)
         self.max_iterations = self.default_params.evidence_max_iterations
         self.ibn_similarity_threshold = self.default_params.get("ibn_similarity_threshold", 0.5) # Use .get for safety
         self.min_nodes_for_hyperedge_consideration = self.default_params.get("min_nodes_for_hyperedge", 2) # Use .get
 
     def _prepare_node_properties_for_neo4j(self, node_pydantic: Node) -> Dict[str, Any]:
-        """Converts a Node Pydantic model into a flat dictionary for Neo4j."""
+        """
+        Serializes a Pydantic Node model into a flat dictionary suitable for Neo4j storage.
+        
+        Handles confidence vector fields and metadata, including special serialization for
+        datetime, Enum, lists, sets, and nested Pydantic models. Filters out fields with
+        None values and ensures all properties are compatible with Neo4j property types.
+        
+        Returns:
+            A dictionary of node properties ready for insertion into Neo4j.
+        """
         if node_pydantic is None: return {}
         props = {"id": node_pydantic.id, "label": node_pydantic.label}
         if node_pydantic.confidence:
@@ -82,7 +96,14 @@ class EvidenceStage(BaseStage):
         return {k: v for k, v in props.items() if v is not None}
 
     def _prepare_edge_properties_for_neo4j(self, edge_pydantic: Edge) -> Dict[str, Any]:
-        """Converts an Edge Pydantic model into a flat dictionary for Neo4j."""
+        """
+        Serializes an Edge Pydantic model into a flat dictionary suitable for Neo4j property storage.
+        
+        Metadata fields are serialized with special handling for datetimes (ISO format), Enums (value), lists, sets, dicts, and nested Pydantic models (JSON or string fallback). All properties with `None` values are excluded from the result.
+        
+        Returns:
+            A dictionary of edge properties formatted for Neo4j.
+        """
         if edge_pydantic is None: return {}
         props = {"id": edge_pydantic.id}
         if hasattr(edge_pydantic, 'confidence') and edge_pydantic.confidence is not None:
@@ -101,7 +122,11 @@ class EvidenceStage(BaseStage):
     async def _select_hypothesis_to_evaluate_from_neo4j(
         self, hypothesis_node_ids: List[str]
     ) -> Optional[Dict[str, Any]]:
-        """Selects a hypothesis from Neo4j based on criteria."""
+        """
+        Selects the most suitable hypothesis from Neo4j for evidence integration.
+        
+        Queries Neo4j for hypotheses matching the provided IDs, retrieves up to 10 candidates ordered by impact score and empirical confidence, and scores them locally based on impact and confidence variance. Returns the highest scoring hypothesis data as a dictionary, or None if no eligible hypothesis is found.
+        """
         if not hypothesis_node_ids: return None
         
         query = """
@@ -139,6 +164,17 @@ class EvidenceStage(BaseStage):
             if not eligible_hypotheses_data: return None
 
             def score_hypothesis_data(h_data: Dict[str, Any]):
+                """
+                Calculates a score for a hypothesis based on its impact and confidence variance.
+                
+                The score is computed as the sum of the hypothesis's impact score and the variance of its confidence vector components, favoring hypotheses with both high impact and high uncertainty.
+                
+                Args:
+                    h_data: Dictionary containing hypothesis data, expected to include 'impact_score' and 'confidence_vector_list'.
+                
+                Returns:
+                    A float representing the combined score of impact and confidence variance.
+                """
                 impact = h_data.get('impact_score', 0.1)
                 conf_list = h_data.get('confidence_vector_list', [0.5]*4)
                 conf_variance = sum([(c - 0.5) ** 2 for c in conf_list]) / 4.0
@@ -155,7 +191,11 @@ class EvidenceStage(BaseStage):
     async def _execute_hypothesis_plan(
         self, hypothesis_data_from_neo4j: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
-        """Simulates plan execution to generate mock evidence data."""
+        """
+        Simulates the execution of a hypothesis plan to generate mock evidence data.
+        
+        Given hypothesis data from Neo4j, this method generates one or two pieces of simulated evidence, each with randomized support, strength, statistical power, disciplinary tags, and content description. The generated evidence is returned as a list of dictionaries, each representing a piece of evidence.
+        """
         hypo_label = hypothesis_data_from_neo4j.get("label", "Unknown Hypothesis")
         plan_json_str = hypothesis_data_from_neo4j.get("plan_json")
         plan_type_simulated = "SimulatedPlanExecution"
@@ -189,7 +229,20 @@ class EvidenceStage(BaseStage):
     async def _create_evidence_in_neo4j(
         self, hypothesis_data_from_neo4j: Dict[str, Any], evidence_data: Dict[str, Any], iteration: int, evidence_index: int
     ) -> Optional[Dict[str, Any]]:
-        """Creates evidence node and links it to hypothesis in Neo4j."""
+        """
+        Creates an evidence node in Neo4j and links it to a hypothesis node.
+        
+        The evidence node is constructed based on the provided evidence data and inherits certain properties, such as the layer, from the associated hypothesis. The function determines the relationship type (supportive or contradictory) based on whether the evidence supports the hypothesis. It serializes the node and edge properties for Neo4j storage, creates the evidence node, and establishes the relationship to the hypothesis node in the database.
+        
+        Args:
+            hypothesis_data_from_neo4j: Dictionary containing properties of the hypothesis node from Neo4j.
+            evidence_data: Dictionary with evidence details, including content, support flag, strength, and metadata.
+            iteration: The current iteration index for evidence creation.
+            evidence_index: The index of the evidence within the current iteration.
+        
+        Returns:
+            A dictionary of the created evidence node's properties (including its ID) if successful, or None if creation or linking fails.
+        """
         hypothesis_id = hypothesis_data_from_neo4j["id"]
         hypothesis_label = hypothesis_data_from_neo4j.get("label", "N/A")
         hypothesis_layer_id = hypothesis_data_from_neo4j.get("layer_id", self.default_params.initial_layer)
@@ -273,6 +326,11 @@ class EvidenceStage(BaseStage):
         evidence_strength: float, supports_hypothesis: bool, 
         statistical_power: Optional[StatisticalPower], edge_type: Optional[EdgeType]
     ) -> bool:
+        """
+        Updates the confidence vector of a hypothesis node in Neo4j using a Bayesian update.
+        
+        The method recalculates the hypothesis's confidence vector based on new evidence, computes the information gain, and updates the relevant fields in the Neo4j database. Returns True if the update succeeds, otherwise False.
+        """
         def _deserialize_tags(self, raw) -> Set[str]:
         """
         Safely deserialize disciplinary tags from JSON string, list, or None.
@@ -339,7 +397,18 @@ class EvidenceStage(BaseStage):
     async def _create_ibn_in_neo4j(
         self, evidence_node_data: Dict[str, Any], hypothesis_node_data: Dict[str, Any]
     ) -> Optional[str]:
-        """Creates Interdisciplinary Bridge Node (IBN) in Neo4j if conditions met."""
+        """
+        Creates an Interdisciplinary Bridge Node (IBN) in Neo4j to connect evidence and hypothesis nodes from distinct disciplines when their semantic similarity exceeds a threshold.
+        
+        The IBN node is created only if the evidence and hypothesis nodes have non-overlapping disciplinary tags and their labels are sufficiently semantically similar. The method inserts the IBN node into Neo4j, assigns appropriate metadata and confidence, and creates relationships linking the IBN to both the evidence and hypothesis nodes.
+        
+        Args:
+            evidence_node_data: Dictionary containing properties of the evidence node.
+            hypothesis_node_data: Dictionary containing properties of the hypothesis node.
+        
+        Returns:
+            The ID of the created IBN node if successful, or None if conditions are not met or creation fails.
+        """
         hypo_tags_raw = hypothesis_node_data.get("metadata_disciplinary_tags")
         ev_tags_raw = evidence_node_data.get("metadata_disciplinary_tags")
         hypo_tags = self._deserialize_tags(hypo_tags_raw)
@@ -406,7 +475,18 @@ class EvidenceStage(BaseStage):
     async def _create_hyperedges_in_neo4j(
         self, hypothesis_data: Dict[str, Any], related_evidence_data_list: List[Dict[str, Any]]
     ) -> List[str]:
-        """Creates hyperedges in Neo4j if conditions met."""
+        """
+        Creates a hyperedge center node in Neo4j to represent joint influence on a hypothesis.
+        
+        If the number of related evidence nodes meets the minimum threshold, this method creates a hyperedge center node with aggregated confidence and links it to the hypothesis and evidence nodes via `HAS_MEMBER` relationships.
+        
+        Args:
+            hypothesis_data: Dictionary containing hypothesis node properties from Neo4j.
+            related_evidence_data_list: List of dictionaries with evidence node properties.
+        
+        Returns:
+            A list containing the IDs of created hyperedge center nodes.
+        """
         created_hyperedge_ids: List[str] = []
         if len(related_evidence_data_list) < self.min_nodes_for_hyperedge_consideration:
             return created_hyperedge_ids
@@ -483,16 +563,37 @@ class EvidenceStage(BaseStage):
         return created_hyperedge_ids
 
     async def _apply_temporal_decay_and_patterns(self):
+        """
+        Placeholder for temporal decay and pattern detection logic.
+        
+        Currently, this method does not perform any actions.
+        """
         logger.debug("Temporal decay and pattern detection (P1.18, P1.25) - placeholder, no action taken.")
         pass
 
     async def _adapt_graph_topology(self):
+        """
+        Placeholder for dynamic graph topology adaptation logic.
+        
+        Currently, this method does not perform any actions.
+        """
         logger.debug("Dynamic graph topology adaptation (P1.22) - placeholder, no action taken.")
         pass
 
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph removed
     ) -> StageOutput:
+        """
+        Executes the evidence integration stage by iteratively generating and linking evidence to hypotheses in Neo4j.
+        
+        This method selects hypotheses for evaluation, simulates evidence generation, creates evidence nodes and relationships in Neo4j, updates hypothesis confidence scores, and constructs interdisciplinary bridge nodes (IBNs) and hyperedges as appropriate. The process is repeated for a configured number of iterations or until all eligible hypotheses are processed. Returns a summary of the integration process, including counts of created and updated entities, and updates the session context.
+        
+        Args:
+            current_session_data: The session data containing accumulated context, including hypothesis node IDs.
+        
+        Returns:
+            A StageOutput summarizing the evidence integration process, with metrics and context updates.
+        """
         self._log_start(current_session_data.session_id)
         hypothesis_data = current_session_data.accumulated_context.get(HypothesisStage.stage_name, {})
         hypothesis_node_ids: List[str] = hypothesis_data.get("hypothesis_node_ids", [])

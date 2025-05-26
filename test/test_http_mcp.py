@@ -8,7 +8,7 @@ import requests
 
 def test_mcp_server():
     """
-    Sends a test "initialize" request to the local MCP server and verifies its response.
+    Sends an "initialize" JSON-RPC request to a local MCP server and verifies the response.
     
     Returns:
         True if the server responds with the expected MCP initialization fields; False otherwise.

@@ -9,9 +9,9 @@ import re
 
 def fix_indentation(input_file, output_file=None):
     """
-    Corrects common indentation and line splitting issues in a Python source file.
+    Fixes indentation and line splitting issues in a Python source file.
     
-    Reads the specified input file, applies fixes for multiple statements on a single line and improper indentation after closing parentheses, and writes the corrected content to the output file. If no output file is specified, the input file is overwritten.
+    Reads the input file, separates multiple statements on a single line, corrects improper indentation after closing parentheses, and writes the corrected content to the output file. If no output file is specified, the input file is overwritten.
     """
     if output_file is None:
         output_file = input_file

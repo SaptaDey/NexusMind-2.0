@@ -34,6 +34,11 @@ class InitializationStage(BaseStage):
     stage_name: str = "InitializationStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the InitializationStage with default parameters for root node creation.
+        
+        Sets the root node label, initial confidence values, and initial layer based on default parameters from settings.
+        """
         super().__init__(settings)
         self.root_node_label = "Task Understanding"
         self.initial_confidence_values = self.default_params.initial_confidence
@@ -41,8 +46,9 @@ class InitializationStage(BaseStage):
 
     def _prepare_node_properties_for_neo4j(self, node_pydantic: Node) -> Dict[str, Any]:
         """
-        Converts a Node Pydantic model instance into a flat dictionary suitable for Neo4j properties.
-        Handles datetime, Enum, ConfidenceVector, and nested NodeMetadata.
+        Converts a Node Pydantic model into a flat dictionary of properties suitable for Neo4j storage.
+        
+        Serializes nested fields such as confidence vectors and metadata, handling datetimes, enums, lists, sets, and nested Pydantic models. Omits properties with None values and falls back to string serialization if JSON encoding fails.
         """
         if node_pydantic is None:
             return {}
@@ -94,6 +100,17 @@ class InitializationStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph parameter removed
     ) -> StageOutput:
+        """
+        Initializes or retrieves the root node in Neo4j for a given user query, updating disciplinary tags if necessary.
+        
+        Attempts to find an existing root node labeled `ROOT` in Neo4j that matches the initial query context. If found, merges any new disciplinary tags from operational parameters and updates the node if tags have changed. If not found, creates a new root node with default properties and disciplinary tags. Handles Neo4j errors and returns a `StageOutput` summarizing the operation, including metrics and context updates.
+        
+        Args:
+            current_session_data: Session data containing the initial user query and accumulated context.
+        
+        Returns:
+            A `StageOutput` summarizing whether a new root node was created or an existing one was used, including metrics and context updates.
+        """
         self._log_start(current_session_data.session_id)
         initial_query = current_session_data.query
         operational_params = current_session_data.accumulated_context.get("operational_params", {})

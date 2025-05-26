@@ -283,6 +283,12 @@ class Edge(TimestampedModel):
         return hash((self.id, self.source_id, self.target_id, self.type))
 
     def __eq__(self, other: Any) -> bool:
+        """
+        Checks equality with another Edge based on ID, source ID, target ID, and type.
+        
+        Returns:
+            True if the other object is an Edge with matching ID, source ID, target ID, and type; otherwise, False.
+        """
         if isinstance(other, Edge):
             return (
                 self.id == other.id

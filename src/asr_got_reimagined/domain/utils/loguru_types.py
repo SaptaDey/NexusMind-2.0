@@ -41,19 +41,26 @@ class Logger:
         ...
 
     def remove(self, handler_id: int) -> None:
-        """Remove a previously added handler."""
+        """
+        Removes a previously added logging handler by its identifier.
+        
+        Args:
+            handler_id: The integer ID of the handler to remove.
+        """
         ...
 
     def add(self, sink: Any, **kwargs: Any) -> int:
         """
-        Adds a new logging handler to the logger.
+        Adds a new logging handler (sink) to the logger.
+        
+        The sink determines where log messages are sent, such as a file, stream, or custom callable. Additional keyword arguments can be provided to configure the handler's behavior.
         
         Args:
-            sink: The destination for log messages, such as a file, stream, or callable.
-            **kwargs: Additional configuration options for the handler.
+            sink: The destination for log messages (e.g., file path, stream, or callable).
+            **kwargs: Optional configuration parameters for the handler.
         
         Returns:
-            An integer identifier for the added handler.
+            An integer ID representing the added handler, which can be used to remove it later.
         """
         ...
 
@@ -62,10 +69,10 @@ class Logger:
         self, exception: Callable[..., T]
     ) -> Callable[..., T]:  # T should be defined now
         """
-        Decorator that wraps a callable to automatically catch and log exceptions.
+        Decorator that wraps a callable to catch and log exceptions during its execution.
         
         Returns:
-            A callable with the same signature as the input, with exception handling added.
+            A callable with the same signature as the input, enhanced to log any exceptions raised.
         """
         ...  # type: ignore[empty-body]
 
@@ -84,28 +91,28 @@ class Logger:
         [Callable[..., T]], Callable[..., T]
     ]:  # Changed List to list, T should be defined
         """
-        Decorator that wraps a function to automatically catch and log specified exceptions.
+        Decorator that wraps a function to catch and log specified exceptions.
         
         Args:
-            exception: List of exception types to catch. Defaults to all exceptions.
-            default: Value to return if an exception is caught.
-            message: Optional log message to use when an exception is caught.
-            onerror: Optional callback invoked when an exception is caught.
-            level: Log level to use for the caught exception.
+            exception: List of exception types to catch. If not provided, all exceptions are caught.
+            default: Value to return if a caught exception occurs.
+            message: Log message to use when an exception is caught.
+            onerror: Callback invoked when an exception is caught.
+            level: Log level for the caught exception.
             reraise: If True, re-raises the exception after logging.
             exclude: List of exception types to ignore and not catch.
         
         Returns:
-            A decorator that wraps a function, catching and logging specified exceptions.
+            A decorator that wraps a function, catching and logging the specified exceptions.
         """
         ...  # type: ignore[empty-body]
 
     def catch(self, *args: Any, **kwargs: Any) -> Any:
         """
-        Decorator that catches exceptions raised by a function and logs them.
+        Decorator that wraps a function to catch and log exceptions.
         
         Returns:
-            The decorated function with exception handling and logging applied.
+            The decorated function with automatic exception handling and logging.
         """
         ...  # type: ignore[empty-body]
 

@@ -59,6 +59,11 @@ def close_neo4j_driver() -> None:
         logger.info("Closing Neo4j driver.")
         _driver.close()
         _driver = None
+    else:
+        logger.info("Neo4j driver is already closed or not initialized.")
+
+    import asyncio
+
     # --- Query Execution ---
     async def execute_query(
     query: str,
@@ -84,7 +89,7 @@ def close_neo4j_driver() -> None:
         ValueError: If an invalid tx_type is provided.
     """
     driver = get_neo4j_driver()  # Ensures driver is initialized
-    if not driver:
+    if not driver:  # Should not happen if get_neo4j_driver raises on failure
         logger.error("Neo4j driver not available. Cannot execute query.")
         raise ServiceUnavailable("Neo4j driver not initialized or connection failed.")
 
@@ -94,13 +99,12 @@ def close_neo4j_driver() -> None:
     records: List[Record] = []
 
     def _execute_sync_query() -> List[Record]:
-        # Synchronous I/O encapsulated here
         with driver.session(database=db_name) as session:
             logger.debug(f"Executing query on database '{db_name}' with type '{tx_type}': {query[:100]}...")
+
             @unit_of_work(timeout=30)  # Example timeout, adjust as needed
             def _transaction_work(tx: Transaction) -> List[Record]:
                 result: Result = tx.run(query, parameters)
-                # Materialize records within the transaction
                 return [record for record in result]
 
             if tx_type == "read":
@@ -120,14 +124,14 @@ def close_neo4j_driver() -> None:
     except Neo4jError as e:
         logger.error(f"Neo4j error executing Cypher query on database '{db_name}': {e}")
         logger.error(f"Query: {query}, Parameters: {parameters}")
-        raise
+        raise  # Re-raise the specific Neo4jError
     except ServiceUnavailable:
         logger.error(f"Neo4j service became unavailable while attempting to execute query on '{db_name}'.")
         raise
     except Exception as e:
         logger.error(f"Unexpected error executing Cypher query on database '{db_name}': {e}")
         logger.error(f"Query: {query}, Parameters: {parameters}")
-        raise
+        raise  # Re-raise any other unexpected exception
 
     return records
 

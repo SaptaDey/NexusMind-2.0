@@ -1,65 +1,52 @@
-import logging
 from typing import Any, Dict, List
+from src.asr_got_reimagined.infrastructure.database import execute_query
 
-from asr_got_reimagined.domain.database import execute_query
-
-logger = logging.getLogger(__name__)
-
-async def fetch_dimension_records(
-    query: str, params: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+async def fetch_dimension_records(params: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Fetch dimension records asynchronously using execute_query.
+    Fetch records from the dimension table based on provided parameters.
     """
-    logger.debug("Fetching dimension records with params: %s", params)
+    query = "SELECT * FROM dim_table WHERE id = :id"
     return await execute_query(query, params, tx_type="read")
 
 
-async def insert_fact_record(
-    record: Dict[str, Any]
-) -> None:
+async def fetch_fact_records(params: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Insert a fact record into the database.
+    Fetch records from the fact table based on provided parameters.
     """
-    logger.debug("Inserting fact record: %s", record)
-    await execute_query(
-        "INSERT INTO fact_table (id, value) VALUES (:id, :value)",
-        {"id": record["id"], "value": record["value"]},
-        tx_type="write",
-    )
+    query = "SELECT * FROM fact_table WHERE key = :key"
+    return await execute_query(query, params, tx_type="read")
 
 
-async def update_record_status(
-    record_id: int, status: str
-) -> None:
+async def upsert_processed_data(records: List[Dict[str, Any]]) -> None:
     """
-    Update the status field for a given record.
+    Upsert processed data into the processed_data table.
     """
-    logger.debug("Updating status for record_id=%s to %s", record_id, status)
-    await execute_query(
-        "UPDATE staging_table SET status = :status WHERE id = :id",
-        {"id": record_id, "status": status},
-        tx_type="write",
-    )
-
-
-async def run_stage(event: Dict[str, Any]) -> List[Dict[str, Any]]:
+    query = """
+    INSERT INTO processed_data (col1, col2, col3)
+    VALUES (:col1, :col2, :col3)
+    ON CONFLICT (col1) DO UPDATE
+      SET col2 = EXCLUDED.col2,
+          col3 = EXCLUDED.col3
     """
-    Main entry point for this pipeline stage.
+    for record in records:
+        await execute_query(query, record, tx_type="write")
+
+
+async def run_stage(params: Dict[str, Any]) -> None:
     """
-    # Fetch dimension records based on event filters
-    dim_records = await fetch_dimension_records(
-        "SELECT * FROM dim_table WHERE filter = :filter",
-        {"filter": event.get("filter_value")},
-    )
+    Orchestrate the full pipeline stage: fetch, process, and upsert data.
+    """
+    dim_records = await fetch_dimension_records(params)
+    fact_records = await fetch_fact_records(params)
 
-    # Process each record and insert into fact table
-    for rec in dim_records:
-        await insert_fact_record(rec)
+    # Example processing logic: combine dimension and fact records
+    processed: List[Dict[str, Any]] = []
+    for dim, fact in zip(dim_records, fact_records):
+        combined = {
+            "col1": dim.get("id"),
+            "col2": fact.get("value"),
+            "col3": True  # placeholder for additional processing
+        }
+        processed.append(combined)
 
-    # Optionally update statuses after processing
-    for rec in dim_records:
-        if rec.get("needs_update"):
-            await update_record_status(rec["id"], "processed")
-
-    return dim_records
+    await upsert_processed_data(processed)

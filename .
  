@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# cleanup_legacy_dirs.sh
+# Removes deprecated directories under git/ and verifies their removal.
+
+set -euo pipefail
+
+# Delete legacy directories
+rm -rf git/c__
+rm -rf git/simple_tests
+rm -rf git/test
+
+# Verify removal by listing remaining entries in git/
+echo "Remaining entries in git/:"
+ls -1 git

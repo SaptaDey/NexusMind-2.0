@@ -17,9 +17,9 @@ def bayesian_update_confidence(
     edge_type: Optional[EdgeType] = None,  # P1.10, P1.24, P1.25 for context
 ) -> ConfidenceVector:
     """
-    Performs a simplified Bayesian-inspired update on a confidence vector based on new evidence.
+    Performs a simplified Bayesian-inspired update on a confidence vector using new evidence.
     
-    The update adjusts each component of the confidence vector toward 1.0 if the evidence supports the hypothesis, or toward 0.0 if it contradicts, scaled by a weight derived from evidence strength, statistical power, and edge type. Returns a new confidence vector reflecting the updated values.
+    Each component of the confidence vector is adjusted toward 1.0 if the evidence supports the hypothesis, or toward 0.0 if it contradicts, with the adjustment scaled by a weight derived from evidence strength, statistical power, and edge type. Returns a new confidence vector with updated values.
     """
     # This is a highly simplified placeholder. True Bayesian updates involve likelihoods, priors, etc.
     # and updating probability distributions, not just scores.
@@ -70,9 +70,10 @@ def calculate_information_gain(
     prior_distribution: list[float], posterior_distribution: list[float]
 ) -> float:
     """
-    Calculates a simplified information gain between prior and posterior probability distributions.
+    Calculates the average absolute difference between prior and posterior probability distributions.
     
-    Returns the average absolute difference between corresponding elements of the two distributions. If the distributions differ in length, returns 0.0.
+    Returns:
+        The mean absolute change between corresponding elements of the two distributions, or 0.0 if their lengths differ.
     """
     # Simplified: sum of absolute changes in probability for now
     if len(prior_distribution) != len(posterior_distribution):

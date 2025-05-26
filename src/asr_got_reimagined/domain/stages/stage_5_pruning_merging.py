@@ -73,12 +73,6 @@ class PruningMergingStage(BaseStage):
         logger.error(f"Unexpected error during node pruning: {e}")
         return 0
 
-        except Neo4jError as e:
-            logger.error(f"Neo4j error during node pruning: {e}")
-            return 0
-        except Exception as e:
-            logger.error(f"Unexpected error during node pruning: {e}")
-            return 0
 
     async def _prune_isolated_nodes_in_neo4j(self) -> int:
         """Prunes isolated nodes (excluding ROOT) directly in Neo4j."""

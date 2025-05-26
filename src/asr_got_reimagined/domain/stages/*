@@ -5,7 +5,7 @@ async def fetch_dimension_records(params: Dict[str, Any]) -> List[Dict[str, Any]
     """
     Fetch records from the dimension table based on provided parameters.
     """
-    query = "SELECT * FROM dim_table WHERE id = :id"
+    query = "MATCH (d:Dimension {id: $id}) RETURN d"
     return await execute_query(query, params, tx_type="read")
 
 

@@ -31,65 +31,47 @@ class PruningMergingStage(BaseStage):
 
 
     async def _prune_low_confidence_impact_nodes_in_neo4j(self) -> int:
-        """Prunes nodes based on confidence and impact directly in Neo4j."""
-        # This query attempts to replicate the min_confidence_component logic.
-        # It assumes confidence components are stored as properties like 'confidence_empirical_support', etc.
-        # A more direct approach would be if an overall confidence or min_confidence was pre-calculated.
-        # For this example, we'll check if ALL known confidence components are below the threshold.
-        # This is a common simplification if min() over arbitrary properties isn't easy in Cypher.
-        # Or, fetch candidates and apply min() in Python, then batch delete.
-        # Let's try fetching and batch deleting for closer logic to original _should_prune_node
+        """Prunes nodes based on confidence and impact directly in Neo4j using optimized single query."""
         
-        fetch_query = """
+        # Single optimized query that filters and deletes in one operation
+        prune_query = """
         MATCH (n:Node)
-        WHERE NOT n:ROOT AND NOT n:DECOMPOSITION_DIMENSION 
-              AND (n.type = 'HYPOTHESIS' OR n.type = 'EVIDENCE' OR n.type = 'INTERDISCIPLINARY_BRIDGE') 
-              // Add other prunable types if necessary
-        RETURN n.id AS id,
-               n.confidence_empirical_support AS conf_emp,
-               n.confidence_theoretical_basis AS conf_theo,
-               n.confidence_methodological_rigor AS conf_meth,
-               n.confidence_consensus_alignment AS conf_cons,
-               n.metadata_impact_score AS impact_score
+        WHERE NOT n:ROOT
+          AND NOT n:DECOMPOSITION_DIMENSION
+          AND n.type IN ['HYPOTHESIS', 'EVIDENCE', 'INTERDISCIPLINARY_BRIDGE']
+          AND coalesce(
+                apoc.coll.min([
+                  coalesce(n.confidence_empirical_support, 1.0),
+                  coalesce(n.confidence_theoretical_basis, 1.0),
+                  coalesce(n.confidence_methodological_rigor, 1.0),
+                  coalesce(n.confidence_consensus_alignment, 1.0)
+                ]), 1.0
+              ) < $conf_thresh
+          AND coalesce(n.metadata_impact_score, 1.0) < $impact_thresh
+        DETACH DELETE n
+        RETURN count(n) AS pruned_count
         """
-        nodes_to_prune_ids: List[str] = []
         try:
-            candidate_nodes_data = execute_query(fetch_query, {}, tx_type="read")
-            if not candidate_nodes_data:
-                logger.info("No candidate nodes found for confidence/impact pruning.")
-                return 0
-
-            for record_data in candidate_nodes_data:
-                node_id = record_data["id"]
-                conf_values = [
-                    record_data.get("conf_emp", 1.0), # Default to non-prune if component missing
-                    record_data.get("conf_theo", 1.0),
-                    record_data.get("conf_meth", 1.0),
-                    record_data.get("conf_cons", 1.0)
-                ]
-                min_confidence_component = min(conf_values)
-                impact_score = record_data.get("impact_score", 1.0) # Default to non-prune
-
-                if (min_confidence_component < self.pruning_confidence_threshold and
-                    impact_score < self.pruning_impact_threshold):
-                    nodes_to_prune_ids.append(node_id)
-                    logger.debug(f"Node ID: {node_id} marked for pruning. Min Conf: {min_confidence_component:.2f}, Impact: {impact_score:.2f}")
-
-            if not nodes_to_prune_ids:
-                logger.info("No nodes met the criteria for confidence/impact pruning after evaluation.")
-                return 0
-
-            # Batch delete
-            delete_query = """
-            UNWIND $node_ids AS node_id
-            MATCH (n:Node {id: node_id})
-            DETACH DELETE n
-            """
-            # The execute_query tool doesn't directly return row counts for DETACH DELETE.
-            # We'll rely on the number of IDs we sent for deletion as the count.
-            execute_query(delete_query, {"node_ids": nodes_to_prune_ids}, tx_type="write")
-            logger.info(f"Pruned {len(nodes_to_prune_ids)} low-confidence/low-impact nodes from Neo4j.")
-            return len(nodes_to_prune_ids)
+            result = execute_query(
+                prune_query,
+                {
+                    "conf_thresh": self.pruning_confidence_threshold,
+                    "impact_thresh": self.pruning_impact_threshold
+                },
+                tx_type="write"
+            )
+            pruned_count = result[0]["pruned_count"] if result and result[0] else 0
+            if pruned_count > 0:
+                logger.info(f"Pruned {pruned_count} low-confidence/low-impact nodes from Neo4j using optimized query.")
+            else:
+                logger.info("No nodes met the criteria for confidence/impact pruning.")
+            return pruned_count
+        except Neo4jError as e:
+            logger.error(f"Neo4j error during node pruning: {e}")
+            return 0
+        except Exception as e:
+            logger.error(f"Unexpected error during node pruning: {e}")
+            return 0
 
         except Neo4jError as e:
             logger.error(f"Neo4j error during node pruning: {e}")

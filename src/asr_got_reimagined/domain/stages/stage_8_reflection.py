@@ -92,18 +92,18 @@ class ReflectionStage(BaseStage):
         RETURN n.metadata_bias_flags_json AS bias_flags_json
         """
         try:
-            results = execute_query(query, {}, tx_type="read")
+            results = await execute_query(query, {}, tx_type="read")
             flagged_nodes_count = 0
             high_severity_bias_count = 0
             if results:
                 flagged_nodes_count = len(results)
                 for record in results:
-                    bias_flags_list = json.loads(record["bias_flags_json"]) # Assuming it's a JSON string of a list of dicts
+                    bias_flags_list = json.loads(record["bias_flags_json"])  # Assuming it's a JSON string of a list of dicts
                     for flag_dict in bias_flags_list:
-                        bias_flag = BiasFlag(**flag_dict) # Parse into Pydantic model
+                        bias_flag = BiasFlag(**flag_dict)  # Parse into Pydantic model
                         if bias_flag.severity == "high":
                             high_severity_bias_count += 1
-            
+
             message = f"Found {flagged_nodes_count} nodes with bias flags. {high_severity_bias_count} have high severity."
             status = "FAIL" if high_severity_bias_count > self.max_high_severity_bias_nodes else ("WARNING" if flagged_nodes_count > 0 else "PASS")
             return AuditCheckResult(check_name="bias_flags_assessment", status=status, message=message)

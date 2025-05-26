@@ -21,6 +21,11 @@ class PruningMergingStage(BaseStage):
     stage_name: str = "PruningMergingStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the PruningMergingStage with pruning and merging thresholds from settings.
+        
+        Configures thresholds for node and edge pruning, as well as semantic overlap for merging, using values provided in the settings object.
+        """
         super().__init__(settings)
         # P1.5: Pruning and Merging thresholds from settings
         self.pruning_confidence_threshold = self.default_params.pruning_confidence_threshold
@@ -31,7 +36,12 @@ class PruningMergingStage(BaseStage):
 
 
     async def _prune_low_confidence_impact_nodes_in_neo4j(self) -> int:
-        """Prunes nodes based on confidence and impact directly in Neo4j."""
+        """
+        Prunes nodes from Neo4j whose minimum confidence component and impact score are below configured thresholds.
+        
+        Returns:
+            The number of nodes pruned from the database.
+        """
         # This query attempts to replicate the min_confidence_component logic.
         # It assumes confidence components are stored as properties like 'confidence_empirical_support', etc.
         # A more direct approach would be if an overall confidence or min_confidence was pre-calculated.
@@ -99,7 +109,12 @@ class PruningMergingStage(BaseStage):
             return 0
 
     async def _prune_isolated_nodes_in_neo4j(self) -> int:
-        """Prunes isolated nodes (excluding ROOT) directly in Neo4j."""
+        """
+        Removes isolated nodes (nodes with no relationships) from Neo4j, excluding those labeled as ROOT.
+        
+        Returns:
+            The number of nodes that were pruned.
+        """
         query = """
         MATCH (n:Node)
         WHERE NOT n:ROOT AND size((n)--()) = 0 
@@ -120,7 +135,12 @@ class PruningMergingStage(BaseStage):
             return 0
             
     async def _prune_low_confidence_edges_in_neo4j(self) -> int:
-        """Prunes edges with confidence below a threshold."""
+        """
+        Deletes edges from the Neo4j database whose confidence value is below the configured threshold.
+        
+        Returns:
+            The number of edges that were pruned.
+        """
         query = """
         MATCH ()-[r]->()
         WHERE r.confidence IS NOT NULL AND r.confidence < $threshold
@@ -142,9 +162,9 @@ class PruningMergingStage(BaseStage):
 
     async def _merge_nodes_in_neo4j(self) -> int:
         """
-        Placeholder for node merging directly in Neo4j.
-        Actual merging based on semantic similarity is complex and typically requires external computation.
-        This function will be a no-op for now, or implement a very simple merge if possible.
+        Placeholder for node merging in Neo4j.
+        
+        Currently, this method does not perform any merging due to the complexity of implementing semantic similarity-based merging directly in Cypher. Returns zero to indicate no nodes were merged.
         """
         # The original merging logic is heavily reliant on Python-based semantic similarity
         # and complex Pydantic model interactions, which are difficult to translate directly
@@ -167,6 +187,17 @@ class PruningMergingStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph removed
     ) -> StageOutput:
+        """
+        Executes the pruning and merging stage on the Neo4j graph.
+        
+        This method orchestrates the removal of low-confidence or low-impact nodes, isolated nodes, and low-confidence edges from the Neo4j database. It also invokes a placeholder for node merging. After processing, it collects and returns metrics summarizing the number of elements pruned or merged, as well as the remaining node and edge counts.
+        
+        Args:
+            current_session_data: The session data for the current processing run.
+        
+        Returns:
+            A StageOutput object containing a summary, metrics, and context update for the stage.
+        """
         self._log_start(current_session_data.session_id)
 
         total_nodes_pruned = 0

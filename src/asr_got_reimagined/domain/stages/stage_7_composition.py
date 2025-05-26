@@ -58,6 +58,9 @@ class CompositionStage(BaseStage):
     stage_name: str = "CompositionStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the CompositionStage with the provided settings and sets the citation style to Vancouver.
+        """
         super().__init__(settings)
         self.citation_style = "Vancouver"
 
@@ -66,6 +69,16 @@ class CompositionStage(BaseStage):
         extracted_subgraphs_data: List[LocalExtractedSubgraphData], # Changed type
         initial_query: str,
     ) -> str:
+        """
+        Generates an executive summary highlighting the main findings from extracted subgraphs.
+        
+        Args:
+            extracted_subgraphs_data: List of parsed subgraph data objects to summarize.
+            initial_query: The original query or research question analyzed.
+        
+        Returns:
+            A summary string referencing the initial query and key subgraph names.
+        """
         num_subgraphs = len(extracted_subgraphs_data)
         subgraph_names = [sg.name for sg in extracted_subgraphs_data] # Access .name from parsed object
         summary = (
@@ -82,6 +95,15 @@ class CompositionStage(BaseStage):
         self,
         node_dict: Dict[str, Any], # Changed from Node Pydantic object to dict
     ) -> tuple[str, Optional[CitationItem]]:
+        """
+        Formats a node dictionary as a textual claim and generates a corresponding citation.
+        
+        Args:
+            node_dict: Dictionary representing a node, including properties and labels.
+        
+        Returns:
+            A tuple containing the formatted claim string (with citation reference) and a CitationItem object.
+        """
         node_id = node_dict.get("id", "UnknownID")
         properties = node_dict.get("properties", {})
         node_label = properties.get("label", "Unknown Label")
@@ -118,6 +140,11 @@ class CompositionStage(BaseStage):
     async def _generate_section_from_subgraph_data( # Renamed and signature changed
         self, subgraph_data: LocalExtractedSubgraphData # Changed from ASRGoTGraph and ExtractedSubgraph
     ) -> tuple[OutputSection, List[CitationItem]]:
+        """
+        Generates an analytical section and associated citations from a subgraph's data.
+        
+        Examines nodes within the provided subgraph data to identify key claims based on node type, confidence, and impact score. Formats up to three top claims as key points, summarizes their relationships, and compiles relevant citations. If no high-impact nodes are found, notes the absence of specific claims. Returns the constructed section and a list of citations.
+        """
         section_title = f"Analysis: {subgraph_data.name.replace('_', ' ').title()}"
         content_parts: List[str] = [
             f"This section discusses findings from the '{subgraph_data.name}' subgraph, which focuses on: {subgraph_data.description}.\n"
@@ -187,6 +214,11 @@ class CompositionStage(BaseStage):
         return section, citations
 
     async def _generate_reasoning_trace_appendix_summary(self, session_data: GoTProcessorSessionData) -> str:
+        """
+        Generates a summary of the reasoning trace appendix from the session data.
+        
+        Iterates through the stage outputs trace in the session data and compiles a formatted summary listing each stage's number, name, summary, and duration.
+        """
         lines = ["Summary of Reasoning Trace Appendix:"]
         for trace_item in session_data.stage_outputs_trace:
             lines.append(f"  Stage {trace_item['stage_number']}. {trace_item['stage_name']}: {trace_item['summary']} ({trace_item.get('duration_ms', 'N/A')}ms)")
@@ -195,6 +227,17 @@ class CompositionStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph removed
     ) -> StageOutput:
+        """
+        Executes the composition stage to generate a structured analytical output from extracted subgraph data.
+        
+        Parses raw subgraph extraction results from the session context, validates and processes each subgraph, and generates an executive summary, output sections, and deduplicated citations. Handles cases where no valid subgraphs are available by producing a minimal output. Updates the session context with the composed output and returns a summary of the composition process.
+        
+        Args:
+            current_session_data: The current session's data, including accumulated context and the initial query.
+        
+        Returns:
+            A StageOutput object containing the composition summary, metrics, and updated context with the final composed output.
+        """
         self._log_start(current_session_data.session_id)
 
         subgraph_extraction_results_dict = current_session_data.accumulated_context.get(SubgraphExtractionStage.stage_name, {})

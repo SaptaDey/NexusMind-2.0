@@ -24,7 +24,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def check_health():
-    """Check if the NexusMind server is running by testing the health endpoint."""
+    """
+    Checks if the NexusMind server is operational by querying its health endpoint.
+    
+    Returns:
+        True if the server responds with HTTP 200 and valid health data; False otherwise.
+    """
     try:
         response = requests.get(HEALTH_ENDPOINT)
         if response.status_code == 200:
@@ -40,10 +45,10 @@ def check_health():
 
 def test_mcp_initialize():
     """
-    Sends an initialize request to the MCP endpoint to verify its availability.
+    Sends a JSON-RPC initialize request to the MCP endpoint to verify its responsiveness.
     
     Returns:
-        True if the MCP endpoint responds successfully with a result; False otherwise.
+        True if the MCP endpoint responds with HTTP 200 and a valid "result" field; False otherwise.
     """
     init_payload = {
         "jsonrpc": "2.0",
@@ -85,10 +90,9 @@ def test_mcp_initialize():
 
 def check_config_file():
     """
-    Validates the existence and structure of the MCP configuration file.
+    Checks whether the MCP configuration file exists and is correctly structured.
     
-    Checks if the configuration file exists, is valid JSON, and contains the required
-    'connection' and 'endpoint' fields with the expected endpoint value.
+    Validates that the configuration file is present, contains valid JSON, and includes a 'connection' object with an 'endpoint' field matching the expected MCP endpoint.
     
     Returns:
         True if the configuration file is present and valid; False otherwise.
@@ -126,7 +130,11 @@ def check_config_file():
         return False
 
 def display_instructions():
-    """Display instructions for connecting with Claude Desktop."""
+    """
+    Displays step-by-step instructions for connecting Claude Desktop to the NexusMind MCP server.
+    
+    The instructions include both importing the MCP configuration file and performing manual setup, along with a reference to the full documentation.
+    """
     logger.info("\n" + "=" * 60)
     logger.info("CLAUDE DESKTOP CONNECTION INSTRUCTIONS")
     logger.info("=" * 60)
@@ -148,9 +156,9 @@ def display_instructions():
 
 def main():
     """
-    Runs the NexusMind MCP setup process, performing server checks, configuration validation, and displaying connection instructions.
+    Runs the NexusMind MCP setup workflow, including server health checks, MCP endpoint testing, configuration validation, and connection instructions.
     
-    Executes a sequence of steps to verify server health, test the MCP endpoint, validate the MCP configuration file, and provide instructions for connecting Claude Desktop to the NexusMind server. Exits the program if the server is not running.
+    Performs a sequence of steps to ensure the NexusMind server is operational, the MCP endpoint is responsive, and the MCP configuration file is valid. Displays step-by-step instructions for connecting Claude Desktop. Exits the program if the server is not running.
     """
     logger.info("\n=== NexusMind MCP Setup ===\n")
 

@@ -38,6 +38,11 @@ class HypothesisStage(BaseStage):
     stage_name: str = "HypothesisStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the HypothesisStage with configuration parameters for hypothesis generation.
+        
+        Sets up minimum and maximum hypotheses per dimension, confidence values, default disciplinary tags, and default plan types based on provided settings.
+        """
         super().__init__(settings)
         self.k_min_hypotheses = self.default_params.hypotheses_per_dimension.min_hypotheses
         self.k_max_hypotheses = self.default_params.hypotheses_per_dimension.max_hypotheses
@@ -46,7 +51,11 @@ class HypothesisStage(BaseStage):
         self.default_plan_types_config = self.default_params.default_plan_types
 
     def _prepare_node_properties_for_neo4j(self, node_pydantic: Node) -> Dict[str, Any]:
-        """Converts a Node Pydantic model into a flat dictionary for Neo4j."""
+        """
+        Converts a Pydantic Node model into a flat dictionary of properties suitable for Neo4j storage.
+        
+        Serializes confidence fields and metadata, handling special types such as datetime, Enum, lists, sets, and nested Pydantic models. Non-serializable metadata fields are converted to strings as a fallback. Properties with None values are excluded from the result.
+        """
         if node_pydantic is None: return {}
         props = {"id": node_pydantic.id, "label": node_pydantic.label}
         if node_pydantic.confidence:
@@ -76,7 +85,14 @@ class HypothesisStage(BaseStage):
         return {k: v for k, v in props.items() if v is not None}
 
     def _prepare_edge_properties_for_neo4j(self, edge_pydantic: Edge) -> Dict[str, Any]:
-        """Converts an Edge Pydantic model into a flat dictionary for Neo4j."""
+        """
+        Converts an Edge Pydantic model into a flat dictionary of properties suitable for Neo4j storage.
+        
+        Serializes edge ID, confidence (if present), and metadata fields, handling special types such as datetime, Enum, lists, sets, dictionaries, and nested Pydantic models. Metadata fields are prefixed and serialized as JSON or string as needed. Properties with None values are excluded from the result.
+        
+        Returns:
+            A dictionary of edge properties formatted for Neo4j.
+        """
         if edge_pydantic is None: return {}
         props = {"id": edge_pydantic.id}
         if hasattr(edge_pydantic, 'confidence') and edge_pydantic.confidence is not None:
@@ -96,14 +112,16 @@ class HypothesisStage(BaseStage):
         self, dimension_label: str, dimension_tags: Set[str], hypo_index: int, initial_query: str
     ) -> dict[str, Any]:
         """
-        Generates the content dictionary for a single hypothesis.
+        Generates randomized metadata for a single hypothesis related to a given dimension.
+        
         Args:
-            dimension_label: Label of the dimension node.
-            dimension_tags: Disciplinary tags from the dimension node.
-            hypo_index: Index of the hypothesis for this dimension.
-            initial_query: The original query string.
+            dimension_label: The label of the dimension node this hypothesis is based on.
+            dimension_tags: Disciplinary tags associated with the dimension node.
+            hypo_index: The index of the hypothesis for this dimension.
+            initial_query: The original query string that prompted hypothesis generation.
+        
         Returns:
-            A dictionary for hypothesis metadata.
+            A dictionary containing hypothesis metadata, including a descriptive label, plan, falsification criteria, optional bias flags, impact score, and disciplinary tags.
         """
         base_hypothesis_text = f"Hypothesis {hypo_index + 1} regarding '{dimension_label}' for query '{initial_query[:30]}...'"
         plan_type = random.choice(self.default_plan_types_config)
@@ -138,6 +156,14 @@ class HypothesisStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph removed
     ) -> StageOutput:
+        """
+        Executes the hypothesis generation stage by creating hypothesis nodes and their relationships in Neo4j for each dimension node identified in the previous decomposition stage.
+        
+        For each dimension node, generates a random number of hypotheses within configured bounds, creates corresponding hypothesis nodes with metadata, and establishes GENERATES_HYPOTHESIS relationships from the dimension to each hypothesis in the Neo4j database. Handles missing dimensions and Neo4j errors gracefully, logging issues and skipping problematic entries.
+        
+        Returns:
+            StageOutput: Contains a summary, metrics on created nodes and relationships, and an updated context with all created hypothesis node IDs.
+        """
         self._log_start(current_session_data.session_id)
 
         decomposition_data = current_session_data.accumulated_context.get(DecompositionStage.stage_name, {})

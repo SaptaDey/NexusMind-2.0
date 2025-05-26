@@ -273,6 +273,33 @@ class EvidenceStage(BaseStage):
         evidence_strength: float, supports_hypothesis: bool, 
         statistical_power: Optional[StatisticalPower], edge_type: Optional[EdgeType]
     ) -> bool:
+        def _deserialize_tags(self, raw) -> Set[str]:
+        """
+        Safely deserialize disciplinary tags from JSON string, list, or None.
+        
+        Args:
+            raw: Input that could be a JSON string, list, or None
+            
+        Returns:
+            Set of string tags, empty set if parsing fails or input is None/empty
+        """
+        if raw is None:
+            return set()
+        
+        if isinstance(raw, str):
+            try:
+                parsed = json.loads(raw)
+                return set(parsed) if parsed else set()
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse disciplinary tags JSON: {raw}")
+                return set()
+        
+        # Handle list/iterable inputs
+        try:
+            return set(raw) if raw else set()
+        except (TypeError, ValueError):
+            logger.warning(f"Failed to convert disciplinary tags to set: {raw}")
+            return set()
         new_confidence_vec = bayesian_update_confidence(
             prior_confidence=prior_confidence, evidence_strength=evidence_strength,
             evidence_supports_hypothesis=supports_hypothesis, statistical_power=statistical_power, edge_type=edge_type
@@ -313,10 +340,10 @@ class EvidenceStage(BaseStage):
         self, evidence_node_data: Dict[str, Any], hypothesis_node_data: Dict[str, Any]
     ) -> Optional[str]:
         """Creates Interdisciplinary Bridge Node (IBN) in Neo4j if conditions met."""
-        hypo_tags_str = hypothesis_node_data.get("metadata_disciplinary_tags", [])
-        ev_tags_str = evidence_node_data.get("metadata_disciplinary_tags", [])
-        hypo_tags = set(json.loads(hypo_tags_str) if isinstance(hypo_tags_str, str) else hypo_tags_str) # Handle JSON string or list
-        ev_tags = set(json.loads(ev_tags_str) if isinstance(ev_tags_str, str) else ev_tags_str)
+        hypo_tags_raw = hypothesis_node_data.get("metadata_disciplinary_tags")
+        ev_tags_raw = evidence_node_data.get("metadata_disciplinary_tags")
+        hypo_tags = self._deserialize_tags(hypo_tags_raw)
+        ev_tags = self._deserialize_tags(ev_tags_raw)
 
 
         if not hypo_tags or not ev_tags or hypo_tags.intersection(ev_tags):

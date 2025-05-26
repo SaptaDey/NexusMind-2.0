@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Define the root git directory (assumed to be next to this script)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GIT_ROOT="$SCRIPT_DIR/git"
+
+echo "Starting cleanup of legacy directories in: $GIT_ROOT"
+
+# List of legacy directories to remove
+LEGACY_DIRS=(c__ simple_tests test)
+
+for DIR in "${LEGACY_DIRS[@]}"; do
+  TARGET="$GIT_ROOT/$DIR"
+  if [ -d "$TARGET" ]; then
+    echo "Removing directory: $TARGET"
+    rm -rf "$TARGET"
+  else
+    echo "Skipping, not found: $TARGET"
+  fi
+done
+
+echo
+echo "Final contents of $GIT_ROOT:"
+ls -1 "$GIT_ROOT"

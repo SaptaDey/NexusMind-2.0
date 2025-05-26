@@ -1,4 +1,5 @@
 import json
+import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional, Type, TypeVar, List, Set
@@ -166,7 +167,7 @@ class InitializationStage(BaseStage):
 
             else: # No existing ROOT node found, create one
                 logger.info("No existing ROOT node found in Neo4j. Creating a new one.")
-                new_root_node_id_internal = "n0" # Standard internal ID for new root node
+                new_root_node_id_internal = uuid.uuid4().hex # Unique ID to avoid collisions across sessions
                 
                 default_disciplines = set(operational_params.get(
                     "initial_disciplinary_tags", 

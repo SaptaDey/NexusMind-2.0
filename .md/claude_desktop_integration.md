@@ -58,11 +58,13 @@ If you encounter issues:
 
 ## Advanced Configuration
 
-For advanced users, you can modify the `claude_mcp_config.json` file to:
+The `config/claude_mcp_config.json` file is primarily used to define the NexusMind service for Claude Desktop. It specifies details like the service name, description, endpoint URL, and capabilities.
 
-- Change the parameters for the reasoning process
-- Adjust the level of detail in the responses
-- Configure how graph state information is displayed
+Parameters that control the reasoning process at runtime, such as:
+- The level of detail in responses (e.g., including the reasoning trace or full graph state)
+- Specific operational parameters for the ASR-GoT query (e.g., confidence thresholds, specific stages to run if that feature were implemented)
+
+are generally sent by the MCP client (Claude Desktop) as part of the `params` object in the JSON-RPC request to the `asr_got.query` method. For details on available query parameters, refer to the `MCPASRGoTQueryParams` schema defined in `src/asr_got_reimagined/api/schemas.py`. Modifying `claude_mcp_config.json` does not alter these runtime behaviors.
 
 ## Detailed Logging
 

@@ -20,11 +20,13 @@ if __name__ == "__main__":
         settings.app.port,
         settings.app.log_level,
     )
+    logger.info(f"Uvicorn reload mode: {settings.app.uvicorn_reload}")
+    logger.info(f"Uvicorn workers: {settings.app.uvicorn_workers}")
     uvicorn.run(
         "asr_got_reimagined.main:app",  # Path to the app instance
         host=settings.app.host,
         port=settings.app.port,
         log_level=settings.app.log_level.lower(),  # Uvicorn expects lowercase log level
-        reload=True,  # Enable reload for development, disable in production
-        # workers=4 # Example for production: number of worker processes
+        reload=settings.app.uvicorn_reload,  # Controlled by settings
+        workers=settings.app.uvicorn_workers,
     )

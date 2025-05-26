@@ -16,7 +16,6 @@ from src.asr_got_reimagined.api.schemas import (
     MCPInitializeResult,
     ShutdownParams,
 )
-from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
 from src.asr_got_reimagined.domain.services.got_processor import (
     GoTProcessor,
     GoTProcessorSessionData,
@@ -111,18 +110,6 @@ async def handle_asr_got_query(
             ):
                 if isinstance(session_data_result.graph_state, GraphStateSchema):
                     response_graph_state = session_data_result.graph_state
-                elif isinstance(
-                    session_data_result.graph_state, ASRGoTGraph
-                ) and hasattr(session_data_result.graph_state, "to_serializable_dict"):
-                    try:
-                        serializable_dict = (
-                            session_data_result.graph_state.to_serializable_dict()
-                        )
-                        response_graph_state = GraphStateSchema(**serializable_dict)
-                    except Exception as e_conv:
-                        logger.error(
-                            f"Failed to convert ASRGoTGraph to GraphStateSchema for session {session_data_result.session_id}: {e_conv}"
-                        )
                 elif isinstance(session_data_result.graph_state, dict):
                     try:
                         response_graph_state = GraphStateSchema(

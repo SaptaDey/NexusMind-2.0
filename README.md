@@ -17,7 +17,7 @@
 #### **Intelligent Scientific Reasoning through Graph-of-Thoughts**
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/SaptaDey/NexusMind/releases)
-[![Python](https://img.shields.io/badge/python-3.13.3-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache_2.0-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](Dockerfile)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688.svg)](https://fastapi.tiangolo.com)
@@ -33,7 +33,7 @@
 
 ## 🔍 Overview
 
-NexusMind leverages **graph structures** to perform sophisticated scientific reasoning. It implements the **Model Context Protocol (MCP)** to integrate with AI applications like Claude Desktop, providing an Advanced Scientific Reasoning Graph-of-Thoughts (ASR-GoT) framework designed for complex research tasks.
+NexusMind leverages a **Neo4j graph database** to perform sophisticated scientific reasoning, with graph operations managed within its pipeline stages. It implements the **Model Context Protocol (MCP)** to integrate with AI applications like Claude Desktop, providing an Advanced Scientific Reasoning Graph-of-Thoughts (ASR-GoT) framework designed for complex research tasks.
 
 **Key highlights:**
 - Process complex scientific queries using graph-based reasoning
@@ -143,8 +143,17 @@ The core reasoning process follows a sophisticated 8-stage pipeline:
   </table>
 </div>
 
+### Architectural Highlights
+
+NexusMind is built around a flexible 8-stage pipeline architecture, where each stage encapsulates specific reasoning logic. This design promotes modularity and clarity.
+
+-   **8-Stage Pipeline Design**: The core reasoning process is broken down into eight distinct stages, from initialization to reflection. Each stage has a well-defined responsibility.
+-   **Stage-Specific Logic and Neo4j Interaction**: Graph operations and interactions with the Neo4j database are primarily handled within individual stages. Each stage formulates and executes Cypher queries relevant to its task, utilizing `neo4j_utils` for database communication. This means the graph representation is persisted and manipulated directly within Neo4j.
+-   **Orchestration by `GoTProcessor`**: The `GoTProcessor` acts as the central orchestrator. It manages the flow through the 8-stage pipeline, invoking each stage in sequence. It does not manage a central graph object in memory; rather, it facilitates the overall process.
+-   **Data Flow Between Stages**: Data is passed between stages using `GoTProcessorSessionData` and `accumulated_context`. Each stage receives context from previous stages and can contribute its findings to the `accumulated_context`, which is then available to subsequent stages. This allows for a progressive build-up of insights as the pipeline executes.
+
 **Core Features:**
-- **🧠 Graph Knowledge Representation**: Uses `networkx` to model complex relationships with hyperedges and multi-layer networks
+- **🧠 Graph Knowledge Representation**: Utilizes a **Neo4j graph database** to model complex relationships. Graph interactions and manipulations are performed by individual pipeline stages using Cypher queries via `neo4j_utils`.
 - **🔄 Dynamic Confidence Vectors**: Four-dimensional confidence assessment (empirical support, theoretical basis, methodological rigor, consensus alignment)
 - **🌐 Interdisciplinary Bridge Nodes**: Automatically connects insights across different research domains
 - **🔗 Advanced Edge Types**: Supports causal, temporal, correlative, and custom relationship types
@@ -158,7 +167,7 @@ The core reasoning process follows a sophisticated 8-stage pipeline:
 <div align="center">
   <table>
     <tr>
-      <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" width="38" height="38"/><br>Python 3.13+</td>
+      <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" width="38" height="38"/><br>Python 3.11+</td>
       <td align="center"><img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" width="38" height="38"/><br>FastAPI</td>
       <td align="center"><img src="https://networkx.org/documentation/stable/_static/networkx_logo.svg" width="38" height="38"/><br>NetworkX</td>
       <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="38" height="38"/><br>Docker</td>
@@ -176,107 +185,126 @@ The core reasoning process follows a sophisticated 8-stage pipeline:
 
 ```
 NexusMind/
+├── 📁 .devcontainer/                     # VS Code Remote - Containers configuration
+│   └── devcontainer.json
+├── 📁 .github/                           # GitHub specific files (e.g., workflows)
+│   └── 📁 workflows/
+│       └── codeql.yml
+├── 📁 .md/                               # Markdown files for project documentation
+│   ├── CHANGELOG.md
+│   ├── CLAUDE_INTEGRATION.md
+│   ├── PYTHON_UPGRADE_SUMMARY.md
+│   └── claude_desktop_integration.md
 ├── 📁 config/                             # Configuration files
-│   ├── settings.yaml                      # Application settings
-│   ├── claude_mcp_config.json            # Claude MCP integration config
-│   └── logging.yaml                       # Logging configuration
+│   ├── settings.yaml                      # Main application settings
+│   └── claude_mcp_config.json            # Claude MCP integration config
 │
-├── 📁 src/asr_got_reimagined/            # Main source code
-│   ├── 📁 api/                           # API layer
-│   │   ├── 📁 routes/                    # API route definitions
-│   │   │   ├── mcp.py                    # MCP protocol endpoints
-│   │   │   ├── health.py                 # Health check endpoints
-│   │   │   └── graph.py                  # Graph query endpoints
-│   │   ├── schemas.py                    # API request/response schemas
-│   │   └── middleware.py                 # API middleware
-│   │
-│   ├── 📁 domain/                        # Core business logic
-│   │   ├── 📁 models/                    # Domain models
-│   │   │   ├── common.py                 # Common types and enums
-│   │   │   ├── graph_elements.py         # Node, Edge, Hyperedge models
-│   │   │   ├── graph_state.py            # Graph state management
-│   │   │   ├── confidence.py             # Confidence vector models
-│   │   │   └── metadata.py               # Metadata schemas
-│   │   │
-│   │   ├── 📁 services/                  # Business services
-│   │   │   ├── got_processor.py          # Main GoT processing service
-│   │   │   ├── evidence_service.py       # Evidence gathering and assessment
-│   │   │   ├── confidence_service.py     # Confidence calculation service
-│   │   │   ├── graph_service.py          # Graph manipulation service
-│   │   │   └── mcp_service.py            # MCP protocol service
-│   │   │
-│   │   ├── 📁 stages/                    # 8-Stage pipeline implementation
-│   │   │   ├── base_stage.py             # Abstract base stage
-│   │   │   ├── stage_1_initialization.py # Stage 1: Graph initialization
-│   │   │   ├── stage_2_decomposition.py  # Stage 2: Query decomposition
-│   │   │   ├── stage_3_hypothesis.py     # Stage 3: Hypothesis generation
-│   │   │   ├── stage_4_evidence.py       # Stage 4: Evidence integration
-│   │   │   ├── stage_5_pruning.py        # Stage 5: Pruning and merging
-│   │   │   ├── stage_6_extraction.py     # Stage 6: Subgraph extraction
-│   │   │   ├── stage_7_composition.py    # Stage 7: Answer composition
-│   │   │   └── stage_8_reflection.py     # Stage 8: Quality reflection
-│   │   │
-│   │   └── 📁 utils/                     # Utility functions
-│   │       ├── graph_utils.py            # Graph manipulation utilities
-│   │       ├── confidence_utils.py       # Confidence calculation utilities
-│   │       ├── statistical_utils.py      # Statistical analysis utilities
-│   │       ├── bias_detection.py         # Bias detection algorithms
-│   │       └── temporal_analysis.py      # Temporal pattern analysis
-│   │
-│   ├── 📁 infrastructure/                # Infrastructure layer
-│   │   ├── 📁 database/                  # Database integration
-│   │   ├── 📁 cache/                     # Caching layer
-│   │   └── 📁 external/                  # External service integrations
-│   │
-│   ├── main.py                           # Application entry point
-│   └── app_setup.py                      # Application setup and configuration
+├── 📁 docs/                              # Project documentation
+│   ├── 📁 examples/                      # Example files
+│   │   └── initialize_request.json
+│   ├── 📁 setup/                         # Setup related documentation
+│   │   └── neo4j_windows_wsl2_docs.md
+│   └── 📁 testing/                       # Testing related documentation
+│       └── testing_strategy_and_example.md
+│
+├── 📁 scripts/                           # Utility and helper scripts
+│   ├── add_evidence_types.py
+│   ├── add_type_annotations.py
+│   ├── add_type_hints.py
+│   ├── extract_clean_stage4.py
+│   ├── fix_imports.py
+│   ├── fix_indentation.py
+│   ├── fix_stage4_evidence.py
+│   └── 📁 profiling/
+│       ├── analyze_profile.py
+│       └── profile_runner.py
+│
+├── 📁 src/                                # Source code
+│   └── 📁 asr_got_reimagined/            # Main application package
+│       ├── 📁 api/                       # API layer (FastAPI)
+│       │   ├── 📁 routes/                # API route definitions
+│       │   │   ├── __init__.py
+│       │   │   └── mcp.py                # MCP protocol endpoints
+│       │   ├── __init__.py
+│       │   └── schemas.py                # API request/response Pydantic schemas
+│       │
+│       ├── 📁 domain/                    # Core business logic and domain models
+│       │   ├── 📁 models/                # Pydantic models for domain entities
+│       │   │   ├── __init__.py
+│       │   │   ├── common.py
+│       │   │   ├── common_types.py
+│       │   │   └── graph_elements.py
+│       │   ├── 📁 services/              # Business logic services
+│       │   │   ├── __init__.py
+│       │   │   ├── got_processor.py      # Main Graph-of-Thoughts processing service
+│       │   │   └── neo4j_utils.py        # Neo4j database utilities
+│       │   ├── 📁 stages/                # 8-Stage GoT pipeline implementation
+│       │   │   ├── __init__.py
+│       │   │   ├── base_stage.py
+│       │   │   ├── stage_1_initialization.py
+│       │   │   ├── stage_2_decomposition.py
+│       │   │   ├── stage_3_hypothesis.py
+│       │   │   ├── stage_4_evidence.py
+│       │   │   ├── stage_5_pruning_merging.py
+│       │   │   ├── stage_6_subgraph_extraction.py
+│       │   │   ├── stage_7_composition.py
+│       │   │   └── stage_8_reflection.py
+│       │   ├── 📁 utils/                 # Utility functions for domain logic
+│       │   │   ├── __init__.py
+│       │   │   ├── graph_analysis_helpers.py
+│       │   │   ├── graph_analysis_neo4j.py
+│       │   │   ├── loguru_types.py
+│       │   │   ├── math_helpers.py
+│       │   │   └── metadata_helpers.py
+│       │   └── __init__.py
+│       │
+│       ├── 📁 loguru-stubs/              # Type stubs for Loguru
+│       │   └── __init__.pyi
+│       ├── __init__.py
+│       ├── app_setup.py                  # FastAPI application setup and configuration
+│       ├── config.py                     # Pydantic settings configuration
+│       └── main.py                       # Application entry point (Uvicorn runner)
 │
 ├── 📁 tests/                             # Test suite
-│   ├── 📁 unit/                          # Unit tests
-│   │   ├── 📁 stages/                    # Stage-specific tests
-│   │   ├── 📁 services/                  # Service tests
-│   │   └── 📁 models/                    # Model tests
 │   ├── 📁 integration/                   # Integration tests
-│   └── 📁 fixtures/                      # Test fixtures and data
+│   │   └── 📁 api/                       # API specific integration tests
+│   │       ├── 📁 data/
+│   │       │   └── test_query.json
+│   │       ├── socket_test.py
+│   │       ├── test_http_mcp.py
+│   │       ├── test_mcp_endpoints.py
+│   │       ├── test_request.py
+│   │       └── test_server.py
+│   └── __init__.py
 │
-├── 📁 scripts/                           # Utility scripts
-│   ├── setup_dev.py                      # Development setup
-│   ├── add_type_hints.py                 # Type hint utilities
-│   └── deployment/                       # Deployment scripts
-│
-├── 📁 docs/                              # Documentation
-│   ├── api/                              # API documentation
-│   ├── architecture/                     # Architecture diagrams
-│   └── examples/                         # Usage examples
-│
-├── 📁 static/                            # Static assets
-│   └── nexusmind-logo.png               # Application logo
-│
-├── 📄 Docker Files & Config
 ├── Dockerfile                            # Docker container definition
-├── docker-compose.yml                   # Multi-container setup
+├── docker-compose.yml                    # Docker Compose for development
+├── docker-compose.prod.yml               # Docker Compose for production
 ├── .dockerignore                         # Docker ignore patterns
-│
-├── 📄 Configuration Files
-├── pyproject.toml                        # Python project configuration
-├── poetry.lock                           # Dependency lock file
-├── mypy.ini                              # Type checking configuration
-├── pyrightconfig.json                    # Python type checker config
-├── .pre-commit-config.yaml              # Pre-commit hooks
 ├── .gitignore                            # Git ignore patterns
-│
-└── 📄 Documentation
-    ├── README.md                         # This file
-    ├── CHANGELOG.md                      # Version history
-    ├── LICENSE                           # Apache 2.0 license
-    └── CONTRIBUTING.md                   # Contribution guidelines
+├── mypy.ini                              # MyPy type checking configuration
+├── poetry.lock                           # Poetry dependency lock file
+├── pyproject.toml                        # Python project configuration (Poetry)
+├── pyrightconfig.json                    # Pyright type checker configuration
+├── README.md                             # This file
+└── setup_claude_connection.py            # Script for Claude Desktop connection setup (manual run)
 ```
 
 ## 🚀 Getting Started
 
+### Deployment Prerequisites
+
+Before running NexusMind (either locally or via Docker if not using the provided `docker-compose.prod.yml` which includes Neo4j), ensure you have:
+
+-   **A running Neo4j Instance**: NexusMind requires a connection to a Neo4j graph database.
+    -   **APOC Library**: Crucially, the Neo4j instance **must** have the APOC (Awesome Procedures On Cypher) library installed. Several Cypher queries within the application's reasoning stages utilize APOC procedures (e.g., `apoc.create.addLabels`, `apoc.merge.node`). Without APOC, the application will not function correctly.
+    -   **Configuration**: Ensure that your `config/settings.yaml` (or corresponding environment variables) correctly points to your Neo4j instance URI, username, and password.
+
+    *Note: The provided `docker-compose.yml` (for development) and `docker-compose.prod.yml` (for production) already include a Neo4j service with the APOC library pre-configured, satisfying this requirement when using Docker Compose.*
+
 ### Prerequisites
 
-- **Python 3.13+** (Docker image uses Python 3.13.3-slim-bookworm)
+- **Python 3.11+** (as specified in `pyproject.toml`, e.g., the Docker image uses Python 3.11.x or 3.12.x, 3.13.x)
 - **[Poetry](https://python-poetry.org/docs/#installation)**: For dependency management
 - **[Docker](https://www.docker.com/get-started)** and **[Docker Compose](https://docs.docker.com/compose/install/)**: For containerized deployment
 
@@ -388,6 +416,10 @@ graph TB
    docker-compose -f docker-compose.prod.yml up --build -d
    ```
 
+### Notes on Specific Deployment Platforms
+
+-   **Smithery.ai**: Deployment to the Smithery.ai platform was not specifically investigated as part of this project due to the inability to access detailed platform specifications. Users intending to deploy NexusMind to Smithery.ai should consult the platform's specific documentation and adapt the standard Docker deployment practices as needed. The provided `Dockerfile` and `docker-compose.prod.yml` serve as a baseline for containerized deployment.
+
 4. **Access the Services**:
    - **API Documentation**: `http://localhost:8000/docs`
    - **Health Check**: `http://localhost:8000/health`
@@ -395,62 +427,39 @@ graph TB
 
 ## 🔌 API Endpoints
 
-### Core Endpoints
+The primary API endpoints exposed by NexusMind are:
 
-- **MCP Protocol**: `POST /mcp`
-  ```json
-  {
-    "method": "process_query",
-    "params": {
-      "query": "Analyze the relationship between microbiome diversity and cancer progression",
-      "confidence_threshold": 0.7,
-      "max_stages": 8
+- **MCP Protocol Endpoint**: `POST /mcp`
+  - This endpoint is used for communication with MCP clients like Claude Desktop.
+  - Example Request for the `asr_got.query` method:
+    ```json
+    {
+      "jsonrpc": "2.0",
+      "method": "asr_got.query",
+      "params": {
+        "query": "Analyze the relationship between microbiome diversity and cancer progression.",
+        "parameters": {
+          "include_reasoning_trace": true,
+          "include_graph_state": false
+        }
+      },
+      "id": "123"
     }
-  }
-  ```
+    ```
+  - Other supported MCP methods include `initialize` and `shutdown`.
 
-- **Health Check**: `GET /health`
-  ```json
-  {
-    "status": "healthy",
-    "version": "0.1.0",
-    "timestamp": "2024-05-23T10:30:00Z"
-  }
-  ```
-
-### Advanced Endpoints
-
-- **Graph Query**: `POST /api/v1/graph/query`
-  ```json
-  {
-    "query": "Research question or hypothesis",
-    "parameters": {
-      "disciplines": ["immunology", "oncology"],
-      "confidence_threshold": 0.6,
-      "include_temporal_analysis": true,
-      "enable_bias_detection": true
+- **Health Check Endpoint**: `GET /health`
+  - Provides a simple health status of the application.
+  - Example Response:
+    ```json
+    {
+      "status": "healthy",
+      "version": "0.1.0" 
     }
-  }
-  ```
+    ```
+    *(Note: The timestamp field shown previously is not part of the current health check response.)*
 
-- **Graph State**: `GET /api/v1/graph/{session_id}`
-  - Retrieve current state of a reasoning graph
-  - Includes confidence scores, node relationships, and metadata
-
-- **Analytics**: `GET /api/v1/analytics/{session_id}`
-  - Get comprehensive metrics about the reasoning process
-  - Includes performance stats, confidence trends, and quality measures
-
-- **Subgraph Extraction**: `POST /api/v1/graph/{session_id}/extract`
-  ```json
-  {
-    "criteria": {
-      "min_confidence": 0.7,
-      "node_types": ["hypothesis", "evidence"],
-      "include_causal_chains": true
-    }
-  }
-  ```
+The advanced API endpoints previously listed (e.g., `/api/v1/graph/query`) are not implemented in the current version and are reserved for potential future development.
 
 ## 🧪 Testing & Quality Assurance
 
@@ -521,34 +530,80 @@ poetry run pre-commit run --all-files       # Run all hooks
 
 ### Application Settings (`config/settings.yaml`)
 
+The application settings are managed via `config/settings.yaml` and can be overridden by environment variables. Below is an illustrative example of the YAML structure, reflecting the Pydantic models in `src/asr_got_reimagined/config.py`.
+
 ```yaml
-# Core application settings
+# Core application settings (corresponds to AppSettings in config.py)
 app:
   name: "NexusMind"
   version: "0.1.0"
-  debug: false
-  log_level: "INFO"
+  # debug: false # Optional: Corresponds to APP_DEBUG environment variable if used.
+  log_level: "INFO" # Corresponds to APP_LOG_LEVEL or LOG_LEVEL.
+  host: "0.0.0.0"   # Corresponds to APP_HOST.
+  port: 8000        # Corresponds to APP_PORT.
+  
+  # Uvicorn server settings (can be overridden by environment variables)
+  uvicorn_reload: true # For development. Set to false in production (APP_UVICORN_RELOAD).
+  uvicorn_workers: 1   # Number of worker processes (APP_UVICORN_WORKERS).
 
-# API configuration
-api:
-  host: "0.0.0.0"
-  port: 8000
-  cors_origins: ["*"]
-  
-# ASR-GoT Framework settings
+  # CORS settings (can be overridden by environment variable)
+  # Example: "http://localhost:3000,https://your.frontend.domain"
+  # Set to "*" to allow all origins (default).
+  cors_allowed_origins_str: "*" # Corresponds to APP_CORS_ALLOWED_ORIGINS_STR.
+
+# ASR-GoT Framework settings (corresponds to ASRGoTConfig in config.py)
+# These are typically nested under 'asr_got.default_parameters' in the actual settings object.
 asr_got:
-  max_stages: 8
-  default_confidence_threshold: 0.6
-  enable_bias_detection: true
-  enable_temporal_analysis: true
-  max_hypotheses_per_dimension: 5
+  default_parameters: # Corresponds to ASRGoTDefaultParams
+    initial_confidence: [0.9, 0.9, 0.9, 0.9]
+    # Example for a nested object like 'hypotheses_per_dimension':
+    # hypotheses_per_dimension:
+    #   min: 2
+    #   max: 4 
+    pruning_confidence_threshold: 0.2
+    # ... other ASRGoTDefaultParams fields can be set here.
   
-# Graph settings
-graph:
-  max_nodes: 10000
-  enable_hyperedges: true
-  enable_multi_layer: true
-  temporal_decay_factor: 0.1
+  layers: # Example layer definition
+    root_layer:
+      description: "The initial layer where the query is processed."
+    # ... other layer definitions can be added here.
+
+# MCP Server Settings (corresponds to MCPSettings in config.py)
+mcp_settings:
+  protocol_version: "2024-11-05"
+  server_name: "NexusMind MCP Server"
+  server_version: "0.1.0" # Matches app.version by default.
+  vendor_name: "AI Research Group"
+  # ... other mcp_settings fields can be set here.
+
+# Optional Claude API integration (corresponds to ClaudeAPIConfig in config.py)
+# claude_api:
+#   api_key: "your_claude_api_key_here_or_use_env_var" # Example: "env:CLAUDE_API_KEY"
+#   default_model: "claude-3-opus-20240229"
+#   timeout_seconds: 120
+#   max_retries: 2
+#
+#   Important Note on Claude API Settings:
+#   The 'claude_api' section above is for an *optional, direct Claude API integration*.
+#   This is NOT required for the primary functionality of NexusMind, which is to connect
+#   with Claude Desktop via the Model Context Protocol (MCP). For standard MCP-based
+#   integration with Claude Desktop, you do NOT need to provide your own Claude API keys.
+#   These settings would only be used if you intend to extend NexusMind to make direct
+#   calls to the Claude API, bypassing the MCP client.
+
+# Knowledge Domains (corresponds to a list of KnowledgeDomain models in config.py)
+# knowledge_domains:
+#   - name: "Immunology"
+#     keywords: ["immune system", "antibodies", "T-cells"]
+#     description: "The study of the immune system."
+#   - name: "Oncology"
+#     keywords: ["cancer", "tumor", "chemotherapy"]
+#     description: "The study and treatment of tumors."
+
+# Note: The actual settings structure is defined by Pydantic models in src/asr_got_reimagined/config.py.
+# Environment variables (e.g., APP__PORT=8001) can override these YAML values.
+# For nested structures, use double underscores for environment variables 
+# (e.g., ASR_GOT__DEFAULT_PARAMETERS__INITIAL_CONFIDENCE='[0.8,0.8,0.8,0.8]').
 ```
 
 ### MCP Configuration (`config/claude_mcp_config.json`)

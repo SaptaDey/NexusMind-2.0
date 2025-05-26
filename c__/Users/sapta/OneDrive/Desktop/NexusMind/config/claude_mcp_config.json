@@ -1,7 +1,0 @@
-# Updated configuration for Claude MCP
-{
-  "server": "localhost",
-  "port": 8000,
-  "protocol": "mcp",
-  "timeout": 30
-}

@@ -91,6 +91,9 @@ class AppSettings(BaseModel):
         default=8000
     )  # Can be overridden by APP__PORT environment variable
     log_level: str = Field(default="INFO")
+    cors_allowed_origins_str: str = Field(default="*", alias="APP_CORS_ALLOWED_ORIGINS_STR", description="Comma-separated list of allowed CORS origins, or '*' for all.")
+    uvicorn_reload: bool = Field(default=True, alias="APP_UVICORN_RELOAD", description="Enable Uvicorn auto-reload (True for dev, False for prod).")
+    uvicorn_workers: int = Field(default=1, alias="APP_UVICORN_WORKERS", description="Number of Uvicorn workers (e.g., (2 * CPU_CORES) + 1). Default is 1.")
     # debug: bool = False
 
 

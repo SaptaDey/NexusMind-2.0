@@ -48,10 +48,9 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """
     Creates and configures the FastAPI application with logging, CORS, health check, and routing.
-    
 
     Initializes the logger, sets up CORS middleware based on allowed origins from settings, attaches a GoTProcessor instance to the application state, defines a health check endpoint, and mounts the MCP router.
-    
+
     Returns:
         The configured FastAPI application instance.
     """
@@ -88,14 +87,14 @@ def create_app() -> FastAPI:
         allowed_origins = ["*"]
     else:
         allowed_origins = [origin.strip() for origin in allowed_origins_str.split(',') if origin.strip()]
-        if not allowed_origins: # Default if empty or only whitespace after split
+        if not allowed_origins:  # Default if empty or only whitespace after split
             logger.warning("APP_CORS_ALLOWED_ORIGINS_STR was not '*' and parsed to empty list. Defaulting to ['*'].")
-            allowed_origins = ["*"] # Default to all if configuration is invalid or empty
+            allowed_origins = ["*"]  # Default to all if configuration is invalid or empty
 
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins, # Use the parsed list
+        allow_origins=allowed_origins,  # Use the parsed list
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
         allow_headers=["*"],
@@ -107,7 +106,7 @@ def create_app() -> FastAPI:
     async def health_check():
         """
         Handles the /health endpoint to report application health status.
-        
+
         Returns:
             A JSON object containing the application's health status and version.
         """

@@ -87,9 +87,22 @@ def get_degree_centrality_gds(graph_name: str, node_label_filter: Optional[str] 
     config_parts.append(f"orientation: '{orientation.upper()}'") # Ensure orientation is upper, though GDS might be flexible
     
     config_str = ", ".join(config_parts)
-    
     # We use gds.util.asNode(nodeId).id to get our application-specific ID property
-    cypher_query = f"CALL gds.degree.stream($graph_name, {{{config_str}}}) YIELD nodeId, score RETURN gds.util.asNode(nodeId).id AS nodeId, score"
+-   config_str = ", ".join(config_parts)
+-   cypher_query = f"CALL gds.degree.stream($graph_name, {{{config_str}}}) YIELD nodeId, score RETURN gds.util.asNode(nodeId).id AS nodeId, score"
++   # Build a parameterized config map instead of inlining
++   config = {
++       "orientation": orientation.upper(),
++   }
++   if node_label_filter:
++       config["nodeLabels"] = [node_label_filter]
++
++   cypher_query = (
++       "CALL gds.degree.stream($graph_name, $config) "
++       "YIELD nodeId, score "
++       "RETURN gds.util.asNode(nodeId).id AS nodeId, score"
++   )
++   params_for_query = {"graph_name": graph_name, "config": config}
     logger.debug(f"Conceptual GDS degree centrality query: {cypher_query}")
     
     # In a real implementation:
@@ -101,7 +114,7 @@ def get_degree_centrality_gds(graph_name: str, node_label_filter: Optional[str] 
     #     # cypher_query = "CALL gds.degree.stream($graph_name, $config) YIELD nodeId, score RETURN gds.util.asNode(nodeId).id AS nodeId, score"
     #     # params = {"graph_name": graph_name, "config": {"nodeLabels": [node_label_filter], "orientation": orientation}}
     #     # For now, using f-string formatted query for conceptual clarity.
-    #     results = execute_query(cypher_query, params=params_for_query if node_label_filter else {"graph_name":graph_name}) 
+    #     results = execute_query(cypher_query, params=params_for_query)
     #     logger.info(f"Successfully fetched degree centrality for {len(results)} nodes from GDS graph '{graph_name}'.")
     #     return results 
     # except Exception as e:

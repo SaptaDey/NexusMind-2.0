@@ -1,69 +1,105 @@
 #!/usr/bin/env python3
 """
-This script fixes indentation issues in Python files by re-formatting them.
+fix_indentation.py
+
+Refactors Python files to replace tabs with spaces, remove trailing whitespace,
+and provide optional dry-run and multi-directory support.
 """
 import os
 import sys
+import argparse
+import logging
+from pathlib import Path
+from multiprocessing import Pool
+from tqdm import tqdm
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Fix indentation: replace tabs with spaces and strip trailing whitespace.'
+    )
+    parser.add_argument(
+        'dirs', nargs='*', default=['src'],
+        help='Directories to scan (default: src)'
+    )
+    parser.add_argument(
+        '--check', action='store_true',
+        help='Report files that would be modified without writing changes.'
+    )
+    parser.add_argument(
+        '--jobs', type=int, default=1,
+        help='Number of parallel worker processes (default: 1).'
+    )
+    parser.add_argument(
+        '--log-level', default='INFO',
+        choices=['DEBUG','INFO','WARNING','ERROR'],
+        help='Set logging level (default: INFO).'
+    )
+    return parser.parse_args()
 
-def fix_indentation_issues(filepath: str) -> None:
-    """
-    Reformats a Python file to replace tabs with spaces and remove trailing whitespace.
-    
-    Reads the file at the given path, replaces all tab characters with four spaces, strips trailing whitespace from each line, and writes the cleaned content back to the file.
-    """
+def fix_indentation_issues(filepath: Path, check_only: bool=False) -> bool:
     try:
-        with open(filepath, encoding='utf-8') as file:
-            lines = file.readlines()
-
-        # Remove any odd spacing and control characters
+        text = filepath.read_text(encoding='utf-8')
         cleaned_lines = []
-        for line in lines:
-            # Replace tabs with 4 spaces
-            cleaned_line = line.replace('\t', '    ')
-            # Remove trailing whitespace
-            cleaned_line = cleaned_line.rstrip() + '\n'
-            cleaned_lines.append(cleaned_line)
-
-        # Write the fixed content back
-        with open(filepath, 'w', encoding='utf-8') as file:
-            file.writelines(cleaned_lines)
-
-        print(f"Fixed indentation in {filepath}")
+        changed = False
+        for line in text.splitlines(keepends=True):
+            new_line = line.replace('\t', '    ').rstrip() + '\n'
+            if new_line != line:
+                changed = True
+            cleaned_lines.append(new_line)
+        if changed:
+            if not check_only:
+                filepath.write_text(''.join(cleaned_lines), encoding='utf-8')
+            logging.info(
+                '%s %s', 'Would modify' if check_only else 'Modified', filepath
+            )
+        return changed
     except Exception as e:
-        print(f"Error processing {filepath}: {e}")
+        logging.error('Error processing %s: %s', filepath, e)
+        return False
 
-
-def find_python_files(start_dir: str):
-    """Find all Python files in the given directory and its subdirectories."""
-    for root, _, files in os.walk(start_dir):
-        for file in files:
-            if file.endswith('.py'):
-                yield os.path.join(root, file)
-
+def collect_python_files(directories):
+    for d in directories:
+        base = Path(d)
+        if not base.exists():
+            logging.warning('Directory not found: %s', base)
+            continue
+        for filepath in base.rglob('*.py'):
+            yield filepath
 
 def main():
-    """
-    Scans all Python files in the project's 'src' directory and fixes their indentation.
-    
-    Determines the base directory from the first command-line argument or defaults to the script's parent directory. If the 'src' directory exists, applies indentation fixes to all Python files within it and its subdirectories.
-    """
-    # Get the base directory of the project
-    if len(sys.argv) > 1:
-        base_dir = sys.argv[1]
-    else:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    args = parse_args()
+    logging.basicConfig(level=args.log_level, format='%(levelname)s: %(message)s')
+    files = list(collect_python_files(args.dirs))
+    results = []
+    with Pool(args.jobs) as pool:
+        for changed in tqdm(pool.imap_unordered(
+            lambda f: fix_indentation_issues(f, args.check), files
+        ), total=len(files), desc='Fixing indentation'):
+            results.append(changed)
+    total_modified = sum(results)
+    logging.info('Total files %s: %d/%d',
+                 'to change' if args.check else 'modified',
+                 total_modified, len(files))
 
-    src_dir = os.path.join(base_dir, 'src')
+if __name__ == '__main__':
+    main()
+    logging.basicConfig(level=args.log_level, format='%(levelname)s: %(message)s')
+    files = list(collect_python_files(args.dirs))
+    results = []
+    with Pool(args.jobs) as pool:
+        for changed in tqdm(
+            pool.imap_unordered(lambda f: fix_indentation_issues(f, args.check), files),
+            total=len(files),
+            desc='Fixing indentation'
+        ):
+            results.append(changed)
+    total_modified = sum(results)
+    logging.info(
+        'Total files %s: %d/%d',
+        'to change' if args.check else 'modified',
+        total_modified,
+        len(files)
+    )
 
-    if not os.path.exists(src_dir):
-        print(f"Error: Source directory '{src_dir}' not found.")
-        return
-
-    # Process each Python file
-    for python_file in find_python_files(src_dir):
-        fix_indentation_issues(python_file)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

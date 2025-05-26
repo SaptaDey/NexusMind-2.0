@@ -31,9 +31,9 @@ def get_neo4j_driver() -> Driver:
     """
     Initializes and returns a Neo4j driver instance using a singleton pattern.
     Handles authentication using configured credentials.
-    """
     global _driver
-    if _driver is None or not _driver.closed(): # Check if driver is None or closed
+    # Create a driver only if one doesn't yet exist or has been closed
+    if _driver is None or _driver.closed():
         settings = get_neo4j_settings()
         logger.info(f"Initializing Neo4j driver for URI: {settings.uri}")
         try:

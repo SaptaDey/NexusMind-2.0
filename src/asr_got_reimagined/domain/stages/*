@@ -22,11 +22,8 @@ async def upsert_processed_data(records: List[Dict[str, Any]]) -> None:
     Upsert processed data into the processed_data table.
     """
     query = """
-    INSERT INTO processed_data (col1, col2, col3)
-    VALUES (:col1, :col2, :col3)
-    ON CONFLICT (col1) DO UPDATE
-      SET col2 = EXCLUDED.col2,
-          col3 = EXCLUDED.col3
+    MERGE (p:ProcessedData {col1: $col1})
+    SET p.col2 = $col2, p.col3 = $col3
     """
     for record in records:
         await execute_query(query, record, tx_type="write")

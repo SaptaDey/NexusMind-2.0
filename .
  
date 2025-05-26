@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -e
+
+# Define the base directory relative to this script
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/git"
+
+echo "Starting cleanup in: $BASE_DIR"
+
+# List of legacy directories to remove
+for DIR in c__ simple_tests test; do
+  TARGET="$BASE_DIR/$DIR"
+  if [ -d "$TARGET" ]; then
+    echo "Removing directory: $TARGET"
+    rm -rf "$TARGET"
+  else
+    echo "Skipping; not found: $TARGET"
+  fi
+done
+
+echo
+echo "Cleanup complete. Remaining items in $BASE_DIR:"
+ls -1 "$BASE_DIR"

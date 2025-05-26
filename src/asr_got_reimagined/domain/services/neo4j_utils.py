@@ -3,12 +3,13 @@ from neo4j.exceptions import Neo4jError, ServiceUnavailable
 from typing import Optional, Any, List, Dict, Callable
 from loguru import logger
 from pydantic_settings import BaseSettings
+from pydantic import Field
 
 # --- Configuration ---
 class Neo4jSettings(BaseSettings):
     uri: str = "neo4j://localhost:7687"
     user: str = "neo4j"
-    password: str = "password"
+    password: str = Field(..., env="NEO4J_PASSWORD")
     database: str = "neo4j"  # Default database for operations if not specified per query
 
     class Config:

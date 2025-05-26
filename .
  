@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# cleanup_git_directories.sh
+# Removes legacy directories under the git root and verifies they have been deleted.
+
+# Directories to remove
+dirs=(
+  "git/c__"
+  "git/simple_tests"
+  "git/test"
+)
+
+echo "Starting cleanup of legacy directories..."
+for dir in "${dirs[@]}"; do
+  if [ -d "$dir" ]; then
+    echo "Removing $dir..."
+    rm -rf "$dir"
+  else
+    echo "Skipping $dir; directory not found."
+  fi
+done
+
+echo "Cleanup complete. Remaining contents of git/:"
+ls -1 git

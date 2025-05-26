@@ -30,6 +30,11 @@ class DecompositionStage(BaseStage):
     stage_name: str = "DecompositionStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the DecompositionStage with provided settings.
+        
+        Sets up default decomposition dimensions and confidence values from configuration parameters.
+        """
         super().__init__(settings)
         self.default_dimensions_config = (
             self.default_params.default_decomposition_dimensions
@@ -39,7 +44,14 @@ class DecompositionStage(BaseStage):
         )
 
     def _prepare_node_properties_for_neo4j(self, node_pydantic: Node) -> Dict[str, Any]:
-        """Converts a Node Pydantic model into a flat dictionary for Neo4j."""
+        """
+        Converts a Node Pydantic model into a flat dictionary of properties suitable for Neo4j.
+        
+        Serializes confidence fields with a `confidence_` prefix and metadata fields with a `metadata_` prefix. Handles serialization of complex metadata types, including datetimes (as ISO strings), enums (as values), lists or sets (as lists or JSON), and nested Pydantic models (as JSON or strings if serialization fails). Filters out properties with `None` values.
+        
+        Returns:
+            A dictionary of node properties formatted for Neo4j.
+        """
         if node_pydantic is None: return {}
         props = {"id": node_pydantic.id, "label": node_pydantic.label}
         if node_pydantic.confidence:
@@ -69,7 +81,11 @@ class DecompositionStage(BaseStage):
         return {k: v for k, v in props.items() if v is not None}
 
     def _prepare_edge_properties_for_neo4j(self, edge_pydantic: Edge) -> Dict[str, Any]:
-        """Converts an Edge Pydantic model into a flat dictionary for Neo4j."""
+        """
+        Converts an Edge Pydantic model into a flat dictionary of properties suitable for Neo4j.
+        
+        Serializes the edge's ID, confidence value, and metadata fields, handling dates, enums, and complex objects for compatibility with Neo4j property storage.
+        """
         if edge_pydantic is None: return {}
         props = {"id": edge_pydantic.id} # Type is handled by relationship type in query
         # Add confidence if it exists and is not None
@@ -94,7 +110,11 @@ class DecompositionStage(BaseStage):
         root_node_query_context: Optional[str], 
         custom_dimensions_input: Optional[List[Dict[str, Any]]]
     ) -> List[Dict[str, Any]]:
-        """Determines dimensions to create based on input or defaults."""
+        """
+        Determines the list of conceptual dimensions to use for decomposition.
+        
+        If a custom list of dimensions is provided, returns only those entries that are dictionaries containing both "label" and "description" keys. Otherwise, returns the default dimensions from configuration, each as a dictionary with "label" and "description".
+        """
         if custom_dimensions_input and isinstance(custom_dimensions_input, list):
             logger.info("Using custom decomposition dimensions provided in operational parameters.")
             # Basic validation: ensure items are dicts with 'label' and 'description'
@@ -114,6 +134,21 @@ class DecompositionStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph removed
     ) -> StageOutput:
+        """
+        Performs decomposition of a root node into conceptual dimension nodes and persists them in Neo4j.
+        
+        This method retrieves the root node from the session context, determines the conceptual dimensions to create (using either custom operational parameters or default configuration), and for each dimension:
+        - Creates or merges a corresponding dimension node in Neo4j with appropriate properties and metadata.
+        - Establishes a `DECOMPOSITION_OF` relationship from the dimension node to the root node.
+        
+        Handles errors related to missing root node information or Neo4j operations, logging issues and continuing processing where possible. Returns a `StageOutput` summarizing the number of dimensions and relationships created, along with updated context containing the IDs of the created dimension nodes.
+        
+        Args:
+            current_session_data: The session data containing accumulated context and operational parameters.
+        
+        Returns:
+            A `StageOutput` object with a summary, metrics on created nodes and relationships, and context updates reflecting the decomposition results.
+        """
         self._log_start(current_session_data.session_id)
 
         initialization_data = current_session_data.accumulated_context.get(

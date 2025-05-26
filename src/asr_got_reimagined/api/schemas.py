@@ -51,10 +51,10 @@ class JSONRPCResponse(BaseModel, Generic[T, E]):
         cls, error_value: Optional[JSONRPCErrorObject[E]], values: dict[str, Any]
     ) -> Optional[JSONRPCErrorObject[E]]:
         """
-        Validates that a JSON-RPC response contains either a result or an error, but not both.
+        Ensures a JSON-RPC response includes either a result or an error, but not both.
         
         Raises:
-            ValueError: If both "result" and "error" are present, or if neither is present.
+            ValueError: If both "result" and "error" are provided, or if neither is present.
         
         Returns:
             The error object if present; otherwise, None.

@@ -4,9 +4,9 @@ import json
 
 def make_request(host, port, path, method="GET", body=None, headers=None):
     """
-    Performs an HTTP request to the specified host, port, and path using the given method, body, and headers.
+    Sends an HTTP request to a specified host, port, and path with optional method, body, and headers.
     
-    Prints the HTTP response status and content. Errors encountered during the request are printed. The connection is closed after the request completes.
+    Prints the HTTP response status and content. If an error occurs during the request, the error message is printed. The HTTP connection is closed after the request completes.
     """
     conn = http.client.HTTPConnection(host, port)
 

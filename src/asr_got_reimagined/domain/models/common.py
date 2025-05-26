@@ -8,15 +8,12 @@ from pydantic import BaseModel, BeforeValidator, Field, field_validator
 # Helper for probability distributions (list of floats summing to 1.0)
 def _validate_probability_distribution(v: list[float]) -> list[float]:
     """
-    Validates that a list of floats represents a probability distribution.
+    Validates that a list of floats can represent a probability distribution.
     
-    Checks that all values are between 0.0 and 1.0. Allows empty lists and does not enforce that the sum equals 1.0, assuming normalization may occur elsewhere.
-    
-    Args:
-        v: List of floats to validate.
+    Checks that each value is between 0.0 and 1.0, inclusive. Allows empty lists and does not require the values to sum to 1.0, permitting normalization elsewhere.
     
     Returns:
-        The validated list of floats if all values are within the valid range.
+        The input list if all values are within the valid range.
     
     Raises:
         ValueError: If any value is outside the range [0.0, 1.0].
@@ -48,7 +45,7 @@ class ConfidenceVector(BaseModel):
 
     def to_list(self) -> list[float]:
         """
-        Returns the confidence vector as a list of four float values in a fixed order.
+        Returns the confidence values as a list in the order: empirical support, theoretical basis, methodological rigor, consensus alignment.
         """
         return [
             self.empirical_support,
@@ -60,13 +57,13 @@ class ConfidenceVector(BaseModel):
     @classmethod
     def from_list(cls, values: list[float]) -> "ConfidenceVector":
         """
-        Creates a ConfidenceVector instance from a list of four float values.
+        Creates a ConfidenceVector from a list of four float values.
         
         Args:
-            values: A list of four floats representing empirical support, theoretical basis, methodological rigor, and consensus alignment, in that order.
+            values: List of four floats representing empirical support, theoretical basis, methodological rigor, and consensus alignment, in that order.
         
         Returns:
-            A ConfidenceVector initialized with the provided values.
+            A ConfidenceVector initialized with the specified values.
         
         Raises:
             ValueError: If the input list does not contain exactly four elements.

@@ -34,6 +34,11 @@ class InitializationStage(BaseStage):
     stage_name: str = "InitializationStage"
 
     def __init__(self, settings: Settings):
+        """
+        Initializes the InitializationStage with default parameters for the root node.
+        
+        Sets the root node label, initial confidence values, and initial layer based on configuration.
+        """
         super().__init__(settings)
         self.root_node_label = "Task Understanding"
         self.initial_confidence_values = self.default_params.initial_confidence
@@ -41,8 +46,9 @@ class InitializationStage(BaseStage):
 
     def _prepare_node_properties_for_neo4j(self, node_pydantic: Node) -> Dict[str, Any]:
         """
-        Converts a Node Pydantic model instance into a flat dictionary suitable for Neo4j properties.
-        Handles datetime, Enum, ConfidenceVector, and nested NodeMetadata.
+        Converts a Node Pydantic model into a flat dictionary of properties suitable for Neo4j.
+        
+        Serializes nested fields such as datetimes, enums, confidence vectors, and complex metadata into Neo4j-compatible formats. Lists or sets of complex objects are serialized as JSON strings. Properties with None values are omitted from the result.
         """
         if node_pydantic is None:
             return {}
@@ -94,6 +100,17 @@ class InitializationStage(BaseStage):
     async def execute(
         self, current_session_data: GoTProcessorSessionData # graph: ASRGoTGraph parameter removed
     ) -> StageOutput:
+        """
+        Initializes or retrieves the root node in Neo4j for the current session's initial query.
+        
+        If a ROOT node matching the initial query context exists in Neo4j, it is reused and its disciplinary tags are updated if necessary. Otherwise, a new ROOT node is created with properties derived from the initial query and operational parameters. Updates the session context with the root node ID and disciplinary tags, and returns a summary and metrics about the operation.
+        
+        Args:
+            current_session_data: Session data containing the initial query and accumulated context.
+        
+        Returns:
+            A StageOutput object summarizing the result, including metrics and context updates.
+        """
         self._log_start(current_session_data.session_id)
         initial_query = current_session_data.query
         operational_params = current_session_data.accumulated_context.get("operational_params", {})

@@ -16,7 +16,7 @@ from src.asr_got_reimagined.api.routes.mcp import mcp_router  # noqa: E402
 from src.asr_got_reimagined.domain.services.got_processor import (  # noqa: E402
     GoTProcessor,
 )
-from src.asr_got_reimagined.simple_config import settings  # noqa: E402
+from src.asr_got_reimagined.config import settings  # noqa: E402
 
 
 @asynccontextmanager
@@ -79,15 +79,25 @@ def create_app() -> FastAPI:
     app.state.got_processor = GoTProcessor(settings=settings)
     logger.info("GoTProcessor instance created and attached to app state.")
 
+    # Process allowed origins from settings
+    allowed_origins_str = settings.app.cors_allowed_origins_str
+    if allowed_origins_str == "*":
+        allowed_origins = ["*"]
+    else:
+        allowed_origins = [origin.strip() for origin in allowed_origins_str.split(',') if origin.strip()]
+        if not allowed_origins: # Default if empty or only whitespace after split
+            logger.warning("APP_CORS_ALLOWED_ORIGINS_STR was not '*' and parsed to empty list. Defaulting to ['*'].")
+            allowed_origins = ["*"] # Default to all if configuration is invalid or empty
+
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins, # Use the parsed list
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
         allow_headers=["*"],
     )
-    logger.info("CORS middleware configured to allow all origins.")
+    logger.info(f"CORS middleware configured with origins: {allowed_origins}")
 
     # Add health check endpoint
     @app.get("/health", tags=["Health"])

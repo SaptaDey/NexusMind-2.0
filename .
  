@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+# Cleanup legacy directories under the git root
+rm -rf git/c__
+rm -rf git/simple_tests
+rm -rf git/test
+
+# Verify that the directories have been removed
+echo "Remaining items in git directory:"
+ls -1 git

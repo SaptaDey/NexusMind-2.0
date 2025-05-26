@@ -171,12 +171,21 @@ class PruningMergingStage(BaseStage):
             count_query = "MATCH (n:Node) RETURN count(n) AS node_count; MATCH ()-[r]->() RETURN count(r) AS edge_count;"
             # This specific tool might only execute one query or handle multi-statement differently.
             # For simplicity, let's assume we can get these counts, or make two calls.
-            node_count_res = execute_query("MATCH (n:Node) RETURN count(n) AS node_count", {}, tx_type="read")
-            if node_count_res : nodes_remaining = node_count_res[0]["node_count"]
-            
-            edge_count_res = execute_query("MATCH ()-[r]->() RETURN count(r) AS edge_count", {}, tx_type="read")
-            if edge_count_res : edges_remaining = edge_count_res[0]["edge_count"]
-            
+            node_count_res = execute_query(
+                "MATCH (n:Node) RETURN count(n) AS node_count",
+                {},
+                tx_type="read",
+            )
+            if node_count_res:
+                nodes_remaining = node_count_res[0]["node_count"]
+
+            edge_count_res = execute_query(
+                "MATCH ()-[r]->() RETURN count(r) AS edge_count",
+                {},
+                tx_type="read",
+            )
+            if edge_count_res:
+                edges_remaining = edge_count_res[0]["edge_count"]
         except Neo4jError as e:
             logger.error(f"Failed to get node/edge counts from Neo4j: {e}")
 

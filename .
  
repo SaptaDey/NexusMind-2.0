@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Cleanup legacy directories in the git root
+git_root="git"
+dirs=(c__ simple_tests test)
+
+echo "Starting cleanup of legacy directories in ${git_root}/"
+
+for dir in "${dirs[@]}"; do
+  path="${git_root}/${dir}"
+  if [ -d "${path}" ]; then
+    echo "Removing ${path}..."
+    rm -rf "${path}"
+  else
+    echo "Not found: ${path} (skipping)"
+  fi
+done
+
+echo
+echo "Remaining items in ${git_root}/:"
+ls -1 "${git_root}"

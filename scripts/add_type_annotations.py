@@ -2,6 +2,7 @@
 This script adds Python type annotations to help with static type checking in the codebase.
 """
 import re
+from typing import List, Dict, Any
 
 
 def add_type_annotations(file_path: str) -> None:

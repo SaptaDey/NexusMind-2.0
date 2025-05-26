@@ -49,8 +49,7 @@ def create_app() -> FastAPI:
     """
     Creates and configures the FastAPI application with logging, CORS, health check, and routing.
     
-
-    Initializes the logger, sets up CORS middleware based on allowed origins from settings, attaches a GoTProcessor instance to the application state, defines a health check endpoint, and mounts the MCP router.
+    Initializes the logger, sets up CORS middleware using allowed origins from settings, attaches a GoTProcessor instance to the application state, defines a health check endpoint, and mounts the MCP router.
     
     Returns:
         The configured FastAPI application instance.

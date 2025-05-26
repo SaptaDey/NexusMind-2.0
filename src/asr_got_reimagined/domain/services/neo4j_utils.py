@@ -63,8 +63,25 @@ def close_neo4j_driver() -> None:
     else:
         logger.info("Neo4j driver is already closed or not initialized.")
 
-    import asyncio
+# --- Imports ---
+from neo4j import GraphDatabase, Driver, Record, Result, Transaction, unit_of_work
+from neo4j.exceptions import Neo4jError, ServiceUnavailable
+from typing import Optional, Any, List, Dict, Callable
+from loguru import logger
+from pydantic_settings import BaseSettings
+from pydantic import Field
+import asyncio
 
+
+def close_neo4j_driver() -> None:
+    """Closes the Neo4j driver instance if it's open."""
+    global _driver
+    if _driver is not None and not _driver.closed():
+        logger.info("Closing Neo4j driver.")
+        _driver.close()
+        _driver = None
+    else:
+        logger.info("Neo4j driver is already closed or not initialized.")
     # --- Query Execution ---
     async def execute_query(
     query: str,

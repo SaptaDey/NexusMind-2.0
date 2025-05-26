@@ -36,6 +36,7 @@ def get_neo4j_driver() -> Driver:
     global _driver
     # Create a driver only if one doesn't yet exist or has been closed
     if _driver is None or _driver.closed():
+        settings = get_neo4j_settings()
         logger.info(f"Initializing Neo4j driver for URI: {settings.uri}")
         try:
             _driver = GraphDatabase.driver(settings.uri, auth=(settings.user, settings.password))

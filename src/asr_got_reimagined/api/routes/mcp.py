@@ -63,9 +63,9 @@ async def handle_asr_got_query(
     request_id: Optional[Union[str, int]],
 ) -> JSONRPCResponse[MCPASRGoTQueryResult, Any]:
     """
-    Handles the "asr_got.query" JSON-RPC method, processing a query using the GoTProcessor and returning the result or an error response.
+    Processes an "asr_got.query" JSON-RPC request using the GoTProcessor and returns the result or an error response.
     
-    Forwards the query and parameters to the GoTProcessor, optionally including the graph state and a reasoning trace summary in the response. Converts and validates returned data, measures execution time, and provides robust error handling with fallback responses if processing fails.
+    Forwards the query and parameters to the GoTProcessor, optionally including the graph state and a reasoning trace summary in the response. Measures execution time, validates and converts returned data, and provides robust error handling with fallback responses if processing fails.
     
     Returns:
         A JSON-RPC response containing the ASR-GoT query result, which may include the answer, reasoning trace summary, graph state, confidence vector, execution time, and session ID. If an error occurs, returns a JSON-RPC error response with diagnostic details.

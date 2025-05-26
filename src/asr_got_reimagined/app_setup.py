@@ -47,10 +47,10 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """
-    Creates and configures the FastAPI application with logging, CORS, health check, and routing.
-
-    Initializes the logger, sets up CORS middleware based on allowed origins from settings, attaches a GoTProcessor instance to the application state, defines a health check endpoint, and mounts the MCP router.
-
+    Creates and configures the FastAPI application instance.
+    
+    Initializes logging, sets up CORS middleware based on allowed origins from settings, attaches a GoTProcessor to the application state, defines a health check endpoint, and mounts the MCP router.
+    
     Returns:
         The configured FastAPI application instance.
     """
@@ -104,10 +104,10 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["Health"])
     async def health_check():
         """
-        Handles the /health endpoint to report application health status.
-
+        Handles the /health endpoint and returns the application's health status and version.
+        
         Returns:
-            A JSON object containing the application's health status and version.
+            A JSON object with "status" and "version" keys indicating health and version.
         """
         logger.debug("Health check endpoint was called.")  # type: ignore
         return {"status": "healthy", "version": settings.app.version}

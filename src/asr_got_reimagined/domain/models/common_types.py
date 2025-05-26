@@ -14,12 +14,14 @@ class GoTProcessorSessionData(BaseModel):
 
     session_id: str = Field(default_factory=lambda: f"session-{uuid.uuid4()}")
     query: str
-    graph_state: Optional[Any] = None
+    # graph_state: Optional[Any] = None # Removed as ASRGoTGraph is deleted
     final_answer: Optional[str] = None
     final_confidence_vector: list[float] = Field(default=[0.5, 0.5, 0.5, 0.5])
     accumulated_context: dict[str, Any] = Field(default_factory=dict)
     stage_outputs_trace: list[dict[str, Any]] = Field(default_factory=list)
 
+# ASRGoTGraph import is not present in this file, so no removal needed here for that.
+# If ASRGoTGraph was imported for typing graph_state, that line would also be removed.
 
 class ComposedOutput(BaseModel):
     """Model for the output structure from the Composition Stage."""

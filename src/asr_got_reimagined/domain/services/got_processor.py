@@ -1,15 +1,36 @@
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any, Optional, Dict
+import json
+from datetime import datetime
+from enum import Enum
 
 from loguru import logger
 
 from src.asr_got_reimagined.domain.models.common_types import (
     ComposedOutput,
     GoTProcessorSessionData,
+    ConfidenceVector, # Keep if used by _prepare_properties_for_neo4j, otherwise remove if helper is removed
 )
-from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph
+# ASRGoTGraph and related Pydantic models (Node, Edge, etc.) from graph_state are no longer needed here
+# as GoTProcessor will not interact with the graph structure directly.
+# However, _prepare_properties_for_neo4j *might* still be used by a stage if it was not fully refactored.
+# For this task, we assume _prepare_properties_for_neo4j is also being removed from GoTProcessor.
+# If any Pydantic models like Node, Edge were used by it, their imports would go too.
+# For now, keeping ConfidenceVector as it's from common_types.
+# Let's assume Node, Edge etc. from graph_state are removed.
+# from src.asr_got_reimagined.domain.models.graph_state import (
+#     ASRGoTGraph,
+#     Node,
+#     Edge,
+#     Hyperedge,
+#     NodeMetadata,
+#     EdgeMetadata,
+#     HyperedgeMetadata,
+# )
 from src.asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
+from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # This is still needed if any stage uses it directly, or if processor has fallback.
+                                                                                       # Given stages are Neo4j native, they use it. Processor itself won't after this refactor.
 
 
 class GoTProcessor:
@@ -19,6 +40,10 @@ class GoTProcessor:
         """
         self.settings = settings
         logger.info("Initializing GoTProcessor")
+
+    # _prepare_properties_for_neo4j helper method is removed as per instructions.
+    # Individual stages are now responsible for their own Neo4j property preparation if needed,
+    # or this specific helper (if it was generic enough) would be in a utils module.
 
     def _initialize_stages(self) -> list[BaseStage]:
         """
@@ -97,12 +122,15 @@ class GoTProcessor:
             session_id=session_id or f"session-{uuid.uuid4()}", query=query
         )
 
-        # Create a new graph state for this session
-        current_session_data.graph_state = ASRGoTGraph()
-        current_session_data.graph_state.graph_metadata["query"] = query
-        current_session_data.graph_state.graph_metadata["session_id"] = (
-            current_session_data.session_id
-        )
+        # ASRGoTGraph instantiation removed.
+        # The graph_state attribute in GoTProcessorSessionData will also be removed.
+        # If any metadata was stored in graph_state.graph_metadata, 
+        # it needs a new home if still required (e.g., directly in accumulated_context).
+        # For this task, assuming such metadata is either not critical or handled by stages.
+        # current_session_data.accumulated_context["graph_metadata"] = {
+        #     "query": query,
+        #     "session_id": current_session_data.session_id
+        # } # Example if we wanted to keep this info
 
         # Process initial context
         if initial_context:
@@ -162,8 +190,8 @@ class GoTProcessor:
             # --- END ADDED LOGGING ---
 
             try:  # Execute the stage
+                # Graph argument removed from stage execution call
                 stage_result = await stage.execute(
-                    graph=current_session_data.graph_state,
                     current_session_data=current_session_data,
                 )
 
@@ -364,10 +392,17 @@ class GoTProcessor:
             f"NexusMind query processing completed for session {current_session_data.session_id} in {total_execution_time_ms}ms."
         )
 
+        # --- Final Graph Persistence Logic Removed ---
+        # The graph persistence logic that was here (iterating graph.nodes, graph.edges, etc.)
+        # and using self._prepare_properties_for_neo4j has been removed.
+        # Each stage is now responsible for its own Neo4j interactions.
+
         return current_session_data
 
     async def shutdown_resources(self):
         """Clean up any resources when shutting down."""
         logger.info("Shutting down GoTProcessor resources")
-        # Close any connections, release resources, etc.
+        # Example: Close Neo4j driver if it were managed here, though it's managed in neo4j_utils
+        # from src.asr_got_reimagined.domain.services.neo4j_utils import close_neo4j_driver
+        # close_neo4j_driver() # This would be appropriate if driver lifecycle tied to processor
         return

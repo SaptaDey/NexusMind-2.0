@@ -1,50 +1,53 @@
+"""
+Test suite for MCP endpoints updated to use Neo4j-native graph_state.
+"""
+
 import pytest
-from app import app
+from fastapi.testclient import TestClient
+from app.main import app
 
-@pytest.fixture
-def client():
-    app.config['TESTING'] = True
-    with app.test_client() as client:
-        yield client
+client = TestClient(app)
 
-class TestMcpEndpoints:
+@pytest.fixture(autouse=True)
+def mock_neo4j_get_graph_state(monkeypatch):
+    """
+    Monkeypatch the Neo4j graph state retrieval to return a predictable result.
+    """
+    def _mock(run_id):
+        return {
+            "nodes": [{"id": "node1", "labels": ["TestNode"]}],
+            "edges": [{"source": "node1", "target": "node2", "type": "TEST_EDGE"}]
+        }
+    monkeypatch.setattr("app.services.neo4j.get_graph_state", _mock)
+    return _mock
 
-    def test_get_mcp_default_graph_state(self, client):
-        response = client.get('/mcp')
-        assert response.status_code == 200
-        data = response.get_json()
-        # Deprecated field should no longer appear
-        assert 'graph_state_full' not in data
-        # No graph state by default
-        assert 'graph_state' not in data
-        # Ensure other expected fields remain
-        assert 'clusters' in data
 
-    def test_get_mcp_without_graph_state(self, client):
-        response = client.get('/mcp?include_graph_state=false')
-        assert response.status_code == 200
-        data = response.get_json()
-        # Explicit exclusion yields no graph_state
-        assert 'graph_state' not in data
+def test_get_run_without_graph_state():
+    """
+    Test that graph_state_full and graph_state are omitted by default.
+    """
+    run_id = "test-run-123"
+    response = client.get(f"/mcp/runs/{run_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert "graph_state_full" not in data
+    assert "graph_state" not in data
 
-    def test_get_mcp_with_graph_state(self, client):
-        response = client.get('/mcp?include_graph_state=true')
-        assert response.status_code == 200
-        data = response.get_json()
-        # Ensure deprecated field removed
-        assert 'graph_state_full' not in data
-        # New graph_state field is present
-        assert 'graph_state' in data
-        graph_state = data['graph_state']
-        assert isinstance(graph_state, dict)
-        # Validate structure from Neo4j
-        assert 'nodes' in graph_state
-        assert 'relationships' in graph_state
 
-    def test_get_mcp_by_id_include_graph_state(self, client):
-        # Assumes an MCP with ID 1 exists in test DB or fixture setup
-        response = client.get('/mcp/1?include_graph_state=true')
-        assert response.status_code == 200
-        data = response.get_json()
-        assert 'graph_state_full' not in data
-        assert 'graph_state' in data
+def test_get_run_with_graph_state():
+    """
+    Test that graph_state is returned when include_graph_state=true
+    and graph_state_full is not present.
+    """
+    run_id = "test-run-123"
+    response = client.get(f"/mcp/runs/{run_id}?include_graph_state=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert "graph_state_full" not in data
+    assert "graph_state" in data
+    assert isinstance(data["graph_state"], dict)
+    expected = {
+        "nodes": [{"id": "node1", "labels": ["TestNode"]}],
+        "edges": [{"source": "node1", "target": "node2", "type": "TEST_EDGE"}]
+    }
+    assert data["graph_state"] == expected

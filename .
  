@@ -1,14 +1,36 @@
 #!/usr/bin/env bash
-# cleanup_legacy_dirs.sh
-# Removes deprecated directories under git/ and verifies their removal.
-
 set -euo pipefail
 
-# Delete legacy directories
-rm -rf git/c__
-rm -rf git/simple_tests
-rm -rf git/test
+# Script to remove legacy directories under the 'git' root and verify removal
 
-# Verify removal by listing remaining entries in git/
-echo "Remaining entries in git/:"
-ls -1 git
+TARGET_DIR="git"
+
+echo "Starting cleanup of legacy directories in '$TARGET_DIR'..."
+
+# Remove c__ directory if it exists
+if [ -d "$TARGET_DIR/c__" ]; then
+  rm -rf "$TARGET_DIR/c__"
+  echo "Deleted: $TARGET_DIR/c__"
+else
+  echo "Not found, skipping: $TARGET_DIR/c__"
+fi
+
+# Remove simple_tests directory if it exists
+if [ -d "$TARGET_DIR/simple_tests" ]; then
+  rm -rf "$TARGET_DIR/simple_tests"
+  echo "Deleted: $TARGET_DIR/simple_tests"
+else
+  echo "Not found, skipping: $TARGET_DIR/simple_tests"
+fi
+
+# Remove legacy test directory if it exists
+if [ -d "$TARGET_DIR/test" ]; then
+  rm -rf "$TARGET_DIR/test"
+  echo "Deleted: $TARGET_DIR/test"
+else
+  echo "Not found, skipping: $TARGET_DIR/test"
+fi
+
+echo
+echo "Remaining items in '$TARGET_DIR':"
+ls -1 "$TARGET_DIR"

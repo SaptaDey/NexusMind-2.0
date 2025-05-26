@@ -5,7 +5,6 @@ Script to fix Python module imports by adding 'src.' prefix to 'asr_got_reimagin
 Usage:
   python3 scripts/fix_imports.py [--root /path/to/project] [--src /path/to/src] [--dry-run]
 """
-
 import os
 import re
 from typing import List
@@ -39,21 +38,17 @@ parser.add_argument(
 args = parser.parse_args()
 SRC_DIR = args.src
 
-# Precompile regex for import-fix
 IMPORT_PATTERN = re.compile(r"(from|import)\s+(?!src\.)asr_got_reimagined")
-
 
 def find_python_files(directory: Path) -> List[Path]:
     """Find all Python files recursively in a directory using pathlib."""
     return list(directory.rglob("*.py"))
 
-
 def fix_imports_in_file(file_path: Path) -> int:
     """
     Adds a 'src.' prefix to 'asr_got_reimagined' import statements in a Python file.
 
-    Scans the specified file for import statements that reference 'asr_got_reimagined' without the 'src.' prefix and updates them.
-    Returns the number of import statements modified.
+    Scans the specified file for import statements that reference 'asr_got_reimagined' without the 'src.' prefix and updates them in place. Returns the number of import statements modified.
     """
     content = file_path.read_text(encoding="utf-8")
     new_content, num_replacements = IMPORT_PATTERN.subn(r"\1 src.asr_got_reimagined", content)
@@ -62,7 +57,6 @@ def fix_imports_in_file(file_path: Path) -> int:
         if not args.dry_run:
             file_path.write_text(new_content, encoding="utf-8")
     return num_replacements
-
 
 def main() -> None:
     """
@@ -75,7 +69,6 @@ def main() -> None:
     for file_path in python_files:
         total_fixes += fix_imports_in_file(file_path)
     print(f"Fixed {total_fixes} imports across all Python files.")
-
 
 if __name__ == "__main__":
     main()

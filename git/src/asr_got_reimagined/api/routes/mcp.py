@@ -1,40 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from src.asr_got_reimagined.services.session_service import SessionService
-from src.asr_got_reimagined.api.schemas import SessionDataSchema, GraphStateSchema
+from fastapi import APIRouter, HTTPException
+
+from src.asr_got_reimagined.domain.services.mcp_service import get_session_data
+from src.asr_got_reimagined.api.schemas.graph_state import GraphStateSchema
 
 router = APIRouter(prefix="/mcp", tags=["mcp"])
 
-
-@router.get("/session/{session_id}/data", response_model=SessionDataSchema)
-async def get_session_data(session_id: str, service: SessionService = Depends()):
+@router.get("/session/{session_id}", response_model=GraphStateSchema)
+async def get_session_graph_state(session_id: str):
     """
-    Retrieve session data including graph state.
+    Retrieve the graph state for the specified session.
     """
-    session_data_result = service.get_session_data(session_id)
+    session_data_result = get_session_data(session_id)
     if session_data_result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Session '{session_id}' not found."
-        )
+        raise HTTPException(status_code=404, detail="Session not found")
+
     graph_state = session_data_result.graph_state
 
-    if isinstance(graph_state, GraphStateSchema):
-        response_graph_state = graph_state
+        return graph_state
     elif isinstance(graph_state, dict):
-        response_graph_state = GraphStateSchema(**graph_state)
+        return GraphStateSchema(**graph_state)
     else:
-        # Attempt to extract a serializable dict from graph_state object
-        if hasattr(graph_state, "dict") and callable(graph_state.dict):
-            graph_state_dict = graph_state.dict()
-            response_graph_state = GraphStateSchema(**graph_state_dict)
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Invalid graph_state format"
-            )
-
-    return SessionDataSchema(
-        session_id=session_data_result.session_id,
-        user_data=session_data_result.user_data,
-        graph_state=response_graph_state
-    )
+        raise HTTPException(status_code=500, detail="Unsupported graph state format")

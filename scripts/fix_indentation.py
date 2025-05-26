@@ -31,7 +31,7 @@ def parse_args():
     )
     parser.add_argument(
         '--log-level', default='INFO',
-        choices=['DEBUG','INFO','WARNING','ERROR'],
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
         help='Set logging level (default: INFO).'
     )
     return parser.parse_args()
@@ -72,21 +72,6 @@ def main():
     files = list(collect_python_files(args.dirs))
     results = []
     with Pool(args.jobs) as pool:
-        for changed in tqdm(pool.imap_unordered(
-            lambda f: fix_indentation_issues(f, args.check), files
-        ), total=len(files), desc='Fixing indentation'):
-            results.append(changed)
-    total_modified = sum(results)
-    logging.info('Total files %s: %d/%d',
-                 'to change' if args.check else 'modified',
-                 total_modified, len(files))
-
-if __name__ == '__main__':
-    main()
-    logging.basicConfig(level=args.log_level, format='%(levelname)s: %(message)s')
-    files = list(collect_python_files(args.dirs))
-    results = []
-    with Pool(args.jobs) as pool:
         for changed in tqdm(
             pool.imap_unordered(lambda f: fix_indentation_issues(f, args.check), files),
             total=len(files),
@@ -100,6 +85,21 @@ if __name__ == '__main__':
         total_modified,
         len(files)
     )
+
+if __name__ == '__main__':
+    main()
+    logging.basicConfig(level=args.log_level, format='%(levelname)s: %(message)s')
+    files = list(collect_python_files(args.dirs))
+    results = []
+    with Pool(args.jobs) as pool:
+        for changed in tqdm(pool.imap_unordered(
+            lambda f: fix_indentation_issues(f, args.check), files
+        ), total=len(files), desc='Fixing indentation'):
+            results.append(changed)
+    total_modified = sum(results)
+    logging.info('Total files %s: %d/%d',
+                 'to change' if args.check else 'modified',
+                 total_modified, len(files))
 
 if __name__ == '__main__':
     main()

@@ -1,43 +1,53 @@
-# Git Module
+# MyGraphProject
 
-This directory provides utilities and scripts for Git-related operations in the project.
+A Python library for modeling graph structures and performing confidence vector analysis.
 
-## Overview
+## Features
 
-- Custom Git commands to streamline repository workflows  
-- Hook scripts for automated checks on code changes  
-- Graph utilities for visualizing and managing repository history data  
+- Define graph elements (nodes, edges, hyperedges)
+- Compute and manage confidence vectors
+- (Graph state management module has been removed)
 
-## Project Structure
+## Installation
 
-```
-git/
-├── commands/
-│   ├── init.py                    # Repository initialization commands
-│   ├── commit.py                  # Enhanced commit workflows
-│   └── push.py                    # Remote push and management tools
-├── hooks/
-│   ├── pre-commit                 # Lint and test runner pre-commit hook
-│   └── pre-push                   # Test suite pre-push hook
-├── graph/
-│   ├── graph_elements.py          # Node, Edge, and Hyperedge models
-│   ├── confidence.py              # Confidence vector models
-│   └── utils.py                   # Helper functions for graph data
-└── README.md                      # This file
+```bash
+pip install mygraphproject
 ```
 
 ## Usage
 
-1. Install the Git hooks:
-   ```bash
-   ln -s ../../git/hooks/pre-commit .git/hooks/pre-commit
-   ln -s ../../git/hooks/pre-push   .git/hooks/pre-push
-   ```
-2. Run custom commands:
-   ```bash
-   python git/commands/init.py
-   ```
+```python
+from mygraphproject.graph_elements import Node, Edge
+from mygraphproject.confidence import ConfidenceVector
+
+# Example usage
+node_a = Node(id=1, label="A")
+node_b = Node(id=2, label="B")
+edge = Edge(source=node_a, target=node_b)
+conf = ConfidenceVector([0.9, 0.8, 0.95])
+```
+
+## Project Structure
+
+```text
+MyGraphProject/
+├── src/
+│   ├── graph_elements.py         # Node, Edge, Hyperedge models
+│   ├── confidence.py             # Confidence vector models
+│   └── utils.py                  # Utility functions
+├── tests/
+│   ├── test_graph_elements.py
+│   └── test_confidence.py
+├── docs/
+│   └── usage.md
+├── .gitignore
+└── README.md
+```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request on GitHub.
 
 ## License
 
-This module is released under the MIT License.
+This project is licensed under the MIT License.

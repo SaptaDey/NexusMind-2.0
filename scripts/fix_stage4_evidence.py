@@ -2,6 +2,7 @@
 """
 Format Python stage files under src/asr_got_reimagined/domain/stages using Black.
 """
+
 import subprocess
 import sys
 import os

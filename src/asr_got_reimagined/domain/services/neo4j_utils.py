@@ -59,16 +59,13 @@ def close_neo4j_driver() -> None:
         logger.info("Closing Neo4j driver.")
         _driver.close()
         _driver = None
-    else:
-        logger.info("Neo4j driver is already closed or not initialized.")
-
-# --- Query Execution ---
-def execute_query(
+    # --- Query Execution ---
+    async def execute_query(
     query: str,
     parameters: Optional[Dict[str, Any]] = None,
     database: Optional[str] = None,
     tx_type: str = "read"  # 'read' or 'write'
-) -> List[Record]:
+    ) -> List[Record]:
     """
     Executes a Cypher query using a session from the driver.
 
@@ -86,49 +83,52 @@ def execute_query(
         Neo4jError: For errors during query execution.
         ValueError: If an invalid tx_type is provided.
     """
-    driver = get_neo4j_driver() # Ensures driver is initialized
-    if not driver: # Should not happen if get_neo4j_driver raises on failure
+    driver = get_neo4j_driver()  # Ensures driver is initialized
+    if not driver:
         logger.error("Neo4j driver not available. Cannot execute query.")
         raise ServiceUnavailable("Neo4j driver not initialized or connection failed.")
 
     settings = get_neo4j_settings()
     db_name = database if database else settings.database
-    
+
     records: List[Record] = []
-    
-    try:
+
+    def _execute_sync_query() -> List[Record]:
+        # Synchronous I/O encapsulated here
         with driver.session(database=db_name) as session:
             logger.debug(f"Executing query on database '{db_name}' with type '{tx_type}': {query[:100]}...")
-
-            @unit_of_work(timeout=30) # Example timeout, adjust as needed
+            @unit_of_work(timeout=30)  # Example timeout, adjust as needed
             def _transaction_work(tx: Transaction) -> List[Record]:
                 result: Result = tx.run(query, parameters)
-                # Materialize records within the transaction if they are needed after
-                # or if lazy loading might cause issues.
+                # Materialize records within the transaction
                 return [record for record in result]
 
             if tx_type == "read":
-                records = session.execute_read(_transaction_work)
+                sync_records = session.execute_read(_transaction_work)
             elif tx_type == "write":
-                records = session.execute_write(_transaction_work)
+                sync_records = session.execute_write(_transaction_work)
             else:
                 logger.error(f"Invalid transaction type: {tx_type}. Must be 'read' or 'write'.")
                 raise ValueError(f"Invalid transaction type: {tx_type}. Must be 'read' or 'write'.")
-            
-            logger.info(f"Query executed successfully on database '{db_name}'. Fetched {len(records)} records.")
 
+            logger.info(f"Query executed successfully on database '{db_name}'. Fetched {len(sync_records)} records.")
+            return sync_records
+
+    try:
+        # Run blocking I/O in a thread to avoid blocking the event loop
+        records = await asyncio.to_thread(_execute_sync_query)
     except Neo4jError as e:
         logger.error(f"Neo4j error executing Cypher query on database '{db_name}': {e}")
         logger.error(f"Query: {query}, Parameters: {parameters}")
-        raise  # Re-raise the specific Neo4jError
-    except ServiceUnavailable: # Catch if driver became unavailable between get_driver and session
+        raise
+    except ServiceUnavailable:
         logger.error(f"Neo4j service became unavailable while attempting to execute query on '{db_name}'.")
         raise
     except Exception as e:
         logger.error(f"Unexpected error executing Cypher query on database '{db_name}': {e}")
         logger.error(f"Query: {query}, Parameters: {parameters}")
-        raise  # Re-raise any other unexpected exception
-        
+        raise
+
     return records
 
 # Example of how to use (optional, for testing or demonstration)

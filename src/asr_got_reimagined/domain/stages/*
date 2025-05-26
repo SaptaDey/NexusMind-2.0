@@ -1,0 +1,65 @@
+import logging
+from typing import Any, Dict, List
+
+from asr_got_reimagined.domain.database import execute_query
+
+logger = logging.getLogger(__name__)
+
+async def fetch_dimension_records(
+    query: str, params: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """
+    Fetch dimension records asynchronously using execute_query.
+    """
+    logger.debug("Fetching dimension records with params: %s", params)
+    return await execute_query(query, params, tx_type="read")
+
+
+async def insert_fact_record(
+    record: Dict[str, Any]
+) -> None:
+    """
+    Insert a fact record into the database.
+    """
+    logger.debug("Inserting fact record: %s", record)
+    await execute_query(
+        "INSERT INTO fact_table (id, value) VALUES (:id, :value)",
+        {"id": record["id"], "value": record["value"]},
+        tx_type="write",
+    )
+
+
+async def update_record_status(
+    record_id: int, status: str
+) -> None:
+    """
+    Update the status field for a given record.
+    """
+    logger.debug("Updating status for record_id=%s to %s", record_id, status)
+    await execute_query(
+        "UPDATE staging_table SET status = :status WHERE id = :id",
+        {"id": record_id, "status": status},
+        tx_type="write",
+    )
+
+
+async def run_stage(event: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Main entry point for this pipeline stage.
+    """
+    # Fetch dimension records based on event filters
+    dim_records = await fetch_dimension_records(
+        "SELECT * FROM dim_table WHERE filter = :filter",
+        {"filter": event.get("filter_value")},
+    )
+
+    # Process each record and insert into fact table
+    for rec in dim_records:
+        await insert_fact_record(rec)
+
+    # Optionally update statuses after processing
+    for rec in dim_records:
+        if rec.get("needs_update"):
+            await update_record_status(rec["id"], "processed")
+
+    return dim_records

@@ -10,7 +10,6 @@ from loguru import logger
 from src.asr_got_reimagined.domain.models.common_types import (
     ComposedOutput,
     GoTProcessorSessionData,
-    ConfidenceVector, # Keep if used by _prepare_properties_for_neo4j, otherwise remove if helper is removed
 )
 # ASRGoTGraph and related Pydantic models (Node, Edge, etc.) from graph_state are no longer needed here
 # as GoTProcessor will not interact with the graph structure directly.

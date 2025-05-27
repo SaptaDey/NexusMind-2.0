@@ -3,10 +3,10 @@ import sys
 import subprocess
 import pytest
 
-# Resolve the path to the test_mcp_inspector.py script
-SCRIPT_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../../../../scripts/test_mcp_inspector.py")
-)
+# Find project root and construct path
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "../../../../.."))
+SCRIPT_PATH = os.path.join(PROJECT_ROOT, "scripts", "test_mcp_inspector.py")
 
 def test_inspector_http():
     result = subprocess.run(

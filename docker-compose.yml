@@ -36,7 +36,7 @@ services:
     # env_file:
     #   - .env # Uncomment to load environment variables from a .env file
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"] # Assumes a /health endpoint
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

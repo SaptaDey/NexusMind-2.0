@@ -1,7 +1,8 @@
 import os
 import sys
 
-from loguru import logger
+import uvicorn
+from loguru import logger  # Import logger if you want to log here too
 
 # Add src directory to Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))

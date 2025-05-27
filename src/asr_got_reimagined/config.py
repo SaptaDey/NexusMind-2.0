@@ -6,6 +6,10 @@ import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 
+import json
+import jsonschema
+from loguru import logger
+
 # Load the YAML configuration file
 config_file_path = Path(__file__).parent.parent.parent / "config" / "settings.yaml"
 yaml_config = {}
@@ -13,17 +17,35 @@ if config_file_path.exists():
     with open(config_file_path) as f:
         yaml_config = yaml.safe_load(f)
 
+schema_file_path = Path(__file__).parent.parent.parent / "config" / "config.schema.json"
+
+def validate_config_schema(config_data: dict) -> bool:
+    """Validate configuration against JSON Schema."""
+    try:
+        if schema_file_path.exists():
+            with open(schema_file_path) as f:
+                schema = json.load(f)
+            jsonschema.validate(config_data, schema)
+            logger.info("Configuration validation successful")
+            return True
+        else:
+            logger.warning(f"Schema file not found: {schema_file_path}")
+            return False
+    except jsonschema.ValidationError as e:
+        logger.error(f"Configuration validation failed: {e.message}")
+        raise ValueError(f"Invalid configuration: {e.message}")
+    except Exception as e:
+        logger.error(f"Error validating configuration: {e}")
+        return False
 
 # --- Models for NexusMind Default Parameters ---
 class HypothesisParams(BaseModel):
     min_hypotheses: int = Field(default=2, alias="min")
     max_hypotheses: int = Field(default=4, alias="max")
 
-
 class DecompositionDimension(BaseModel):
     label: str
     description: str
-
 
 class ASRGoTDefaultParams(BaseModel):
     initial_confidence: list[float] = Field(default=[0.9, 0.9, 0.9, 0.9])
@@ -46,15 +68,12 @@ class ASRGoTDefaultParams(BaseModel):
     subgraph_min_impact_threshold: float = Field(default=0.5)
     # temporal_recency_days: Optional[int] = None # Example if used
 
-
 class LayerDefinition(BaseModel):
     description: str
-
 
 class ASRGoTConfig(BaseModel):
     default_parameters: ASRGoTDefaultParams = Field(default_factory=ASRGoTDefaultParams)
     layers: dict[str, LayerDefinition] = Field(default_factory=dict)
-
 
 # --- Models for MCP Settings ---
 class MCPSettings(BaseModel):
@@ -65,7 +84,6 @@ class MCPSettings(BaseModel):
     # display_name: Optional[str] = None
     # description: Optional[str] = None
 
-
 # --- Models for optional Claude API direct integration ---
 class ClaudeAPIConfig(BaseModel):
     api_key: Optional[str] = (
@@ -75,12 +93,10 @@ class ClaudeAPIConfig(BaseModel):
     timeout_seconds: int = Field(default=120)
     max_retries: int = Field(default=2)
 
-
 class KnowledgeDomain(BaseModel):
     name: str
     keywords: list[str] = Field(default_factory=list)
     description: Optional[str] = None
-
 
 # --- Main Application Settings Model ---
 class AppSettings(BaseModel):
@@ -94,8 +110,25 @@ class AppSettings(BaseModel):
     cors_allowed_origins_str: str = Field(default="*", alias="APP_CORS_ALLOWED_ORIGINS_STR", description="Comma-separated list of allowed CORS origins, or '*' for all.")
     uvicorn_reload: bool = Field(default=True, alias="APP_UVICORN_RELOAD", description="Enable Uvicorn auto-reload (True for dev, False for prod).")
     uvicorn_workers: int = Field(default=1, alias="APP_UVICORN_WORKERS", description="Number of Uvicorn workers (e.g., (2 * CPU_CORES) + 1). Default is 1.")
-    # debug: bool = False
 
+    # MCP Transport Configuration
+    mcp_transport_type: str = Field(
+        default="http",
+        alias="MCP_TRANSPORT_TYPE",
+        description="MCP transport type: http, stdio, or both"
+    )
+    mcp_stdio_enabled: bool = Field(
+        default=True,
+        alias="MCP_STDIO_ENABLED",
+        description="Enable STDIO transport"
+    )
+    mcp_http_enabled: bool = Field(
+        default=True,
+        alias="MCP_HTTP_ENABLED",
+        description="Enable HTTP transport"
+    )
+
+    # debug: bool = False
 
 class Settings(BaseSettings):
     app: AppSettings = Field(default_factory=AppSettings)
@@ -112,6 +145,12 @@ class Settings(BaseSettings):
         extra="ignore",  # Ignore extra fields from YAML if any
     )
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Validate entire configuration against JSON Schema
+        config_dict = self.model_dump()
+        validate_config_schema(config_dict)
+
     @classmethod
     def settings_customise_sources(
         cls,
@@ -121,20 +160,20 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        
+
         # Define your custom source function
         # It needs to match the expected signature, though its args might not be used if it's simple
         # For pydantic-settings v2, it's typically (settings_cls: Type[BaseSettings]) -> Dict[str, Any]
         # However, since yaml_config is already loaded, we can wrap it simply.
-        
+
         """
         Customizes the order and sources from which Pydantic loads settings.
-        
+
         Inserts a YAML-based settings source, using a pre-loaded configuration dictionary, into the settings source priority after dotenv settings. This allows settings to be loaded from initialization, environment variables, dotenv files, the YAML file, and file secrets, in that order.
-        
+
         Args:
             settings_cls: The Pydantic settings class being configured.
-        
+
         Returns:
             A tuple of settings sources in the desired order for Pydantic to use.
         """
@@ -157,7 +196,6 @@ class Settings(BaseSettings):
                  # We don't need custom preparation for YAML simple values.
                 return value
 
-
         return (
             init_settings,
             env_settings,
@@ -165,7 +203,6 @@ class Settings(BaseSettings):
             YamlConfigSettingsSource(settings_cls), # Pass settings_cls here
             file_secret_settings,
         )
-
 
 # Global settings instance, to be imported by other modules
 settings = Settings()

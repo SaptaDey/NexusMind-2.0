@@ -1,0 +1,29 @@
+import os
+import sys
+import subprocess
+import pytest
+
+# Resolve the path to the test_mcp_inspector.py script
+SCRIPT_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../../../../scripts/test_mcp_inspector.py")
+)
+
+def test_inspector_http():
+    result = subprocess.run(
+        [sys.executable, SCRIPT_PATH, "http"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, f"HTTP test failed: {result.stderr}"
+    assert "HTTP transport test passed" in result.stdout
+
+@pytest.mark.skip(reason="STDIO transport requires interactive Inspector UI")
+def test_inspector_stdio():
+    result = subprocess.run(
+        [sys.executable, SCRIPT_PATH, "stdio"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert "MCP Inspector started successfully" in result.stdout

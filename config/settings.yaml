@@ -4,6 +4,10 @@ app:
   version: "0.1.0" # Should ideally match pyproject.toml
   host: "0.0.0.0"
   port: 8000 # Default port for Uvicorn
+  # MCP Transport Configuration
+  mcp_transport_type: "http"  # Options: "http", "stdio", "both"
+  mcp_stdio_enabled: true     # Enable STDIO transport
+  mcp_http_enabled: true      # Enable HTTP transport
   log_level: "INFO" # Default log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   # debug: false # Set to true for development if needed, enables more verbose errors
 

@@ -1,7 +1,7 @@
 import time
 import uuid
 from typing import Any, Optional, Dict
-import json
+from src.asr_got_reimagined.domain.models.scoring import ScoreResult
 from datetime import datetime
 from enum import Enum
 
@@ -11,12 +11,12 @@ from src.asr_got_reimagined.domain.models.common_types import (
     ComposedOutput,
     GoTProcessorSessionData,
 )
+
 # ASRGoTGraph and related Pydantic models (Node, Edge, etc.) from graph_state are no longer needed here
 # as GoTProcessor will not interact with the graph structure directly.
 # However, _prepare_properties_for_neo4j *might* still be used by a stage if it was not fully refactored.
 # For this task, we assume _prepare_properties_for_neo4j is also being removed from GoTProcessor.
 # If any Pydantic models like Node, Edge were used by it, their imports would go too.
-# For now, keeping ConfidenceVector as it's from common_types.
 # Let's assume Node, Edge etc. from graph_state are removed.
 # from src.asr_got_reimagined.domain.models.graph_state import (
 #     ASRGoTGraph,

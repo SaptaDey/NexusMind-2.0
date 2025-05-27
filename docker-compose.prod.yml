@@ -13,16 +13,19 @@ services:
       - "${APP_PORT:-8000}:8000" # Expose port 8000, configurable via .env or environment
     # VOLUMES for src and config are REMOVED for production to use code baked into the image.
     environment:
-      APP_ENV: "production" # Indicate production environment
+      APP_ENV: "production"
       APP_LOG_LEVEL: "${LOG_LEVEL:-INFO}"
-      APP_CORS_ALLOWED_ORIGINS_STR: "${CORS_ALLOWED_ORIGINS}" # Must be set in prod environment, e.g. "https://yourdomain.com,https://another.domain.com"
-      APP_UVICORN_RELOAD: "False" # Disable reload for production
-      APP_UVICORN_WORKERS: "${UVICORN_WORKERS:-4}" # Sensible default, can be overridden
+      APP_CORS_ALLOWED_ORIGINS_STR: "${CORS_ALLOWED_ORIGINS}"
+      APP_UVICORN_RELOAD: "False"
+      APP_UVICORN_WORKERS: "${UVICORN_WORKERS:-4}"
       PYTHONUNBUFFERED: "1"
       PYTHONDONTWRITEBYTECODE: "1"
-      # NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD can also be set here if neo4j_utils is configured to use them
+      MCP_TRANSPORT_TYPE: "${MCP_TRANSPORT_TYPE:-http}"
+      HOST: "${HOST:-0.0.0.0}"
+      PORT: "${PORT:-8000}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "-O", "-", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

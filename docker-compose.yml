@@ -6,6 +6,8 @@ services:
     build:
       context: . # Use the Dockerfile in the current directory
       dockerfile: Dockerfile
+      args:
+        - MCP_TRANSPORT_TYPE=${MCP_TRANSPORT_TYPE:-http}
     container_name: nexusmind-api
     restart: unless-stopped
     ports:
@@ -19,20 +21,22 @@ services:
       - type: bind
         source: ./config
         target: /app/config
+      - type: bind
+        source: ./scripts
+        target: /app/scripts
       # Optional: Mount logs directory if your app writes logs to a file within the container
       # - ./logs:/app/logs
     environment:
-      # Environment variables can be set here or in an .env file
-      # Example:
-      # LOG_LEVEL: "INFO"
-      # APP_ENV: "development"
-      # CONFIG_FILE_PATH: "/app/config/settings.yaml" # Path inside the container
-      PYTHONUNBUFFERED: "1" # Ensures Python output is sent straight to terminal/logs
-      PYTHONDONTWRITEBYTECODE: "1" # Prevents .pyc files
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      MCP_TRANSPORT_TYPE: "${MCP_TRANSPORT_TYPE:-http}"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
     # env_file:
     #   - .env # Uncomment to load environment variables from a .env file
     healthcheck:
-      test: ["CMD", "wget", "-O", "-", "http://localhost:8000/health"] # Assumes a /health endpoint
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"] # Assumes a /health endpoint
       interval: 30s
       timeout: 10s
       retries: 3

@@ -48,26 +48,6 @@ async def run_server():
         reload=settings.app.uvicorn_reload,
         workers=settings.app.uvicorn_workers,
     )
-    logger.info("Starting HTTP server using Uvicorn...")
-    logger.info(
-        "Host: {}, Port: {}, Log Level: {}",
-        settings.app.host,
-        settings.app.port,
-        settings.app.log_level,
-    )
-    logger.info(f"Uvicorn reload mode: {settings.app.uvicorn_reload}")
-    logger.info(f"Uvicorn workers: {settings.app.uvicorn_workers}")
-    if MCPServerFactory.should_run_stdio():
-        logger.info("STDIO transport also available - use main_stdio.py for STDIO mode")
-    import uvicorn as _uvicorn
-    _uvicorn.run(
-        "src.asr_got_reimagined.main:app",
-        host=settings.app.host,
-        port=settings.app.port,
-        log_level=settings.app.log_level.lower(),
-        reload=settings.app.uvicorn_reload,
-        workers=settings.app.uvicorn_workers,
-    )
 
 if __name__ == "__main__":
     import asyncio

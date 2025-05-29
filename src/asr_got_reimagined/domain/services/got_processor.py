@@ -197,6 +197,8 @@ class GoTProcessor:
                 # --- BEGIN ADDED LOGGING (After Stage Execution) ---
                 logger.debug(f"--- Output from Stage: {stage_name} ---")
                 if isinstance(stage_result, StageOutput):
+                    if stage_result.error_message: # New check
+                        logger.error(f"Stage {stage_name} reported an error: {stage_result.error_message}") # New log
                     if (
                         hasattr(stage_result, "next_stage_context_update")
                         and stage_result.next_stage_context_update
@@ -213,12 +215,12 @@ class GoTProcessor:
                         logger.debug(f"Summary: {stage_result.summary}")
                     if hasattr(stage_result, "metrics") and stage_result.metrics:
                         logger.debug(f"Metrics: {stage_result.metrics}")
-                    if (
-                        stage_result.error_message
-                    ):  # Also log error if any, though handled later
-                        logger.debug(
-                            f"Error reported by stage: {stage_result.error_message}"
-                        )
+                    # The debug log for error_message is now covered by the error log above,
+                    # but if kept, it should also check if stage_result is StageOutput
+                    # if stage_result.error_message:
+                    #     logger.debug(
+                    #         f"Error reported by stage (debug): {stage_result.error_message}"
+                    #     )
                 elif stage_result is not None:
                     logger.debug(f"Raw output (non-StageOutput): {stage_result}")
                 else:
@@ -258,7 +260,7 @@ class GoTProcessor:
                     f"Completed stage {i + 1}: {stage_name} in {stage_duration_ms}ms"
                 )
 
-                # ADD new error checking logic for InitializationStage:
+                # MODIFIED error checking logic for InitializationStage:
                 if isinstance(stage, InitializationStage):
                     initialization_output = (
                         current_session_data.accumulated_context.get(
@@ -276,22 +278,20 @@ class GoTProcessor:
                     ):
                         error_reason_summary = stage_result.error_message
                         halt_message = f"Processing halted: Initialization failed with error: {error_reason_summary}"
-                        logger.error(
-                            f"Critical error from InitializationStage (StageOutput): {error_reason_summary}. Halting further processing."
+                        logger.error( # Ensure this log reflects the source
+                            f"Critical error from InitializationStage (via StageOutput.error_message): {error_reason_summary}. Halting further processing."
                         )
-
                     # Priority 2: "error" key in the stage's output within accumulated_context (if not already caught by P1)
-                    elif initialization_output.get("error"):
+                    elif initialization_output.get("error"): # This is now an elif
                         error_reason_summary = str(
                             initialization_output.get("error")
-                        )  # Ensure string
+                        )
                         halt_message = f"Processing halted: Initialization failed with error from context: {error_reason_summary}"
                         logger.error(
                             f"Critical error found in InitializationStage context: {error_reason_summary}. Halting further processing."
                         )
-
                     # Priority 3: Missing 'root_node_id' (if no other errors were caught by P1 or P2)
-                    elif not initialization_output.get("root_node_id"):
+                    elif not initialization_output.get("root_node_id"): # This is now an elif
                         error_reason_summary = (
                             "InitializationStage did not provide root_node_id."
                         )
@@ -300,7 +300,7 @@ class GoTProcessor:
                             f"{error_reason_summary} Halting further processing."
                         )
 
-                    if halt_message:  # This block executes if any of the above conditions set halt_message
+                    if halt_message:
                         current_session_data.final_answer = halt_message
                         current_session_data.final_confidence_vector = [
                             0.0,

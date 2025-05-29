@@ -44,10 +44,8 @@ asr_got:
 
   pipeline_stages:
     - name: "Initialization"
-      module_path: "src.asr_got_reimagined.domain.stages.InitializationStage"
-      enabled: true
+      module_path: "asr_got_reimagined.domain.stages.InitializationStage"
     # ... other stages ...
-
 # MCP Server Settings (corresponds to MCPSettings in config.py)
 mcp_settings:
   protocol_version: "2024-11-05"

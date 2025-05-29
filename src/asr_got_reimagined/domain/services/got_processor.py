@@ -48,7 +48,9 @@ from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query, Ne
 class GoTProcessor:
     def __init__(self, settings):
         """
-        Initializes a GoTProcessor instance with the provided settings.
+        Initializes the GoTProcessor with configuration settings and loads enabled pipeline stages.
+        
+        The processor dynamically loads and instantiates all enabled processing stages based on the provided settings, preparing the pipeline for query processing.
         """
         self.settings = settings
         logger.info("Initializing GoTProcessor")
@@ -57,12 +59,13 @@ class GoTProcessor:
 
     def _initialize_stages(self) -> list[BaseStage]:
         """
-        Instantiates and returns the ordered list of processing stages based on the configuration.
+        Dynamically loads and instantiates enabled processing stages as defined in the configuration.
         
         Returns:
-            A list of initialized stage objects.
+            A list of initialized stage objects in the order specified by the pipeline configuration.
+        
         Raises:
-            RuntimeError: If a configured stage module/class cannot be loaded.
+            RuntimeError: If a configured stage's module or class cannot be loaded or is not a subclass of BaseStage.
         """
         initialized_stages: list[BaseStage] = []
         if not hasattr(self.settings.asr_got, 'pipeline_stages') or not self.settings.asr_got.pipeline_stages:
@@ -110,18 +113,18 @@ class GoTProcessor:
         initial_context: Optional[dict[str, Any]] = None,
     ) -> GoTProcessorSessionData:
         """
-        Processes a natural language query through the ASR-GoT pipeline, executing each stage in sequence and managing session state, context, and error handling.
+        Executes a natural language query through the configured ASR-GoT pipeline stages, managing session state, context propagation, error handling, and final result assembly.
         
         Args:
             query: The natural language query to process.
-            session_id: Optional session identifier for continuing or managing a session.
-            operational_params: Optional parameters to control processing behavior.
-            initial_context: Optional initial context to seed the processing.
+            session_id: Optional identifier to continue or associate with an existing session.
+            operational_params: Optional dictionary of parameters to influence processing behavior.
+            initial_context: Optional dictionary to seed the initial context for the pipeline.
         
         Returns:
-            GoTProcessorSessionData containing the final answer, confidence vector, accumulated context, graph state, and a trace of stage outputs.
+            GoTProcessorSessionData containing the final answer, confidence vector, accumulated context, and a trace of stage outputs.
         
-        This method initializes or continues a session, orchestrates the execution of all processing stages, logs detailed input and output information for each stage, handles errors (especially during initialization), and compiles the final results and metrics for the query.
+        This method initializes or resumes a session, sequentially executes each enabled pipeline stage, accumulates and propagates context, applies stage-specific halting logic, and compiles the final answer and confidence vector. If a critical error or halting condition is encountered, processing stops and an appropriate error message and confidence vector are set in the result.
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
@@ -235,6 +238,12 @@ class GoTProcessor:
 
                 # --- Halting Logic Helper ---
                 def _update_trace_for_halt(halt_log_message: str, halt_reason_summary: str):
+                    """
+                    Updates the last entry in the stage outputs trace with halt error information.
+                    
+                    If the last trace entry does not already contain an error, sets the error and summary fields.
+                    If an error exists but differs from the provided halt message, appends the new message.
+                    """
                     last_trace_entry = current_session_data.stage_outputs_trace[-1]
                     if "error" not in last_trace_entry: # Add error info if not already there from stage_result
                         last_trace_entry["error"] = halt_log_message
@@ -243,6 +252,11 @@ class GoTProcessor:
                         last_trace_entry["error"] += f"; {halt_log_message}"
 
                 def _halt_processing(reason_summary: str, log_message: str):
+                    """
+                    Halts further processing due to a critical error or stopping condition.
+                    
+                    Logs the provided message, sets the session's final answer and confidence vector to indicate failure, and updates the processing trace with the halt reason.
+                    """
                     logger.error(log_message)
                     current_session_data.final_answer = reason_summary
                     current_session_data.final_confidence_vector = [0.0, 0.0, 0.0, 0.0]
@@ -346,5 +360,10 @@ class GoTProcessor:
         return current_session_data
 
     async def shutdown_resources(self):
+        """
+        Performs cleanup operations for the GoTProcessor.
+        
+        Currently a placeholder with no implemented resource shutdown logic.
+        """
         logger.info("Shutting down GoTProcessor resources")
         return

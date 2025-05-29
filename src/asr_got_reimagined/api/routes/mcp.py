@@ -27,6 +27,11 @@ mcp_router = APIRouter()
 
 # Dependency for authentication
 async def verify_token(http_request: Request):
+    """
+    Verifies the bearer token in the Authorization header for incoming requests.
+    
+    If an authentication token is configured, checks the Authorization header for a valid bearer token and raises an HTTPException if authentication fails. Skips authentication if no token is configured.
+    """
     if settings.app.auth_token:
         auth_header = http_request.headers.get("Authorization")
         if not auth_header:
@@ -54,6 +59,18 @@ def create_jsonrpc_error(
     message: str,
     data: Optional[Any] = None,
 ) -> JSONRPCResponse[Any, Any]:
+    """
+    Constructs a JSON-RPC error response with the specified code, message, and optional data.
+    
+    Args:
+        request_id: The ID of the JSON-RPC request associated with the error.
+        code: The JSON-RPC error code.
+        message: A descriptive error message.
+        data: Optional additional data to include in the error response.
+    
+    Returns:
+        A JSONRPCResponse object containing the error details.
+    """
     logger.error(f"MCP Error (ID: {request_id}): Code {code} - {message}. Data: {data}")
     return JSONRPCResponse(
         id=request_id, error=JSONRPCErrorObject(code=code, message=message, data=data)
@@ -245,6 +262,16 @@ async def handle_asr_got_query(
 async def handle_shutdown(
     params: Optional[ShutdownParams], request_id: Optional[Union[str, int]]
 ) -> JSONRPCResponse[None, Any]:
+    """
+    Handles the "shutdown" JSON-RPC method by acknowledging the shutdown request.
+    
+    Args:
+        params: Optional shutdown parameters.
+        request_id: The JSON-RPC request identifier.
+    
+    Returns:
+        A JSON-RPC response with a null result, indicating shutdown acknowledgment.
+    """
     logger.info("MCP Shutdown request received. Params: {}", params)
     logger.info("Application will prepare to shut down.")
     return JSONRPCResponse(id=request_id, result=None)
@@ -255,9 +282,9 @@ async def mcp_endpoint_handler(
     request_payload: JSONRPCRequest[dict[str, Any]], http_request: Request # http_request is still available here if needed by handlers
 ):
     """
-    Handles incoming MCP JSON-RPC requests and dispatches them to the appropriate method handler.
+    Processes MCP JSON-RPC requests by dispatching them to the appropriate handler based on the requested method.
     
-    Parses the method and parameters from the request payload, invokes the corresponding handler for "initialize", "asr_got.query", or "shutdown" methods, and returns a JSON-RPC response. Returns a JSON-RPC error for unsupported methods or invalid parameters. Exceptions are logged and mapped to appropriate JSON-RPC error responses.
+    Parses the method and parameters from the incoming request, invokes the corresponding handler for "initialize", "asr_got.query", or "shutdown" methods, and returns a structured JSON-RPC response. Returns a JSON-RPC error response for unsupported methods, invalid parameters, or unexpected exceptions.
     """
     logger.debug(
         "MCP Endpoint received raw request: method={}, id={}",

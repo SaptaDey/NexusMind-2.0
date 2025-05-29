@@ -1,4 +1,5 @@
 import time
+import secrets
 from typing import Any, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -39,7 +40,7 @@ async def verify_token(http_request: Request):
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
 
         token = parts[1]
-        if token != settings.app.auth_token:
+        if not secrets.compare_digest(token, settings.app.auth_token):
             logger.warning("MCP request with invalid token.")
             raise HTTPException(status_code=403, detail="Invalid token")
         logger.debug("MCP request authenticated successfully via token.")

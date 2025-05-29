@@ -98,8 +98,7 @@ NEO4J_PASSWORD="your_local_neo4j_password" # Replace with your actual password
 # You can also set other application environment variables here
 # APP__LOG_LEVEL="DEBUG"
 # APP__PORT="8001"
-# APP_AUTH_TOKEN="your-secret-dev-token"
-```
+# APP__AUTH_TOKEN="your-secret-dev-token"
 **Important**: Ensure `.env` is listed in your `.gitignore` file to prevent accidental commits of credentials.
 
 ## Production Environment Variables

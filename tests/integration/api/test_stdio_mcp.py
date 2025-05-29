@@ -5,7 +5,7 @@ import subprocess
 import pytest
 from pathlib import Path
 
-from src.asr_got_reimagined.config import settings
+from asr_got_reimagined.config import settings
 
 @pytest.fixture(scope="module")
 def stdio_process():
@@ -13,7 +13,7 @@ def stdio_process():
     cmd = [
         "python",
         "-m",
-        "src.asr_got_reimagined.main_stdio"
+        "asr_got_reimagined.main_stdio"
     ]
     proc = subprocess.Popen(
         cmd,
@@ -44,12 +44,27 @@ def test_stdio_initialize(stdio_process):
     }
     # Send request
     line = json.dumps(request) + "\n"
-    stdio_process.stdin.write(line)
-    stdio_process.stdin.flush()
-    # Read and parse one line of response
-    response_line = stdio_process.stdout.readline()
-    response = json.loads(response_line)
+    response_line = None
+    response = None
+    try:
+        stdio_process.stdin.write(line)
+        stdio_process.stdin.flush()
+        # Read and parse one line of response
+        response_line = stdio_process.stdout.readline()
+        if not response_line: # Handle empty readline if process exited
+            stderr_output = stdio_process.stderr.read()
+            pytest.fail(f"STDIO process exited prematurely. stderr:\n{stderr_output}")
+        response = json.loads(response_line)
+    except BrokenPipeError as e:
+        stderr_output = stdio_process.stderr.read()
+        pytest.fail(f"BrokenPipeError encountered. Subprocess stderr:\n{stderr_output}\nOriginal error: {e}")
+    except Exception as e:
+        # Catch other potential errors like json.JSONDecodeError if response_line is not valid JSON
+        stderr_output = stdio_process.stderr.read()
+        pytest.fail(f"An unexpected error occurred. Subprocess stderr:\n{stderr_output}\nOriginal error: {e}\nResponse line was: '{response_line}'")
+
     # Assertions
+    assert response is not None, "Response was not successfully parsed."
     assert response.get("id") == "init-1"
     assert "result" in response
     server_info = response["result"].get("server_info", {})
@@ -69,9 +84,24 @@ def test_stdio_call_tool(stdio_process, query):
             "client_info": {}
         }
     }
-    stdio_process.stdin.write(json.dumps(request) + "\n")
-    stdio_process.stdin.flush()
-    response_line = stdio_process.stdout.readline()
-    response = json.loads(response_line)
+    response_line = None
+    response = None
+    try:
+        stdio_process.stdin.write(json.dumps(request) + "\n")
+        stdio_process.stdin.flush()
+        response_line = stdio_process.stdout.readline()
+        if not response_line: # Handle empty readline if process exited
+            stderr_output = stdio_process.stderr.read()
+            pytest.fail(f"STDIO process exited prematurely. stderr:\n{stderr_output}")
+        response = json.loads(response_line)
+    except BrokenPipeError as e:
+        stderr_output = stdio_process.stderr.read()
+        pytest.fail(f"BrokenPipeError encountered. Subprocess stderr:\n{stderr_output}\nOriginal error: {e}")
+    except Exception as e:
+        # Catch other potential errors like json.JSONDecodeError if response_line is not valid JSON
+        stderr_output = stdio_process.stderr.read()
+        pytest.fail(f"An unexpected error occurred. Subprocess stderr:\n{stderr_output}\nOriginal error: {e}\nResponse line was: '{response_line}'")
+
+    assert response is not None, "Response was not successfully parsed."
     assert response.get("id") == "tool-1"
     assert "result" in response or "error" in response

@@ -14,7 +14,7 @@ from loguru import logger
 # Ensure settings are loaded before other project imports that might depend on them
 try:
     # Attempt to import settings to ensure it's configured early
-    from src.asr_got_reimagined.config import settings
+    from asr_got_reimagined.config import settings
     logger.info(f"Settings loaded. Initial MCP transport type: {settings.app.mcp_transport_type}")
 except ImportError as e:
     logger.error(f"Failed to import settings: {e}. Ensure PYTHONPATH is correct or run as module.")
@@ -24,7 +24,7 @@ except Exception as e:
 
 
 # Now import the server factory
-from src.asr_got_reimagined.server_factory import MCPServerFactory
+from asr_got_reimagined.server_factory import MCPServerFactory
 # It's possible MCPServerFactory or its dependencies (like app_setup) also configure logging.
 # Re-adding a basic stderr sink if no handlers exist or if log output isn't appearing.
 if not logger._core.handlers:

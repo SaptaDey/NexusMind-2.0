@@ -15,4 +15,4 @@ npm install @modelcontextprotocol/inspector --no-save
 
 # Run the Python testing script with the chosen mode
 echo "🚀 Running MCP Inspector tests with mode: $MODE"
-python3 "$PROJECT_ROOT/scripts/test_mcp_inspector.py" "$MODE"
+python3 "$PROJECT_ROOT/scripts/mcp_inspector_executor.py" "$MODE"

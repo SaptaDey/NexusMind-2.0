@@ -1,7 +1,7 @@
 import time
 from typing import Any, Optional, Union
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from loguru import logger
 from pydantic import ValidationError
 
@@ -16,12 +16,36 @@ from src.asr_got_reimagined.api.schemas import (
     MCPInitializeResult,
     ShutdownParams,
 )
+from src.asr_got_reimagined.config import settings # Import settings
 from src.asr_got_reimagined.domain.services.got_processor import (
     GoTProcessor,
     GoTProcessorSessionData,
 )
 
 mcp_router = APIRouter()
+
+
+# Dependency for authentication
+async def verify_token(http_request: Request):
+    if settings.app.auth_token:
+        auth_header = http_request.headers.get("Authorization")
+        if not auth_header:
+            logger.warning("MCP request missing Authorization header when auth_token is configured.")
+            raise HTTPException(status_code=401, detail="Not authenticated")
+
+        parts = auth_header.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            logger.warning(f"MCP request with malformed Authorization header: {auth_header}")
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+        token = parts[1]
+        if token != settings.app.auth_token:
+            logger.warning("MCP request with invalid token.")
+            raise HTTPException(status_code=403, detail="Invalid token")
+        logger.debug("MCP request authenticated successfully via token.")
+    else:
+        logger.debug("MCP auth_token not configured, skipping authentication.")
+    return True
 
 
 def create_jsonrpc_error(
@@ -226,9 +250,9 @@ async def handle_shutdown(
     return JSONRPCResponse(id=request_id, result=None)
 
 
-@mcp_router.post("")
+@mcp_router.post("", dependencies=[Depends(verify_token)])
 async def mcp_endpoint_handler(
-    request_payload: JSONRPCRequest[dict[str, Any]], http_request: Request
+    request_payload: JSONRPCRequest[dict[str, Any]], http_request: Request # http_request is still available here if needed by handlers
 ):
     """
     Handles incoming MCP JSON-RPC requests and dispatches them to the appropriate method handler.

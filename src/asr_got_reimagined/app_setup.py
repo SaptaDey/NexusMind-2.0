@@ -70,9 +70,9 @@ def create_app() -> FastAPI:
         title=settings.app.name,
         version=settings.app.version,
         description="NexusMind: Intelligent Scientific Reasoning through Graph-of-Thoughts MCP Server",
-        openapi_url="/api/openapi.json",
-        docs_url="/api/docs",
-        redoc_url="/api/redoc",
+        openapi_url="/openapi.json",
+        docs_url="/docs",
+        redoc_url="/redoc",
         lifespan=lifespan,
     )
 

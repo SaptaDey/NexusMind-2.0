@@ -1,4 +1,5 @@
 site_name: NexusMind Documentation
+docs_dir: docs_src
 site_url: https://sapta-dey.github.io/NexusMind-2.0/
 repo_url: https://github.com/sapta-dey/NexusMind-2.0/
 repo_name: NexusMind-2.0

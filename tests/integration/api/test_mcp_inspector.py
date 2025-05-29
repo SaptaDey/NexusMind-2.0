@@ -5,12 +5,14 @@ import pytest
 
 # Find project root and construct path
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "../../../../.."))
-SCRIPT_PATH = os.path.join(PROJECT_ROOT, "scripts", "test_mcp_inspector.py")
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "../../..")) # Corrected path to /app
+SCRIPT_PATH = os.path.join(PROJECT_ROOT, "scripts", "run_mcp_inspector.sh") # Corrected script name
 
 def test_inspector_http():
+    # Ensure the script is executable
+    os.chmod(SCRIPT_PATH, 0o755)
     result = subprocess.run(
-        [sys.executable, SCRIPT_PATH, "http"],
+        [SCRIPT_PATH, "http"], # Execute shell script directly
         capture_output=True,
         text=True,
         timeout=60,
@@ -20,8 +22,10 @@ def test_inspector_http():
 
 @pytest.mark.skip(reason="STDIO transport requires interactive Inspector UI")
 def test_inspector_stdio():
+    # Ensure the script is executable
+    os.chmod(SCRIPT_PATH, 0o755)
     result = subprocess.run(
-        [sys.executable, SCRIPT_PATH, "stdio"],
+        [SCRIPT_PATH, "stdio"], # Execute shell script directly
         capture_output=True,
         text=True,
         timeout=60,

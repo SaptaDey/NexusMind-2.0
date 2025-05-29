@@ -113,26 +113,26 @@ class AppSettings(BaseModel):
         default=8000
     )  # Can be overridden by APP__PORT environment variable
     log_level: str = Field(default="INFO")
-    cors_allowed_origins_str: str = Field(default="*", alias="APP_CORS_ALLOWED_ORIGINS_STR", description="Comma-separated list of allowed CORS origins, or '*' for all.")
-    uvicorn_reload: bool = Field(default=True, alias="APP_UVICORN_RELOAD", description="Enable Uvicorn auto-reload (True for dev, False for prod).")
-    uvicorn_workers: int = Field(default=1, alias="APP_UVICORN_WORKERS", description="Number of Uvicorn workers (e.g., (2 * CPU_CORES) + 1). Default is 1.")
-    auth_token: Optional[str] = Field(default=None, alias="APP_AUTH_TOKEN", description="Optional API authentication token for MCP endpoint.")
+    cors_allowed_origins_str: str = Field(default="*", validation_alias="APP_CORS_ALLOWED_ORIGINS_STR", description="Comma-separated list of allowed CORS origins, or '*' for all.")
+    uvicorn_reload: bool = Field(default=True, validation_alias="APP_UVICORN_RELOAD", description="Enable Uvicorn auto-reload (True for dev, False for prod).")
+    uvicorn_workers: int = Field(default=1, validation_alias="APP_UVICORN_WORKERS", description="Number of Uvicorn workers (e.g., (2 * CPU_CORES) + 1). Default is 1.")
+    auth_token: Optional[str] = Field(default=None, validation_alias="APP_AUTH_TOKEN", description="Optional API authentication token for MCP endpoint.")
     # debug: bool = False
 
     # MCP Transport Configuration
     mcp_transport_type: str = Field(
         default="http",
-        alias="MCP_TRANSPORT_TYPE",
+        validation_alias="MCP_TRANSPORT_TYPE",
         description="MCP transport type: http, stdio, or both"
     )
     mcp_stdio_enabled: bool = Field(
         default=True,
-        alias="MCP_STDIO_ENABLED",
+        validation_alias="MCP_STDIO_ENABLED",
         description="Enable STDIO transport"
     )
     mcp_http_enabled: bool = Field(
         default=True,
-        alias="MCP_HTTP_ENABLED",
+        validation_alias="MCP_HTTP_ENABLED",
         description="Enable HTTP transport"
     )
 
@@ -154,7 +154,7 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Validate entire configuration against JSON Schema
-        config_dict = self.model_dump()
+        config_dict = self.model_dump(by_alias=True)
         validate_config_schema(config_dict)
 
     @classmethod

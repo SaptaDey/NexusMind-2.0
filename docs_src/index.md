@@ -167,8 +167,8 @@ NexusMind is built around a flexible 8-stage pipeline architecture, where each s
 <div align="center">
   <table>
     <tr>
-      <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" width="38" height="38"/><br>Python 3.11+</td>
-      <td align="center"><img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" width="38" height="38"/><br>FastAPI</td>
+      <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" alt="Python logo" width="38" height="38"/><br>Python 3.11+</td>
+      <td align="center"><img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" alt="FastAPI logo" width="38" height="38"/><br>FastAPI</td>
       <td align="center"><img src="https://networkx.org/documentation/stable/_static/networkx_logo.svg" width="38" height="38"/><br>NetworkX</td>
       <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="38" height="38"/><br>Docker</td>
     </tr>

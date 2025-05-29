@@ -124,14 +124,11 @@ When deploying NexusMind to a production environment (e.g., Smithery.ai, Heroku,
 
 This file is used when registering NexusMind as an external tool with an MCP client like Claude Desktop. It describes the capabilities and endpoint of your NexusMind instance to the client.
 
-```json
-{
-  "name": "nexusmind",
-  "description": "Advanced Scientific Reasoning with Graph-of-Thoughts",
-  "version": "0.1.0",
-  "endpoints": {
-    "mcp": "http://localhost:8000/mcp" // Adjust if your service URL is different
-  },
+ {
+   "endpoints": {
+     "mcp": "http://localhost:8000/mcp"
+   }
+ }
   "capabilities": [
     "scientific_reasoning",
     "graph_analysis",

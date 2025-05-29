@@ -106,11 +106,12 @@ class GoTProcessor:
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
-            DecompositionStage,  # Added for logging
-            EvidenceStage,  # Added for logging
-            HypothesisStage,  # Added for logging
+            DecompositionStage,
+            EvidenceStage,
+            HypothesisStage,
             InitializationStage,
             ReflectionStage,
+            SubgraphExtractionStage, # Added for type checking
         )
 
         start_total_time = time.time()
@@ -197,6 +198,8 @@ class GoTProcessor:
                 # --- BEGIN ADDED LOGGING (After Stage Execution) ---
                 logger.debug(f"--- Output from Stage: {stage_name} ---")
                 if isinstance(stage_result, StageOutput):
+                    if stage_result.error_message: # New check
+                        logger.error(f"Stage {stage_name} reported an error: {stage_result.error_message}") # New log
                     if (
                         hasattr(stage_result, "next_stage_context_update")
                         and stage_result.next_stage_context_update
@@ -213,12 +216,12 @@ class GoTProcessor:
                         logger.debug(f"Summary: {stage_result.summary}")
                     if hasattr(stage_result, "metrics") and stage_result.metrics:
                         logger.debug(f"Metrics: {stage_result.metrics}")
-                    if (
-                        stage_result.error_message
-                    ):  # Also log error if any, though handled later
-                        logger.debug(
-                            f"Error reported by stage: {stage_result.error_message}"
-                        )
+                    # The debug log for error_message is now covered by the error log above,
+                    # but if kept, it should also check if stage_result is StageOutput
+                    # if stage_result.error_message:
+                    #     logger.debug(
+                    #         f"Error reported by stage (debug): {stage_result.error_message}"
+                    #     )
                 elif stage_result is not None:
                     logger.debug(f"Raw output (non-StageOutput): {stage_result}")
                 else:
@@ -258,7 +261,7 @@ class GoTProcessor:
                     f"Completed stage {i + 1}: {stage_name} in {stage_duration_ms}ms"
                 )
 
-                # ADD new error checking logic for InitializationStage:
+                # MODIFIED error checking logic for InitializationStage:
                 if isinstance(stage, InitializationStage):
                     initialization_output = (
                         current_session_data.accumulated_context.get(
@@ -276,22 +279,20 @@ class GoTProcessor:
                     ):
                         error_reason_summary = stage_result.error_message
                         halt_message = f"Processing halted: Initialization failed with error: {error_reason_summary}"
-                        logger.error(
-                            f"Critical error from InitializationStage (StageOutput): {error_reason_summary}. Halting further processing."
+                        logger.error( # Ensure this log reflects the source
+                            f"Critical error from InitializationStage (via StageOutput.error_message): {error_reason_summary}. Halting further processing."
                         )
-
                     # Priority 2: "error" key in the stage's output within accumulated_context (if not already caught by P1)
-                    elif initialization_output.get("error"):
+                    elif initialization_output.get("error"): # This is now an elif
                         error_reason_summary = str(
                             initialization_output.get("error")
-                        )  # Ensure string
+                        )
                         halt_message = f"Processing halted: Initialization failed with error from context: {error_reason_summary}"
                         logger.error(
                             f"Critical error found in InitializationStage context: {error_reason_summary}. Halting further processing."
                         )
-
                     # Priority 3: Missing 'root_node_id' (if no other errors were caught by P1 or P2)
-                    elif not initialization_output.get("root_node_id"):
+                    elif not initialization_output.get("root_node_id"): # This is now an elif
                         error_reason_summary = (
                             "InitializationStage did not provide root_node_id."
                         )
@@ -300,7 +301,7 @@ class GoTProcessor:
                             f"{error_reason_summary} Halting further processing."
                         )
 
-                    if halt_message:  # This block executes if any of the above conditions set halt_message
+                    if halt_message:
                         current_session_data.final_answer = halt_message
                         current_session_data.final_confidence_vector = [
                             0.0,
@@ -319,6 +320,83 @@ class GoTProcessor:
                             }
                         )
                         break  # Exit the loop of stages
+
+            # --- BEGIN NEW HALTING/FLAGGING LOGIC ---
+
+            # Helper function for halting
+            def _halt_processing(reason_summary: str, log_message: str):
+                logger.error(log_message)
+                current_session_data.final_answer = reason_summary
+                current_session_data.final_confidence_vector = [0.0, 0.0, 0.0, 0.0]
+                current_session_data.stage_outputs_trace.append({
+                    "stage_number": i + 1,
+                    "stage_name": stage_name,
+                    "error": f"Halting: {log_message}",
+                    "summary": reason_summary,
+                })
+
+            # After DecompositionStage
+            if isinstance(stage, DecompositionStage):
+                decomp_output = current_session_data.accumulated_context.get(DecompositionStage.stage_name, {})
+                # Assuming "decomposition_results" or a similar key holds a list/dict of components.
+                # If the primary output value itself is the list/dict of components:
+                # Check if the output is empty or if a specific key like 'components' is empty.
+                # For this example, let's assume if the decomp_output dict itself (excluding summary/metrics) is empty, it means no components.
+                # A more robust check would be on a specific key like 'decomposed_query_components' or 'dimensional_analysis_results'
+                # For now, let's assume a key 'decomposition_results' as per prompt.
+                decomposition_results = decomp_output.get("decomposition_results", []) # Assumption
+                if not decomposition_results:
+                    halt_reason = "Processing halted: The query could not be broken down into actionable components. Please try rephrasing or providing more specific details."
+                    _halt_processing(halt_reason, "Halting: No components after DecompositionStage.")
+                    break
+
+            # After HypothesisStage
+            elif isinstance(stage, HypothesisStage):
+                hypo_output = current_session_data.accumulated_context.get(HypothesisStage.stage_name, {})
+                # Assuming "hypotheses_results" holds a list/dict of hypotheses
+                # Let's assume a key 'hypotheses_generated' as per prompt (using "hypotheses_results" from prompt).
+                hypotheses_results = hypo_output.get("hypotheses_results", []) # Assumption
+                if not hypotheses_results:
+                    halt_reason = "Processing halted: No hypotheses could be generated. The topic may be too abstract or requires domain knowledge beyond current capabilities."
+                    _halt_processing(halt_reason, "Halting: No hypotheses generated after HypothesisStage.")
+                    break
+
+            # After EvidenceStage
+            elif isinstance(stage, EvidenceStage):
+                evidence_output = current_session_data.accumulated_context.get(EvidenceStage.stage_name, {})
+                # Check for an indicator from the stage's output.
+                # Assuming a key like "total_evidence_integrated" or a flag "no_evidence_found_in_stage"
+                # For this example, let's assume the stage sets a key "evidence_integration_summary"
+                # which contains "total_evidence_integrated".
+                evidence_summary = evidence_output.get("evidence_integration_summary", {}) # Assumption
+                total_evidence_integrated = evidence_summary.get("total_evidence_integrated", -1) # Default to -1 if not found
+
+                # Alternative: Check directly from stage_result if it's structured to pass this
+                # if isinstance(stage_result, StageOutput) and stage_result.next_stage_context_update:
+                #    evidence_context = stage_result.next_stage_context_update.get(EvidenceStage.stage_name, {})
+                #    evidence_summary = evidence_context.get("evidence_integration_summary", {})
+                #    total_evidence_integrated = evidence_summary.get("total_evidence_integrated", -1)
+
+                if total_evidence_integrated == 0:
+                    logger.warning("No evidence was integrated by EvidenceStage. Proceeding with caution.")
+                    current_session_data.accumulated_context["no_evidence_found"] = True
+                # No halt for EvidenceStage
+
+            # After SubgraphExtractionStage
+            elif isinstance(stage, SubgraphExtractionStage):
+                subgraph_output = current_session_data.accumulated_context.get(SubgraphExtractionStage.stage_name, {})
+                # Check for an indicator like "nodes_extracted" or "no_subgraph_extracted_in_stage"
+                # Assuming "subgraph_extraction_details" contains "nodes_extracted"
+                subgraph_details = subgraph_output.get("subgraph_extraction_details", {}) # Assumption
+                nodes_extracted = subgraph_details.get("nodes_extracted", -1) # Default to -1
+
+                if nodes_extracted == 0:
+                    logger.warning("No subgraph was extracted by SubgraphExtractionStage. Proceeding with caution.")
+                    current_session_data.accumulated_context["no_subgraph_extracted"] = True
+                # No halt for SubgraphExtractionStage
+
+            # --- END NEW HALTING/FLAGGING LOGIC ---
+
             except Exception as e:
                 logger.error(f"Error in stage {i + 1} ({stage_name}): {e!s}")
                 trace_entry = {

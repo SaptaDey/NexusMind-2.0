@@ -16,6 +16,7 @@ class StageOutput(BaseModel):
 
     summary: str
     metrics: dict[str, Any] = Field(default_factory=dict)
+    error_message: Optional[str] = None
     # Optional: Data to be passed to the next stage or stored in the session context
     # This can be more specific in subclasses if needed.
     next_stage_context_update: dict[str, Any] = Field(default_factory=dict)

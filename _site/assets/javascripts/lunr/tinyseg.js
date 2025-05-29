@@ -116,7 +116,7 @@
           var seg = ["B3","B2","B1"];
           var ctype = ["O","O","O"];
           var o = input.split("");
-          for (i = 0; i < o.length; ++i) {
+          for (let i = 0; i < o.length; ++i) {
             seg.push(o[i]);
             ctype.push(this.ctype_(o[i]))
           }

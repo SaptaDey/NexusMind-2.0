@@ -3,15 +3,15 @@
 <div align="center">
 
 ```
-                                        ╔══════════════════════════════════════╗
-                                        ║                                      ║
-                                        ║           🧠 NexusMind 🧠           ║
-                                        ║                                      ║
-                                        ║     Intelligent Scientific           ║
-                                        ║     Reasoning through                ║
-                                        ║     Graph-of-Thoughts                ║
-                                        ║                                      ║
-                                        ╚══════════════════════════════════════╝
+                                              ╔══════════════════════════════════════╗
+                                              ║                                      ║
+                                              ║           🧠 NexusMind 🧠           ║
+                                              ║                                      ║
+                                              ║     Intelligent Scientific           ║
+                                              ║     Reasoning through                ║
+                                              ║     Graph-of-Thoughts                ║
+                                              ║                                      ║
+                                              ╚══════════════════════════════════════╝
 ```
 
 #### **Intelligent Scientific Reasoning through Graph-of-Thoughts**
@@ -21,7 +21,7 @@
 [![License](https://img.shields.io/badge/license-Apache_2.0-green.svg)](LICENSE) <!-- Assuming LICENSE file will be added -->
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](Dockerfile)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688.svg)](https://fastapi.tiangolo.com)
-[![NetworkX](https://img.shields.io/badge/NetworkX-3.3-orange.svg)](https://networkx.org)
+[![neo4j](https://img.shields.io/badge/NetworkX-3.3-orange.svg)](https://neo4j.com)
 [![Last Updated](https://img.shields.io/badge/last_updated-May_2024-lightgrey.svg)](CHANGELOG.md)
 <!-- Add a GitHub Actions badge for documentation build once active -->
 <!-- [![Docs](https://github.com/sapta-dey/NexusMind-2.0/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/sapta-dey/NexusMind-2.0/actions/workflows/gh-pages.yml) -->

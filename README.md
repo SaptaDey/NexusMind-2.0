@@ -367,7 +367,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0. [Liscende](LICENSE).
+This project is licensed under the Apache License 2.0. [License](LICENSE).
 
 ## 🙏 Acknowledgments
 

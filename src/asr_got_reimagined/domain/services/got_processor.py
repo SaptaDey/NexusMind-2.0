@@ -33,8 +33,17 @@ from src.asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutp
 # For dynamic loading, direct imports here for all stages are not strictly needed.
 # However, for `isinstance` checks or accessing class attributes like `stage_name` for known critical stages,
 # some imports might be retained or handled differently.
-# Stage classes are imported lazily inside process_query where they are needed.
 
+from src.asr_got_reimagined.domain.stages import (
+    InitializationStage, # Keep for specific checks if needed
+    DecompositionStage,  # Keep for specific checks if needed
+    HypothesisStage,     # Keep for specific checks if needed
+    EvidenceStage,       # Keep for specific checks if needed
+    SubgraphExtractionStage, # Keep for specific checks if needed
+    CompositionStage,    # For retrieving final output key
+    ReflectionStage      # For retrieving final confidence key
+)
+from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError
 
 class GoTProcessor:
     def __init__(self, settings):

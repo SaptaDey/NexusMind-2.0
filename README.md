@@ -18,11 +18,13 @@
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/SaptaDey/NexusMind/releases)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-Apache_2.0-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache_2.0-green.svg)](LICENSE) <!-- Assuming LICENSE file will be added -->
 [![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](Dockerfile)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688.svg)](https://fastapi.tiangolo.com)
 [![NetworkX](https://img.shields.io/badge/NetworkX-3.3-orange.svg)](https://networkx.org)
 [![Last Updated](https://img.shields.io/badge/last_updated-May_2024-lightgrey.svg)](CHANGELOG.md)
+<!-- Add a GitHub Actions badge for documentation build once active -->
+<!-- [![Docs](https://github.com/sapta-dey/NexusMind-2.0/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/sapta-dey/NexusMind-2.0/actions/workflows/gh-pages.yml) -->
 
 </div>
 
@@ -30,6 +32,13 @@
   <p><strong>🚀 Next-Generation AI Reasoning Framework for Scientific Research</strong></p>
   <p><em>Leveraging graph structures to transform how AI systems approach scientific reasoning</em></p>
 </div>
+
+## 📚 Documentation
+
+**For comprehensive information on NexusMind, including detailed installation instructions, usage guides, configuration options, API references, contribution guidelines, and the project roadmap, please visit our full documentation site:**
+
+**[➡️ NexusMind Documentation Site](https://sapta-dey.github.io/NexusMind-2.0/)** 
+*(Note: This link will be active once the GitHub Pages site is deployed via the new workflow.)*
 
 ## 🔍 Overview
 
@@ -43,246 +52,21 @@ NexusMind leverages a **Neo4j graph database** to perform sophisticated scientif
 - Modular design for extensibility and customization
 - Integration with Claude Desktop via MCP protocol
 
-## 🌟 Key Features
-
-### 8-Stage Reasoning Pipeline
-
-```mermaid
-graph TD
-    A[🌱 Stage 1: Initialization] --> B[🧩 Stage 2: Decomposition]
-    B --> C[🔬 Stage 3: Hypothesis/Planning]
-    C --> D[📊 Stage 4: Evidence Integration]
-    D --> E[✂️ Stage 5: Pruning/Merging]
-    E --> F[🔍 Stage 6: Subgraph Extraction]
-    F --> G[📝 Stage 7: Composition]
-    G --> H[🤔 Stage 8: Reflection]
-    
-    A1[Create root node<br/>Set initial confidence<br/>Define graph structure] --> A
-    B1[Break into dimensions<br/>Identify components<br/>Create dimensional nodes] --> B
-    C1[Generate hypotheses<br/>Create reasoning strategy<br/>Set falsification criteria] --> C
-    D1[Gather evidence<br/>Link to hypotheses<br/>Update confidence scores] --> D
-    E1[Remove low-value elements<br/>Consolidate similar nodes<br/>Optimize structure] --> E
-    F1[Identify relevant portions<br/>Focus on high-value paths<br/>Create targeted subgraphs] --> F
-    G1[Synthesize findings<br/>Create coherent insights<br/>Generate comprehensive answer] --> G
-    H1[Evaluate reasoning quality<br/>Identify improvements<br/>Final confidence assessment] --> H
-    
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#e8f5e8
-    style D fill:#fff3e0
-    style E fill:#ffebee
-    style F fill:#f1f8e9
-    style G fill:#e3f2fd
-    style H fill:#fce4ec
-```
-
-The core reasoning process follows a sophisticated 8-stage pipeline:
-
-1. **🌱 Initialization**
-   - Creates root node from query with multi-dimensional confidence vector
-   - Establishes initial graph structure with proper metadata
-   - Sets baseline confidence across empirical, theoretical, methodological, and consensus dimensions
-
-2. **🧩 Decomposition**
-   - Breaks query into key dimensions: Scope, Objectives, Constraints, Data Needs, Use Cases
-   - Identifies potential biases and knowledge gaps from the outset
-   - Creates dimensional nodes with initial confidence assessments
-
-3. **🔬 Hypothesis/Planning**
-   - Generates 3-5 hypotheses per dimension with explicit falsification criteria
-   - Creates detailed execution plans for each hypothesis
-   - Tags with disciplinary provenance and impact estimates
-
-4. **📊 Evidence Integration**
-   - Iteratively selects hypotheses based on confidence-to-cost ratio and impact
-   - Gathers and links evidence using typed edges (causal, temporal, correlative)
-   - Updates confidence vectors using Bayesian methods with statistical power assessment
-
-5. **✂️ Pruning/Merging**
-   - Removes nodes with low confidence and impact scores
-   - Consolidates semantically similar nodes
-   - Optimizes graph structure while preserving critical relationships
-
-6. **🔍 Subgraph Extraction**
-   - Identifies high-value subgraphs based on multiple criteria
-   - Focuses on nodes with high confidence and impact scores
-   - Extracts patterns relevant to the original query
-
-7. **📝 Composition**
-   - Synthesizes findings into coherent narrative
-   - Annotates claims with node IDs and edge types
-   - Provides comprehensive answers with proper citations
-
-8. **🤔 Reflection**
-   - Performs comprehensive quality audit
-   - Evaluates coverage, bias detection, and methodological rigor
-   - Provides final confidence assessment and improvement recommendations
-
-### Advanced Technical Capabilities
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">🔄 <b>Multi-Dimensional<br>Confidence</b></td>
-      <td align="center">🧠 <b>Graph-Based<br>Knowledge</b></td>
-      <td align="center">🔌 <b>MCP<br>Integration</b></td>
-      <td align="center">⚡ <b>FastAPI<br>Backend</b></td>
-    </tr>
-    <tr>
-      <td align="center">🐳 <b>Docker<br>Deployment</b></td>
-      <td align="center">🧩 <b>Modular<br>Design</b></td>
-      <td align="center">⚙️ <b>Configuration<br>Management</b></td>
-      <td align="center">🔒 <b>Type<br>Safety</b></td>
-    </tr>
-    <tr>
-      <td align="center">🌐 <b>Interdisciplinary<br>Bridge Nodes</b></td>
-      <td align="center">🔗 <b>Hyperedge<br>Support</b></td>
-      <td align="center">📊 <b>Statistical<br>Power Analysis</b></td>
-      <td align="center">🎯 <b>Impact<br>Estimation</b></td>
-    </tr>
-  </table>
-</div>
-
-### Architectural Highlights
-
-NexusMind is built around a flexible 8-stage pipeline architecture, where each stage encapsulates specific reasoning logic. This design promotes modularity and clarity.
-
--   **8-Stage Pipeline Design**: The core reasoning process is broken down into eight distinct stages, from initialization to reflection. Each stage has a well-defined responsibility.
--   **Stage-Specific Logic and Neo4j Interaction**: Graph operations and interactions with the Neo4j database are primarily handled within individual stages. Each stage formulates and executes Cypher queries relevant to its task, utilizing `neo4j_utils` for database communication. This means the graph representation is persisted and manipulated directly within Neo4j.
--   **Orchestration by `GoTProcessor`**: The `GoTProcessor` acts as the central orchestrator. It manages the flow through the 8-stage pipeline, invoking each stage in sequence. It does not manage a central graph object in memory; rather, it facilitates the overall process.
--   **Data Flow Between Stages**: Data is passed between stages using `GoTProcessorSessionData` and `accumulated_context`. Each stage receives context from previous stages and can contribute its findings to the `accumulated_context`, which is then available to subsequent stages. This allows for a progressive build-up of insights as the pipeline executes.
-
-**Core Features:**
-- **🧠 Graph Knowledge Representation**: Utilizes a **Neo4j graph database** to model complex relationships. Graph interactions and manipulations are performed by individual pipeline stages using Cypher queries via `neo4j_utils`.
-- **🔄 Dynamic Confidence Vectors**: Four-dimensional confidence assessment (empirical support, theoretical basis, methodological rigor, consensus alignment)
-- **🌐 Interdisciplinary Bridge Nodes**: Automatically connects insights across different research domains
-- **🔗 Advanced Edge Types**: Supports causal, temporal, correlative, and custom relationship types
-- **📊 Statistical Rigor**: Integrated power analysis and effect size estimation
-- **🎯 Impact-Driven Prioritization**: Focuses on high-impact research directions
-- **🔌 MCP Server**: Seamless Claude Desktop integration with Model Context Protocol
-- **⚡ High-Performance API**: Modern FastAPI implementation with async support
-
-## 🛠️ Technology Stack
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" width="38" height="38"/><br>Python 3.11+</td>
-      <td align="center"><img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" width="38" height="38"/><br>FastAPI</td>
-      <td align="center"><img src="https://networkx.org/documentation/stable/_static/networkx_logo.svg" width="38" height="38"/><br>NetworkX</td>
-      <td align="center"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="38" height="38"/><br>Docker</td>
-    </tr>
-    <tr>
-      <td align="center"><img src="https://docs.pytest.org/en/7.3.x/_static/pytest_logo_curves.svg" width="38" height="38"/><br>Pytest</td>
-      <td align="center"><img src="https://docs.pydantic.dev/latest/img/logo-white.svg" width="38" height="38"/><br>Pydantic</td>
-      <td align="center"><img src="https://python-poetry.org/images/logo-origami.svg" width="38" height="38"/><br>Poetry</td>
-      <td align="center"><img src="https://raw.githubusercontent.com/tomchristie/uvicorn/master/docs/uvicorn.png" width="38" height="38"/><br>Uvicorn</td>
-    </tr>
-  </table>
-</div>
-
 ## 📂 Project Structure
 
+The project is organized as follows (see the documentation site for more details):
 ```
 NexusMind/
-├── 📁 .devcontainer/                     # VS Code Remote - Containers configuration
-│   └── devcontainer.json
-├── 📁 .github/                           # GitHub specific files (e.g., workflows)
-│   └── 📁 workflows/
-│       └── codeql.yml
-├── 📁 .md/                               # Markdown files for project documentation
-│   ├── CHANGELOG.md
-│   ├── CLAUDE_INTEGRATION.md
-│   ├── PYTHON_UPGRADE_SUMMARY.md
-│   └── claude_desktop_integration.md
-├── 📁 config/                             # Configuration files
-│   ├── settings.yaml                      # Main application settings
-│   └── claude_mcp_config.json            # Claude MCP integration config
-│
-├── 📁 docs/                              # Project documentation
-│   ├── 📁 examples/                      # Example files
-│   │   └── initialize_request.json
-│   ├── 📁 setup/                         # Setup related documentation
-│   │   └── neo4j_windows_wsl2_docs.md
-│   └── 📁 testing/                       # Testing related documentation
-│       └── testing_strategy_and_example.md
-│
-├── 📁 scripts/                           # Utility and helper scripts
-│   ├── add_evidence_types.py
-│   ├── add_type_annotations.py
-│   ├── add_type_hints.py
-│   ├── extract_clean_stage4.py
-│   ├── fix_imports.py
-│   ├── fix_indentation.py
-│   ├── fix_stage4_evidence.py
-│   └── 📁 profiling/
-│       ├── analyze_profile.py
-│       └── profile_runner.py
-│
+├── 📁 .github/                           # GitHub specific files (workflows)
+├── 📁 config/                             # Configuration files (settings.yaml)
+├── 📁 docs_src/                           # Source files for MkDocs documentation
 ├── 📁 src/                                # Source code
 │   └── 📁 asr_got_reimagined/            # Main application package
-│       ├── 📁 api/                       # API layer (FastAPI)
-│       │   ├── 📁 routes/                # API route definitions
-│       │   │   ├── __init__.py
-│       │   │   └── mcp.py                # MCP protocol endpoints
-│       │   ├── __init__.py
-│       │   └── schemas.py                # API request/response Pydantic schemas
-│       │
-│       ├── 📁 domain/                    # Core business logic and domain models
-│       │   ├── 📁 models/                # Pydantic models for domain entities
-│       │   │   ├── __init__.py
-│       │   │   ├── common.py
-│       │   │   ├── common_types.py
-│       │   │   └── graph_elements.py
-│       │   ├── 📁 services/              # Business logic services
-│       │   │   ├── __init__.py
-│       │   │   ├── got_processor.py      # Main Graph-of-Thoughts processing service
-│       │   │   └── neo4j_utils.py        # Neo4j database utilities
-│       │   ├── 📁 stages/                # 8-Stage GoT pipeline implementation
-│       │   │   ├── __init__.py
-│       │   │   ├── base_stage.py
-│       │   │   ├── stage_1_initialization.py
-│       │   │   ├── stage_2_decomposition.py
-│       │   │   ├── stage_3_hypothesis.py
-│       │   │   ├── stage_4_evidence.py
-│       │   │   ├── stage_5_pruning_merging.py
-│       │   │   ├── stage_6_subgraph_extraction.py
-│       │   │   ├── stage_7_composition.py
-│       │   │   └── stage_8_reflection.py
-│       │   ├── 📁 utils/                 # Utility functions for domain logic
-│       │   │   ├── __init__.py
-│       │   │   ├── graph_analysis_helpers.py
-│       │   │   ├── graph_analysis_neo4j.py
-│       │   │   ├── loguru_types.py
-│       │   │   ├── math_helpers.py
-│       │   │   └── metadata_helpers.py
-│       │   └── __init__.py
-│       │
-│       ├── 📁 loguru-stubs/              # Type stubs for Loguru
-│       │   └── __init__.pyi
-│       ├── __init__.py
-│       ├── app_setup.py                  # FastAPI application setup and configuration
-│       ├── config.py                     # Pydantic settings configuration
-│       └── main.py                       # Application entry point (Uvicorn runner)
-│
 ├── 📁 tests/                             # Test suite
-│   ├── 📁 integration/                   # Integration tests
-│   │   └── 📁 api/                       # API specific integration tests
-│   │       ├── 📁 data/
-│   │       │   └── test_query.json
-│   │       ├── socket_test.py
-│   │       ├── test_http_mcp.py
-│   │       ├── test_mcp_endpoints.py
-│   │       ├── test_request.py
-│   │       └── test_server.py
-│   └── __init__.py
-│
 ├── Dockerfile                            # Docker container definition
 ├── docker-compose.yml                    # Docker Compose for development
 ├── docker-compose.prod.yml               # Docker Compose for production
-├── .dockerignore                         # Docker ignore patterns
-├── .gitignore                            # Git ignore patterns
-├── mypy.ini                              # MyPy type checking configuration
+├── mkdocs.yml                            # MkDocs configuration
 ├── poetry.lock                           # Poetry dependency lock file
 ├── pyproject.toml                        # Python project configuration (Poetry)
 ├── pyrightconfig.json                    # Pyright type checker configuration
@@ -565,117 +349,11 @@ poetry run pre-commit run --all-files       # Run all hooks
 # See Makefile for other useful targets like 'make all-checks'.
 ```
 
-### Quality Metrics
+## 🗺️ Roadmap and Future Directions
 
-- **Type Safety**: 
-  - Fully typed codebase with strict mypy configuration
-  - Configured with `mypy.ini` and `pyrightconfig.json`
-  - Fix logger type issues: `python scripts/add_type_hints.py`
+We have an exciting vision for the future of NexusMind! Our roadmap includes plans for enhanced graph visualization, integration with more data sources like Arxiv, and further refinements to the core reasoning engine.
 
-- **Code Quality**:
-  - 95%+ test coverage target
-  - Automated formatting with Ruff
-  - Pre-commit hooks for consistent code quality
-  - Comprehensive integration tests for the 8-stage pipeline
-
-## 🔧 Configuration
-
-### Application Settings (`config/settings.yaml`)
-
-The application settings are managed via `config/settings.yaml` and can be overridden by environment variables. Below is an illustrative example of the YAML structure, reflecting the Pydantic models in `src/asr_got_reimagined/config.py`.
-
-```yaml
-# Core application settings (corresponds to AppSettings in config.py)
-app:
-  name: "NexusMind"
-  version: "0.1.0"
-  # debug: false # Optional: Corresponds to APP_DEBUG environment variable if used.
-  log_level: "INFO" # Corresponds to APP_LOG_LEVEL or LOG_LEVEL.
-  host: "0.0.0.0"   # Corresponds to APP_HOST.
-  port: 8000        # Corresponds to APP_PORT.
-  
-  # Uvicorn server settings (can be overridden by environment variables)
-  uvicorn_reload: true # For development. Set to false in production (APP_UVICORN_RELOAD).
-  uvicorn_workers: 1   # Number of worker processes (APP_UVICORN_WORKERS).
-
-  # CORS settings (can be overridden by environment variable)
-  # Example: "http://localhost:3000,https://your.frontend.domain"
-  # Set to "*" to allow all origins (default).
-  cors_allowed_origins_str: "*" # Corresponds to APP_CORS_ALLOWED_ORIGINS_STR.
-
-# ASR-GoT Framework settings (corresponds to ASRGoTConfig in config.py)
-# These are typically nested under 'asr_got.default_parameters' in the actual settings object.
-asr_got:
-  default_parameters: # Corresponds to ASRGoTDefaultParams
-    initial_confidence: [0.9, 0.9, 0.9, 0.9]
-    # Example for a nested object like 'hypotheses_per_dimension':
-    # hypotheses_per_dimension:
-    #   min: 2
-    #   max: 4 
-    pruning_confidence_threshold: 0.2
-    # ... other ASRGoTDefaultParams fields can be set here.
-  
-  layers: # Example layer definition
-    root_layer:
-      description: "The initial layer where the query is processed."
-    # ... other layer definitions can be added here.
-
-# MCP Server Settings (corresponds to MCPSettings in config.py)
-mcp_settings:
-  protocol_version: "2024-11-05"
-  server_name: "NexusMind MCP Server"
-  server_version: "0.1.0" # Matches app.version by default.
-  vendor_name: "AI Research Group"
-  # ... other mcp_settings fields can be set here.
-
-# Optional Claude API integration (corresponds to ClaudeAPIConfig in config.py)
-# claude_api:
-#   api_key: "your_claude_api_key_here_or_use_env_var" # Example: "env:CLAUDE_API_KEY"
-#   default_model: "claude-3-opus-20240229"
-#   timeout_seconds: 120
-#   max_retries: 2
-#
-#   Important Note on Claude API Settings:
-#   The 'claude_api' section above is for an *optional, direct Claude API integration*.
-#   This is NOT required for the primary functionality of NexusMind, which is to connect
-#   with Claude Desktop via the Model Context Protocol (MCP). For standard MCP-based
-#   integration with Claude Desktop, you do NOT need to provide your own Claude API keys.
-#   These settings would only be used if you intend to extend NexusMind to make direct
-#   calls to the Claude API, bypassing the MCP client.
-
-# Knowledge Domains (corresponds to a list of KnowledgeDomain models in config.py)
-# knowledge_domains:
-#   - name: "Immunology"
-#     keywords: ["immune system", "antibodies", "T-cells"]
-#     description: "The study of the immune system."
-#   - name: "Oncology"
-#     keywords: ["cancer", "tumor", "chemotherapy"]
-#     description: "The study and treatment of tumors."
-
-# Note: The actual settings structure is defined by Pydantic models in src/asr_got_reimagined/config.py.
-# Environment variables (e.g., APP__PORT=8001) can override these YAML values.
-# For nested structures, use double underscores for environment variables 
-# (e.g., ASR_GOT__DEFAULT_PARAMETERS__INITIAL_CONFIDENCE='[0.8,0.8,0.8,0.8]').
-```
-
-### MCP Configuration (`config/claude_mcp_config.json`)
-
-```json
-{
-  "name": "nexusmind",
-  "description": "Advanced Scientific Reasoning with Graph-of-Thoughts",
-  "version": "0.1.0",
-  "endpoints": {
-    "mcp": "http://localhost:8000/mcp"
-  },
-  "capabilities": [
-    "scientific_reasoning",
-    "graph_analysis",
-    "confidence_assessment",
-    "bias_detection"
-  ]
-}
-```
+For more details on our planned features and long-term goals, please see our [Roadmap](ROADMAP.md) (also available on the documentation site).
 
 ## 🗺️ Roadmap and Future Directions
 
@@ -685,34 +363,11 @@ For more details on our planned features and long-term goals, please see our [Ro
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Install development dependencies: `poetry install --with dev`
-4. Make your changes and add tests
-5. Run the test suite: `poetry run pytest`
-6. Submit a pull request
-
-### Code Style
-
-- Follow PEP 8 style guidelines
-- Use type hints for all functions and methods
-- Write comprehensive docstrings
-- Maintain test coverage above 95%
-
-## 📚 Documentation
-
-- **[API Documentation](docs/api/)**: Comprehensive API reference
-- **[Architecture Guide](docs/architecture/)**: System design and components
-- **[Usage Examples](docs/examples/)**: Practical usage scenarios
-- **[Development Guide](docs/development/)**: Contributing and development setup
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) (also available on the documentation site) for details on how to get started, our branching strategy, code style, and more.
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0. (A `LICENSE` file should be present in the repository root).
 
 ## 🙏 Acknowledgments
 

@@ -6,8 +6,7 @@ services:
     build:
       context: . # Use the Dockerfile in the current directory
       dockerfile: Dockerfile
-      args:
-        - MCP_TRANSPORT_TYPE=${MCP_TRANSPORT_TYPE:-http}
+      # MCP_TRANSPORT_TYPE build arg removed, will be controlled by environment variable
     container_name: nexusmind-api
     restart: unless-stopped
     ports:
@@ -39,18 +38,14 @@ services:
       HOST: "0.0.0.0"
       PORT: "8000"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
-    # env_file:
-    #   - .env # Uncomment to load environment variables from a .env file
+    env_file:
+      - .env # Load environment variables from a .env file
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"] # Health check endpoint
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s # Give more time for the app to start, especially with --reload
-    networks:
-      - nexusmind_network
-    depends_on:
-      - nexusmind-neo4j
     networks:
       - nexusmind_network
     depends_on:

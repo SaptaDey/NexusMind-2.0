@@ -15,8 +15,11 @@
         module.exports = factory()
     } else {
         // Browser globals (root is window)
+        if (!root.lunr) {
+            console.error('TinySegmenter: lunr global not found – load lunr.js first.');
+            return;
+        }
         factory()(root.lunr);
-    }
 }(this, function () {
     /**
      * Just return a value to define the module export.

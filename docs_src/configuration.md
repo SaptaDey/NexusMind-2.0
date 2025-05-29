@@ -111,11 +111,11 @@ When deploying NexusMind to a production environment (e.g., Smithery.ai, Heroku,
 *   **`NEO4J_URI`**: The URI of your production Neo4j instance.
 *   **`NEO4J_USER`**: The username for your production Neo4j database.
 *   `NEO4J_DATABASE`: (Optional, defaults to `neo4j`) The specific database name.
-*   `APP_UVICORN_RELOAD="False"`: Disable Uvicorn's auto-reload feature.
-*   `APP_UVICORN_WORKERS="<number_of_workers>"`: Set to an appropriate number based on your server resources (e.g., `4`).
+*   `APP__UVICORN_RELOAD="False"`: Disable Uvicorn's auto-reload feature.
+*   `APP__UVICORN_WORKERS="<number_of_workers>"`: Set to an appropriate number based on your server resources (e.g., `4`).
 *   `LOG_LEVEL="INFO"` (or `APP__LOG_LEVEL="INFO"`): Set a less verbose log level for production.
-*   `APP_CORS_ALLOWED_ORIGINS_STR="<your_frontend_domain_here>"`: Configure allowed CORS origins if your API is accessed from a specific frontend.
-*   `APP_AUTH_TOKEN="<your_secure_random_token>"`: If MCP endpoint authentication is desired, set this to a strong, randomly generated token.
+*   `APP__CORS_ALLOWED_ORIGINS_STR="<your_frontend_domain_here>"`: Configure allowed CORS origins if your API is accessed from a specific frontend.
+*   `APP__AUTH_TOKEN="<your_secure_random_token>"`: If MCP endpoint authentication is desired, set this to a strong, randomly generated token.
 
 **Security Notes on Passwords & Secrets:**
 

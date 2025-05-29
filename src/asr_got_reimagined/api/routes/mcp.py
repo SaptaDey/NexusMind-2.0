@@ -1,8 +1,6 @@
 import time
-from typing import Any, Optional, Union
-
-from typing import Any, Optional, Union
 import secrets
+from typing import Any, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from loguru import logger

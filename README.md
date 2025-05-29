@@ -521,7 +521,7 @@ While the current sequential execution ensures a clear and manageable data flow,
     <tr>
       <td align="center">
         <pre>poetry run pytest</pre>
-        <pre>poetry run pytest -v</pre>
+        <pre>make test</pre>
       </td>
       <td align="center">
         <pre>poetry run mypy src/</pre>
@@ -542,15 +542,18 @@ While the current sequential execution ensures a clear and manageable data flow,
 ### Development Commands
 
 ```bash
-# Run full test suite with coverage
+# Run full test suite with coverage using Poetry
 poetry run pytest --cov=src --cov-report=html --cov-report=term
 
-# Run specific test categories
+# Or using Makefile for the default test run
+make test
+
+# Run specific test categories (using poetry)
 poetry run pytest tests/unit/stages/          # Stage-specific tests
 poetry run pytest tests/integration/         # Integration tests
 poetry run pytest -k "test_confidence"       # Tests matching pattern
 
-# Type checking and linting
+# Type checking and linting (can also be run via Makefile targets: make lint, make check-types)
 poetry run mypy src/ --strict                # Strict type checking
 poetry run ruff check . --fix                # Auto-fix linting issues
 poetry run ruff format .                     # Format code
@@ -558,6 +561,8 @@ poetry run ruff format .                     # Format code
 # Pre-commit hooks (recommended)
 poetry run pre-commit install                # Install hooks
 poetry run pre-commit run --all-files       # Run all hooks
+
+# See Makefile for other useful targets like 'make all-checks'.
 ```
 
 ### Quality Metrics
@@ -671,6 +676,12 @@ mcp_settings:
   ]
 }
 ```
+
+## 🗺️ Roadmap and Future Directions
+
+We have an exciting vision for the future of NexusMind! Our roadmap includes plans for enhanced graph visualization, integration with more data sources like Arxiv, and further refinements to the core reasoning engine.
+
+For more details on our planned features and long-term goals, please see our [Roadmap](ROADMAP.md).
 
 ## 🤝 Contributing
 

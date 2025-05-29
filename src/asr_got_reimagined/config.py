@@ -71,9 +71,15 @@ class ASRGoTDefaultParams(BaseModel):
 class LayerDefinition(BaseModel):
     description: str
 
+class StageItemConfig(BaseModel):
+    name: str = Field(description="A friendly name for the stage (e.g., 'Initialization').")
+    module_path: str = Field(description="The full Python path to the stage class (e.g., 'src.asr_got_reimagined.domain.stages.InitializationStage').")
+    enabled: bool = Field(default=True, description="Whether this stage is enabled and should be included in the pipeline.")
+
 class ASRGoTConfig(BaseModel):
     default_parameters: ASRGoTDefaultParams = Field(default_factory=ASRGoTDefaultParams)
     layers: dict[str, LayerDefinition] = Field(default_factory=dict)
+    pipeline_stages: list[StageItemConfig] = Field(default_factory=list, description="Defines the sequence of stages in the ASR-GoT processing pipeline.")
 
 # --- Models for MCP Settings ---
 class MCPSettings(BaseModel):
@@ -110,6 +116,7 @@ class AppSettings(BaseModel):
     cors_allowed_origins_str: str = Field(default="*", alias="APP_CORS_ALLOWED_ORIGINS_STR", description="Comma-separated list of allowed CORS origins, or '*' for all.")
     uvicorn_reload: bool = Field(default=True, alias="APP_UVICORN_RELOAD", description="Enable Uvicorn auto-reload (True for dev, False for prod).")
     uvicorn_workers: int = Field(default=1, alias="APP_UVICORN_WORKERS", description="Number of Uvicorn workers (e.g., (2 * CPU_CORES) + 1). Default is 1.")
+    auth_token: Optional[str] = Field(default=None, alias="APP_AUTH_TOKEN", description="Optional API authentication token for MCP endpoint.")
     # debug: bool = False
 
     # MCP Transport Configuration

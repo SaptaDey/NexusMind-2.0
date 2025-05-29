@@ -299,6 +299,7 @@ Before running NexusMind (either locally or via Docker if not using the provided
 -   **A running Neo4j Instance**: NexusMind requires a connection to a Neo4j graph database.
     -   **APOC Library**: Crucially, the Neo4j instance **must** have the APOC (Awesome Procedures On Cypher) library installed. Several Cypher queries within the application's reasoning stages utilize APOC procedures (e.g., `apoc.create.addLabels`, `apoc.merge.node`). Without APOC, the application will not function correctly. You can find installation instructions on the [official APOC website](https://neo4j.com/labs/apoc/installation/).
     -   **Configuration**: Ensure that your `config/settings.yaml` (or corresponding environment variables) correctly points to your Neo4j instance URI, username, and password.
+    -   **Indexing**: For optimal performance, ensure appropriate Neo4j indexes are created. See [Neo4j Indexing Strategy](docs/neo4j_indexing.md) for details.
 
     *Note: The provided `docker-compose.yml` (for development) and `docker-compose.prod.yml` (for production) already include a Neo4j service with the APOC library pre-configured, satisfying this requirement when using Docker Compose.*
 
@@ -418,7 +419,11 @@ graph TB
 
 ### Notes on Specific Deployment Platforms
 
--   **Smithery.ai**: Deployment to the Smithery.ai platform was not specifically investigated as part of this project due to the inability to access detailed platform specifications. Users intending to deploy NexusMind to Smithery.ai should consult the platform's specific documentation and adapt the standard Docker deployment practices as needed. The provided `Dockerfile` and `docker-compose.prod.yml` serve as a baseline for containerized deployment.
+-   **Smithery.ai**: Deployment to the Smithery.ai platform typically involves using the provided Docker image directly.
+    *   Consult Smithery.ai's specific documentation for instructions on deploying custom Docker images.
+    *   **Port Configuration**: Ensure that the platform is configured to expose port 8000 (or the port configured via `APP_PORT` if overridden) for the NexusMind container, as this is the default port used by the FastAPI application.
+    *   **Health Checks**: Smithery.ai may use health checks to monitor container status. The NexusMind Docker image includes a `HEALTHCHECK` instruction that verifies the `/health` endpoint (e.g., `http://localhost:8000/health`). Ensure Smithery.ai is configured to use this endpoint if it requires a specific health check path.
+    *   The provided `Dockerfile` and `docker-compose.prod.yml` serve as a baseline for understanding the container setup. Adapt as per Smithery.ai's requirements.
 
 4. **Access the Services**:
    - **API Documentation**: `http://localhost:8000/docs`
@@ -460,6 +465,48 @@ The primary API endpoints exposed by NexusMind are:
     *(Note: The timestamp field shown previously is not part of the current health check response.)*
 
 The advanced API endpoints previously listed (e.g., `/api/v1/graph/query`) are not implemented in the current version and are reserved for potential future development.
+
+## Session Handling (`session_id`)
+
+Currently, the `session_id` parameter available in API requests (e.g., for `asr_got.query`) and present in responses serves primarily to identify and track a single, complete query-response cycle. It is also used for correlating progress notifications (like `got/queryProgress`) with the originating query.
+
+While the system generates and utilizes `session_id`s, NexusMind does not currently support true multi-turn conversational continuity where the detailed graph state or reasoning context from a previous query is automatically loaded and reused for a follow-up query using the same `session_id`. Each query is processed independently at this time.
+
+### Future Enhancement: Persistent Sessions
+
+A potential future enhancement for NexusMind is the implementation of persistent sessions. This would enable more interactive and evolving reasoning processes by allowing users to:
+
+1.  **Persist State:** Store the generated graph state and relevant reasoning context from a query, associated with its `session_id`, likely within the Neo4j database.
+2.  **Reload State:** When a new query is submitted with an existing `session_id`, the system could reload this saved state as the starting point for further processing.
+3.  **Refine and Extend:** Allow the new query to interact with the loaded graph—for example, by refining previous hypotheses, adding new evidence to existing structures, or exploring alternative reasoning paths based on the established context.
+
+Implementing persistent sessions would involve developing robust strategies for:
+*   Efficiently storing and retrieving session-specific graph data in Neo4j.
+*   Managing the lifecycle (e.g., creation, update, expiration) of session data.
+*   Designing sophisticated logic for how new queries merge with, modify, or extend pre-existing session contexts and graphs.
+
+This is a significant feature that could greatly enhance the interactive capabilities of NexusMind. Contributions from the community in designing and implementing persistent session functionality are welcome.
+
+### Future Enhancement: Asynchronous and Parallel Stage Execution
+
+Currently, the 8 stages of the NexusMind reasoning pipeline are executed sequentially. For complex queries or to further optimize performance, exploring asynchronous or parallel execution for certain parts of the pipeline is a potential future enhancement.
+
+**Potential Areas for Parallelism:**
+
+*   **Hypothesis Generation:** The `HypothesisStage` generates hypotheses for each dimension identified by the `DecompositionStage`. The process of generating hypotheses for *different, independent dimensions* could potentially be parallelized. For instance, if three dimensions are decomposed, three parallel tasks could work on generating hypotheses for each respective dimension.
+*   **Evidence Integration (Partial):** Within the `EvidenceStage`, if multiple hypotheses are selected for evaluation, the "plan execution" phase (simulated evidence gathering) for these different hypotheses might be performed concurrently.
+
+**Challenges and Considerations:**
+
+Implementing parallel stage execution would introduce complexities that need careful management:
+
+*   **Data Consistency:** Concurrent operations, especially writes to the Neo4j database (e.g., creating multiple hypothesis nodes or evidence nodes simultaneously), must be handled carefully to ensure data integrity and avoid race conditions. Unique ID generation schemes would need to be robust for parallel execution.
+*   **Transaction Management:** Neo4j transactions for concurrent writes would need to be managed appropriately.
+*   **Dependency Management:** Ensuring that stages (or parts of stages) that truly depend on the output of others are correctly sequenced would be critical.
+*   **Resource Utilization:** Parallel execution could increase resource demands (CPU, memory, database connections).
+*   **Complexity:** The overall control flow of the `GoTProcessor` would become more complex.
+
+While the current sequential execution ensures a clear and manageable data flow, targeted parallelism in areas like hypothesis generation for independent dimensions could offer performance benefits for future versions of NexusMind. This remains an open area for research and development.
 
 ## 🧪 Testing & Quality Assurance
 

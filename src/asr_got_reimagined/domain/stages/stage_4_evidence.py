@@ -383,24 +383,43 @@ class EvidenceStage(BaseStage):
             
             created_ibn_id = result_ibn[0]["ibn_created_id"]
 
-            # Link IBN to evidence and hypothesis
-            for rel_type_enum, source_id, target_id in [
-                (EdgeType.IBN_SOURCE_LINK, evidence_node_data['id'], created_ibn_id),
-                (EdgeType.IBN_TARGET_LINK, created_ibn_id, hypothesis_node_data['id'])
-            ]:
-                edge_id = f"edge_{source_id}_{rel_type_enum.value}_{target_id}"
-                edge_pydantic = Edge(id=edge_id, source_id=source_id, target_id=target_id, type=rel_type_enum, confidence=0.8)
-                edge_props = self._prepare_edge_properties_for_neo4j(edge_pydantic)
-                create_rel_query = """
-                MATCH (s:Node {id: $source_id}), (t:Node {id: $target_id})
-                MERGE (s)-[r:%s {id: $props.id}]->(t) SET r += $props RETURN r.id
-                """ % rel_type_enum.value
-                execute_query(create_rel_query, {"source_id": source_id, "target_id": target_id, "props": edge_props}, tx_type='write')
-            
-            logger.info(f"Created IBN {created_ibn_id} between {evidence_node_data['id']} and {hypothesis_node_data['id']}.")
-            return created_ibn_id
+            # Link IBN to evidence and hypothesis using a single query with multiple MERGE clauses
+            edge1_id = f"edge_{evidence_node_data['id']}_{EdgeType.IBN_SOURCE_LINK.value}_{created_ibn_id}"
+            edge1_pydantic = Edge(id=edge1_id, source_id=evidence_node_data['id'], target_id=created_ibn_id, type=EdgeType.IBN_SOURCE_LINK, confidence=0.8)
+            edge1_props = self._prepare_edge_properties_for_neo4j(edge1_pydantic)
+
+            edge2_id = f"edge_{created_ibn_id}_{EdgeType.IBN_TARGET_LINK.value}_{hypothesis_node_data['id']}"
+            edge2_pydantic = Edge(id=edge2_id, source_id=created_ibn_id, target_id=hypothesis_node_data['id'], type=EdgeType.IBN_TARGET_LINK, confidence=0.8)
+            edge2_props = self._prepare_edge_properties_for_neo4j(edge2_pydantic)
+
+            link_ibn_query = """
+            MATCH (ev_node:Node {id: $ev_id})
+            MATCH (ibn_node:Node {id: $ibn_id})
+            MATCH (hypo_node:Node {id: $hypo_id})
+            MERGE (ev_node)-[r1:IBN_SOURCE_LINK {id: $edge1_props.id}]->(ibn_node)
+            SET r1 += $edge1_props
+            MERGE (ibn_node)-[r2:IBN_TARGET_LINK {id: $edge2_props.id}]->(hypo_node)
+            SET r2 += $edge2_props
+            RETURN r1.id AS r1_id, r2.id AS r2_id
+            """
+            params_link = {
+                "ev_id": evidence_node_data['id'],
+                "ibn_id": created_ibn_id,
+                "hypo_id": hypothesis_node_data['id'],
+                "edge1_props": edge1_props,
+                "edge2_props": edge2_props
+            }
+            link_results = execute_query(link_ibn_query, params_link, tx_type='write')
+
+            if link_results and link_results[0].get("r1_id") and link_results[0].get("r2_id"):
+                logger.info(f"Created IBN {created_ibn_id} and linked it between {evidence_node_data['id']} and {hypothesis_node_data['id']}.")
+                return created_ibn_id
+            else:
+                logger.error(f"Failed to link IBN {created_ibn_id} to evidence/hypothesis.")
+                # Consider cleanup logic for orphaned IBN node if linking fails
+                return None
         except Neo4jError as e:
-            logger.error(f"Neo4j error creating IBN {ibn_id}: {e}")
+            logger.error(f"Neo4j error during IBN creation or linking for {ibn_id}: {e}")
             return None
 
     async def _create_hyperedges_in_neo4j(
@@ -457,28 +476,36 @@ class EvidenceStage(BaseStage):
             
             created_hyperedge_center_id = result_center[0]["hyperedge_center_created_id"]
 
-            # Link members to the hyperedge center node
-            member_ids_to_link = list(hyperedge_node_ids_for_pydantic) # Use the set from Pydantic model
+            batch_member_links_data = []
+            member_ids_to_link = list(hyperedge_node_ids_for_pydantic)
             for member_id in member_ids_to_link:
                 edge_id = f"edge_hyper_{created_hyperedge_center_id}_hasmember_{member_id}"
-                # Minimal edge properties for HAS_MEMBER, can be expanded
-                edge_props = {"id": edge_id} 
-                
-                link_member_query = """
-                MATCH (hc:Node {id: $hyperedge_center_id})
-                MATCH (member:Node {id: $member_node_id})
-                MERGE (hc)-[r:HAS_MEMBER {id: $props.id}]->(member) SET r += $props RETURN r.id
-                """
-                execute_query(link_member_query, {
+                edge_props = {"id": edge_id} # Minimal props, can be expanded
+                batch_member_links_data.append({
                     "hyperedge_center_id": created_hyperedge_center_id,
                     "member_node_id": member_id,
                     "props": edge_props
-                }, tx_type='write')
+                })
             
-            created_hyperedge_ids.append(created_hyperedge_center_id) # Return ID of the central hyperedge node
+            if batch_member_links_data:
+                link_members_query = """
+                UNWIND $links AS link_data
+                MATCH (hc:Node {id: link_data.hyperedge_center_id})
+                MATCH (member:Node {id: link_data.member_node_id})
+                MERGE (hc)-[r:HAS_MEMBER {id: link_data.props.id}]->(member)
+                SET r += link_data.props
+                RETURN count(r) AS total_links_created
+                """
+                link_results = execute_query(link_members_query, {"links": batch_member_links_data}, tx_type='write')
+                if link_results and link_results[0].get("total_links_created") is not None:
+                    logger.debug(f"Batch created {link_results[0]['total_links_created']} HAS_MEMBER links for hyperedge {created_hyperedge_center_id}.")
+                else:
+                    logger.error(f"Failed to get count from batch hyperedge member linking for {created_hyperedge_center_id}.")
+            
+            created_hyperedge_ids.append(created_hyperedge_center_id)
             logger.info(f"Created Hyperedge (center node {created_hyperedge_center_id}) for hypothesis {hypothesis_data['id']} and {len(related_evidence_data_list)} evidence nodes.")
         except Neo4jError as e:
-            logger.error(f"Neo4j error creating hyperedge for hypothesis {hypothesis_data['id']}: {e}")
+            logger.error(f"Neo4j error creating hyperedge or linking members for hypothesis {hypothesis_data['id']}: {e}")
         
         return created_hyperedge_ids
 

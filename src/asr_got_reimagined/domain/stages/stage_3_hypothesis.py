@@ -154,35 +154,36 @@ class HypothesisStage(BaseStage):
         all_hypothesis_node_ids_created: List[str] = []
         nodes_created_count = 0
         edges_created_count = 0
+        
+        batch_hypothesis_node_data = []
+        # Maps Neo4j hypothesis_id to its source dimension_id and the hypothesis label
+        created_hypotheses_map: Dict[str, Dict[str, str]] = {} 
 
         k_min = operational_params.get("hypotheses_per_dimension_min", self.k_min_hypotheses)
         k_max = operational_params.get("hypotheses_per_dimension_max", self.k_max_hypotheses)
         
+        # Step 1: Collect all hypothesis data for batch node creation
         for dim_id in dimension_node_ids:
             try:
-                # Fetch dimension node properties from Neo4j
-                fetch_dim_query = "MATCH (d:Node {id: $dimension_id}) RETURN properties(d) as props, labels(d) as labels"
+                fetch_dim_query = "MATCH (d:Node {id: $dimension_id}) RETURN properties(d) as props"
                 dim_records = execute_query(fetch_dim_query, {"dimension_id": dim_id}, tx_type="read")
                 if not dim_records or not dim_records[0].get("props"):
-                    logger.warning(f"Dimension node {dim_id} not found in Neo4j. Skipping.")
+                    logger.warning(f"Dimension node {dim_id} not found. Skipping hypothesis generation for it.")
                     continue
                 
                 dim_props = dim_records[0]["props"]
-                # dim_labels = dim_records[0]["labels"] # Not directly used for now, but fetched
-                
-                # Extract necessary info for hypothesis generation
                 dimension_label_for_hypo = dim_props.get("label", "Unknown Dimension")
                 dimension_tags_for_hypo = set(dim_props.get("metadata_disciplinary_tags", []))
                 dimension_layer_for_hypo = dim_props.get("metadata_layer_id", self.default_params.initial_layer)
 
                 k_hypotheses_to_generate = random.randint(k_min, k_max)
-                logger.debug(f"Generating {k_hypotheses_to_generate} hypotheses for dimension: '{dimension_label_for_hypo}' (ID: {dim_id})")
+                logger.debug(f"Preparing {k_hypotheses_to_generate} hypotheses for dimension: '{dimension_label_for_hypo}' (ID: {dim_id})")
 
                 for i in range(k_hypotheses_to_generate):
                     hypo_content = await self._generate_hypothesis_content(
                         dimension_label_for_hypo, dimension_tags_for_hypo, i, initial_query
                     )
-                    hypo_id = f"hypo_{dim_id}_{current_session_data.session_id}_{i}" # Ensure unique ID format per session
+                    hypo_id_neo4j = f"hypo_{dim_id}_{current_session_data.session_id}_{i}"
 
                     hypo_metadata = NodeMetadata(
                         description=f"A hypothesis related to dimension: '{dimension_label_for_hypo}'.",
@@ -196,57 +197,97 @@ class HypothesisStage(BaseStage):
                         layer_id=operational_params.get("hypothesis_layer", dimension_layer_for_hypo),
                     )
                     hypothesis_node_pydantic = Node(
-                        id=hypo_id, label=hypo_content["label"], type=NodeType.HYPOTHESIS,
+                        id=hypo_id_neo4j, label=hypo_content["label"], type=NodeType.HYPOTHESIS,
                         confidence=ConfidenceVector.from_list(self.hypothesis_confidence_values),
                         metadata=hypo_metadata
                     )
                     hyp_props_for_neo4j = self._prepare_node_properties_for_neo4j(hypothesis_node_pydantic)
-
-                    create_hyp_node_query = """
-                    MERGE (h:Node {id: $props.id}) SET h += $props
-                    WITH h, $type_label AS typeLabel CALL apoc.create.addLabels(h, [typeLabel]) YIELD node
-                    RETURN node.id AS hypothesis_id
-                    """
-                    params_hyp_node = {"props": hyp_props_for_neo4j, "type_label": NodeType.HYPOTHESIS.value}
-                    result_hyp_node = execute_query(create_hyp_node_query, params_hyp_node, tx_type='write')
-
-                    if not result_hyp_node or not result_hyp_node[0].get("hypothesis_id"):
-                        logger.error(f"Failed to create hypothesis node {hypo_id} in Neo4j.")
-                        continue
                     
-                    created_hypothesis_id = result_hyp_node[0]["hypothesis_id"]
-                    all_hypothesis_node_ids_created.append(created_hypothesis_id)
-                    nodes_created_count += 1
-
-                    # Create relationship: (Dimension)-[:GENERATES_HYPOTHESIS]->(Hypothesis)
-                    edge_id = f"edge_{dim_id}_genhyp_{created_hypothesis_id}"
-                    edge_pydantic = Edge(
-                        id=edge_id, source_id=dim_id, target_id=created_hypothesis_id,
-                        type=EdgeType.GENERATES_HYPOTHESIS, confidence=0.9,
-                        metadata=EdgeMetadata(description=f"Hypothesis '{hypo_content['label']}' generated for dimension '{dimension_label_for_hypo}'.")
-                    )
-                    edge_props_for_neo4j = self._prepare_edge_properties_for_neo4j(edge_pydantic)
-                    
-                    create_rel_query = """
-                    MATCH (dim:Node {id: $dimension_id})
-                    MATCH (hyp:Node {id: $hypothesis_id})
-                    MERGE (dim)-[r:GENERATES_HYPOTHESIS {id: $props.id}]->(hyp)
-                    SET r += $props
-                    RETURN r.id as rel_id
-                    """
-                    params_rel = {"dimension_id": dim_id, "hypothesis_id": created_hypothesis_id, "props": edge_props_for_neo4j}
-                    result_rel = execute_query(create_rel_query, params_rel, tx_type='write')
-
-                    if result_rel and result_rel[0].get("rel_id"):
-                        edges_created_count += 1
-                    else:
-                        logger.error(f"Failed to create GENERATES_HYPOTHESIS relationship for {dim_id} to {created_hypothesis_id}.")
-
+                    batch_hypothesis_node_data.append({
+                        "props": hyp_props_for_neo4j,
+                        "type_label_value": NodeType.HYPOTHESIS.value,
+                        "dim_id_source": dim_id, # To link back for relationship creation
+                        "hypo_label_original": hypo_content["label"] # For logging/mapping
+                    })
             except Neo4jError as e:
-                logger.error(f"Neo4j error processing dimension {dim_id}: {e}. Skipping.")
-            except Exception as e: # Catch other unexpected errors for a specific dimension
-                logger.error(f"Unexpected error processing dimension {dim_id}: {e}. Skipping.")
+                logger.error(f"Neo4j error fetching dimension {dim_id}: {e}. Skipping.")
+            except Exception as e:
+                logger.error(f"Unexpected error preparing hypotheses for dimension {dim_id}: {e}. Skipping.")
 
+        # Step 2: Execute batch hypothesis node creation
+        if batch_hypothesis_node_data:
+            try:
+                batch_node_query = """
+                UNWIND $batch_data AS item
+                MERGE (h:Node {id: item.props.id}) SET h += item.props
+                WITH h, item.type_label_value AS typeLabelValue CALL apoc.create.addLabels(h, [typeLabelValue]) YIELD node
+                RETURN node.id AS created_hyp_id, item.dim_id_source AS dim_id_source, item.hypo_label_original AS hypo_label
+                """
+                results_nodes = execute_query(batch_node_query, {"batch_data": batch_hypothesis_node_data}, tx_type='write')
+                
+                for record in results_nodes:
+                    created_hyp_id = record["created_hyp_id"]
+                    dim_id_source = record["dim_id_source"]
+                    hypo_label = record["hypo_label"]
+                    
+                    all_hypothesis_node_ids_created.append(created_hyp_id)
+                    nodes_created_count += 1
+                    created_hypotheses_map[created_hyp_id] = {"dim_id": dim_id_source, "label": hypo_label}
+                    logger.debug(f"Batch created/merged hypothesis node '{hypo_label}' (ID: {created_hyp_id}) for dimension {dim_id_source}.")
+            except Neo4jError as e:
+                logger.error(f"Neo4j error during batch hypothesis node creation: {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error during batch hypothesis node creation: {e}")
+
+        # Step 3: Collect and batch relationship creation
+        batch_relationship_data = []
+        if created_hypotheses_map:
+            for created_hyp_id, hypo_data_map in created_hypotheses_map.items():
+                dim_id_for_rel = hypo_data_map["dim_id"]
+                hypo_label_for_rel = hypo_data_map["label"]
+                
+                # Need dimension label for edge description - fetch it again or store it earlier if needed
+                # For simplicity, we'll use a generic description or try to retrieve it if it was stored with dim_id
+                # This part might need adjustment if dim_label is not easily accessible here.
+                # Assuming dim_id_for_rel can be used to fetch its label if necessary, or we use what we have.
+                # For now, using a placeholder from the hypo_label_for_rel.
+                dim_label_placeholder = f"Dimension for '{hypo_label_for_rel[:20]}...'"
+
+
+                edge_id = f"edge_{dim_id_for_rel}_genhyp_{created_hyp_id}"
+                edge_pydantic = Edge(
+                    id=edge_id, source_id=dim_id_for_rel, target_id=created_hyp_id,
+                    type=EdgeType.GENERATES_HYPOTHESIS, confidence=0.9,
+                    metadata=EdgeMetadata(description=f"Hypothesis '{hypo_label_for_rel}' generated for dimension '{dim_label_placeholder}'.")
+                )
+                edge_props_for_neo4j = self._prepare_edge_properties_for_neo4j(edge_pydantic)
+                batch_relationship_data.append({
+                    "dim_id": dim_id_for_rel, 
+                    "hyp_id": created_hyp_id, 
+                    "props": edge_props_for_neo4j
+                })
+
+        # Step 4: Execute batch relationship creation
+        if batch_relationship_data:
+            try:
+                batch_rel_query = """
+                UNWIND $batch_rels AS rel_detail
+                MATCH (dim:Node {id: rel_detail.dim_id})
+                MATCH (hyp:Node {id: rel_detail.hyp_id})
+                MERGE (dim)-[r:GENERATES_HYPOTHESIS {id: rel_detail.props.id}]->(hyp)
+                SET r += rel_detail.props
+                RETURN count(r) AS total_rels_created
+                """
+                result_rels = execute_query(batch_rel_query, {"batch_rels": batch_relationship_data}, tx_type='write')
+                if result_rels and result_rels[0].get("total_rels_created") is not None:
+                    edges_created_count = result_rels[0]["total_rels_created"]
+                    logger.debug(f"Batch created {edges_created_count} GENERATES_HYPOTHESIS relationships.")
+                else:
+                    logger.error("Batch GENERATES_HYPOTHESIS relationship creation query did not return expected count.")
+            except Neo4jError as e:
+                logger.error(f"Neo4j error during batch GENERATES_HYPOTHESIS relationship creation: {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error during batch GENERATES_HYPOTHESIS relationship creation: {e}")
 
         summary = f"Generated {nodes_created_count} hypotheses in Neo4j across {len(dimension_node_ids)} dimensions."
         metrics = {
@@ -254,6 +295,14 @@ class HypothesisStage(BaseStage):
             "relationships_created_in_neo4j": edges_created_count,
             "avg_hypotheses_per_dimension": nodes_created_count / len(dimension_node_ids) if dimension_node_ids else 0,
         }
-        context_update = {"hypothesis_node_ids": all_hypothesis_node_ids_created}
+        # Ensure hypotheses_results key is populated if other stages expect it
+        hypotheses_results_for_context = [
+            {"id": hyp_id, "label": data["label"], "dimension_id": data["dim_id"]} 
+            for hyp_id, data in created_hypotheses_map.items()
+        ]
+        context_update = {
+            "hypothesis_node_ids": all_hypothesis_node_ids_created,
+            "hypotheses_results": hypotheses_results_for_context # Added based on got_processor expectation
+        }
 
         return StageOutput(summary=summary, metrics=metrics, next_stage_context_update={self.stage_name: context_update})

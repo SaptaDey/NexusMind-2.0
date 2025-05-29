@@ -106,11 +106,12 @@ class GoTProcessor:
         """
         from src.asr_got_reimagined.domain.stages import (
             CompositionStage,
-            DecompositionStage,  # Added for logging
-            EvidenceStage,  # Added for logging
-            HypothesisStage,  # Added for logging
+            DecompositionStage,
+            EvidenceStage,
+            HypothesisStage,
             InitializationStage,
             ReflectionStage,
+            SubgraphExtractionStage, # Added for type checking
         )
 
         start_total_time = time.time()
@@ -319,6 +320,83 @@ class GoTProcessor:
                             }
                         )
                         break  # Exit the loop of stages
+
+            # --- BEGIN NEW HALTING/FLAGGING LOGIC ---
+
+            # Helper function for halting
+            def _halt_processing(reason_summary: str, log_message: str):
+                logger.error(log_message)
+                current_session_data.final_answer = reason_summary
+                current_session_data.final_confidence_vector = [0.0, 0.0, 0.0, 0.0]
+                current_session_data.stage_outputs_trace.append({
+                    "stage_number": i + 1,
+                    "stage_name": stage_name,
+                    "error": f"Halting: {log_message}",
+                    "summary": reason_summary,
+                })
+
+            # After DecompositionStage
+            if isinstance(stage, DecompositionStage):
+                decomp_output = current_session_data.accumulated_context.get(DecompositionStage.stage_name, {})
+                # Assuming "decomposition_results" or a similar key holds a list/dict of components.
+                # If the primary output value itself is the list/dict of components:
+                # Check if the output is empty or if a specific key like 'components' is empty.
+                # For this example, let's assume if the decomp_output dict itself (excluding summary/metrics) is empty, it means no components.
+                # A more robust check would be on a specific key like 'decomposed_query_components' or 'dimensional_analysis_results'
+                # For now, let's assume a key 'decomposition_results' as per prompt.
+                decomposition_results = decomp_output.get("decomposition_results", []) # Assumption
+                if not decomposition_results:
+                    halt_reason = "Processing halted: The query could not be broken down into actionable components. Please try rephrasing or providing more specific details."
+                    _halt_processing(halt_reason, "Halting: No components after DecompositionStage.")
+                    break
+
+            # After HypothesisStage
+            elif isinstance(stage, HypothesisStage):
+                hypo_output = current_session_data.accumulated_context.get(HypothesisStage.stage_name, {})
+                # Assuming "hypotheses_results" holds a list/dict of hypotheses
+                # Let's assume a key 'hypotheses_generated' as per prompt (using "hypotheses_results" from prompt).
+                hypotheses_results = hypo_output.get("hypotheses_results", []) # Assumption
+                if not hypotheses_results:
+                    halt_reason = "Processing halted: No hypotheses could be generated. The topic may be too abstract or requires domain knowledge beyond current capabilities."
+                    _halt_processing(halt_reason, "Halting: No hypotheses generated after HypothesisStage.")
+                    break
+
+            # After EvidenceStage
+            elif isinstance(stage, EvidenceStage):
+                evidence_output = current_session_data.accumulated_context.get(EvidenceStage.stage_name, {})
+                # Check for an indicator from the stage's output.
+                # Assuming a key like "total_evidence_integrated" or a flag "no_evidence_found_in_stage"
+                # For this example, let's assume the stage sets a key "evidence_integration_summary"
+                # which contains "total_evidence_integrated".
+                evidence_summary = evidence_output.get("evidence_integration_summary", {}) # Assumption
+                total_evidence_integrated = evidence_summary.get("total_evidence_integrated", -1) # Default to -1 if not found
+
+                # Alternative: Check directly from stage_result if it's structured to pass this
+                # if isinstance(stage_result, StageOutput) and stage_result.next_stage_context_update:
+                #    evidence_context = stage_result.next_stage_context_update.get(EvidenceStage.stage_name, {})
+                #    evidence_summary = evidence_context.get("evidence_integration_summary", {})
+                #    total_evidence_integrated = evidence_summary.get("total_evidence_integrated", -1)
+
+                if total_evidence_integrated == 0:
+                    logger.warning("No evidence was integrated by EvidenceStage. Proceeding with caution.")
+                    current_session_data.accumulated_context["no_evidence_found"] = True
+                # No halt for EvidenceStage
+
+            # After SubgraphExtractionStage
+            elif isinstance(stage, SubgraphExtractionStage):
+                subgraph_output = current_session_data.accumulated_context.get(SubgraphExtractionStage.stage_name, {})
+                # Check for an indicator like "nodes_extracted" or "no_subgraph_extracted_in_stage"
+                # Assuming "subgraph_extraction_details" contains "nodes_extracted"
+                subgraph_details = subgraph_output.get("subgraph_extraction_details", {}) # Assumption
+                nodes_extracted = subgraph_details.get("nodes_extracted", -1) # Default to -1
+
+                if nodes_extracted == 0:
+                    logger.warning("No subgraph was extracted by SubgraphExtractionStage. Proceeding with caution.")
+                    current_session_data.accumulated_context["no_subgraph_extracted"] = True
+                # No halt for SubgraphExtractionStage
+
+            # --- END NEW HALTING/FLAGGING LOGIC ---
+
             except Exception as e:
                 logger.error(f"Error in stage {i + 1} ({stage_name}): {e!s}")
                 trace_entry = {

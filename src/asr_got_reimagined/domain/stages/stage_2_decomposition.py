@@ -162,84 +162,133 @@ class DecompositionStage(BaseStage):
         nodes_created_count = 0
         edges_created_count = 0
         dimension_labels_created: List[str] = []
+        
+        batch_dimension_node_data = []
+        created_dimensions_map: Dict[str, str] = {} # original_id to created_node_id
 
         for i, dim_data in enumerate(dimensions_to_create_conceptual):
             dim_label = dim_data.get("label", f"Dimension {i + 1}")
             dim_description = dim_data.get("description", f"Details for {dim_label}")
-            dim_id = f"dim_{root_node_id}_{i}" # Ensure unique ID
+            # Make dim_id deterministic for mapping if needed, or use original_dim_data.label if unique
+            original_dim_identifier = dim_data.get("id", dim_label) # Assuming label is unique enough for mapping or dim_data has a unique 'id'
+            dim_id_neo4j = f"dim_{root_node_id}_{i}" # Neo4j node ID
 
             dim_metadata = NodeMetadata(
                 description=dim_description,
                 source_description="DecompositionStage (P1.2)",
                 epistemic_status=EpistemicStatus.ASSUMPTION,
-                disciplinary_tags=list(initial_disciplinary_tags), # Inherit tags
+                disciplinary_tags=list(initial_disciplinary_tags),
                 layer_id=operational_params.get("dimension_layer", root_node_layer_str),
                 impact_score=0.7,
             )
             dimension_node_pydantic = Node(
-                id=dim_id, label=dim_label, type=NodeType.DECOMPOSITION_DIMENSION,
+                id=dim_id_neo4j, label=dim_label, type=NodeType.DECOMPOSITION_DIMENSION,
                 confidence=ConfidenceVector.from_list(self.dimension_confidence_values),
                 metadata=dim_metadata
             )
             node_props_for_neo4j = self._prepare_node_properties_for_neo4j(dimension_node_pydantic)
+            type_label_value = NodeType.DECOMPOSITION_DIMENSION.value
+            
+            batch_dimension_node_data.append({
+                "props": node_props_for_neo4j, 
+                "type_label_value": type_label_value,
+                "original_identifier": original_dim_identifier # To map back if needed
+            })
 
+        if batch_dimension_node_data:
             try:
-                create_dim_node_query = """
-                MERGE (d:Node {id: $props.id}) SET d += $props
-                WITH d, $type_label AS typeLabel CALL apoc.create.addLabels(d, [typeLabel]) YIELD node
-                RETURN node.id AS dimension_id
+                batch_node_query = """
+                UNWIND $batch_data AS item
+                MERGE (d:Node {id: item.props.id}) SET d += item.props
+                WITH d, item.type_label_value AS typeLabelValue CALL apoc.create.addLabels(d, [typeLabelValue]) YIELD node
+                RETURN node.id AS created_node_id, item.props.label AS created_label, item.original_identifier AS original_identifier
                 """
-                params_node = {"props": node_props_for_neo4j, "type_label": NodeType.DECOMPOSITION_DIMENSION.value}
-                result_node = execute_query(create_dim_node_query, params_node, tx_type='write')
+                # Using item.props.label as created_label since node_props_for_neo4j contains 'label'
+                results_nodes = execute_query(batch_node_query, {"batch_data": batch_dimension_node_data}, tx_type='write')
                 
-                if not result_node or not result_node[0].get("dimension_id"):
-                    logger.error(f"Failed to create or retrieve dimension node {dim_id} in Neo4j.")
-                    continue
-                
-                created_dimension_id = result_node[0]["dimension_id"]
-                dimension_node_ids_created.append(created_dimension_id)
-                dimension_labels_created.append(dim_label)
-                nodes_created_count += 1
+                for record in results_nodes:
+                    created_node_id = record["created_node_id"]
+                    created_label = record["created_label"] # This is the label from props, e.g., "Scope"
+                    original_identifier = record["original_identifier"] # The original unique key for this dim_data
 
-                # Create relationship: (Dimension)-[:DECOMPOSITION_OF]->(Root)
+                    dimension_node_ids_created.append(created_node_id)
+                    dimension_labels_created.append(created_label) # Store the actual label used
+                    nodes_created_count += 1
+                    created_dimensions_map[original_identifier] = created_node_id # Map original id to Neo4j id
+                    logger.debug(f"Batch created/merged dimension node '{created_label}' (ID: {created_node_id}).")
+
+            except Neo4jError as e:
+                logger.error(f"Neo4j error during batch dimension node creation: {e}")
+            except Exception as e:
+                logger.error(f"Unexpected error during batch dimension node creation: {e}")
+        
+        # Relationship Batching
+        batch_relationship_data = []
+        if dimension_node_ids_created: # Only proceed if nodes were created
+            # Iterate through the original conceptual dimensions to prepare relationship data
+            # using the mapping `created_dimensions_map`
+            for i, dim_data in enumerate(dimensions_to_create_conceptual):
+                original_dim_identifier = dim_data.get("id", dim_data.get("label", f"Dimension {i+1}"))
+                created_dimension_id = created_dimensions_map.get(original_dim_identifier)
+                
+                if not created_dimension_id:
+                    logger.warning(f"Could not find created Neo4j ID for original dimension identifier '{original_dim_identifier}'. Skipping relationship creation.")
+                    continue
+
+                dim_label_for_edge = dim_data.get("label", f"Dimension {i+1}") # For edge description
+
                 edge_id = f"edge_{created_dimension_id}_decompof_{root_node_id}"
                 edge_pydantic = Edge(
                     id=edge_id, source_id=created_dimension_id, target_id=root_node_id,
-                    type=EdgeType.DECOMPOSITION_OF, confidence=0.95, # High confidence for structural link
-                    metadata=EdgeMetadata(description=f"'{dim_label}' is a decomposition of '{decomposition_input_text[:30]}...'")
+                    type=EdgeType.DECOMPOSITION_OF, confidence=0.95,
+                    metadata=EdgeMetadata(description=f"'{dim_label_for_edge}' is a decomposition of '{decomposition_input_text[:30]}...'")
                 )
                 edge_props_for_neo4j = self._prepare_edge_properties_for_neo4j(edge_pydantic)
-
-                create_rel_query = """
-                MATCH (dim_node:Node {id: $dim_id})
-                MATCH (root_node:Node {id: $root_id})
-                MERGE (dim_node)-[r:DECOMPOSITION_OF {id: $props.id}]->(root_node)
-                SET r += $props
-                RETURN r.id as rel_id
+                batch_relationship_data.append({
+                    "dim_id": created_dimension_id, 
+                    "root_id": root_node_id, 
+                    "props": edge_props_for_neo4j
+                })
+        
+        if batch_relationship_data:
+            try:
+                batch_rel_query = """
+                UNWIND $batch_rels AS rel_detail
+                MATCH (dim_node:Node {id: rel_detail.dim_id})
+                MATCH (root_node:Node {id: rel_detail.root_id})
+                MERGE (dim_node)-[r:DECOMPOSITION_OF {id: rel_detail.props.id}]->(root_node)
+                SET r += rel_detail.props
+                RETURN count(r) AS total_rels_created
                 """
-                # Note: EdgeType.DECOMPOSITION_OF.value is used as label, not in props directly for type
-                params_rel = {"dim_id": created_dimension_id, "root_id": root_node_id, "props": edge_props_for_neo4j}
-                result_rel = execute_query(create_rel_query, params_rel, tx_type='write')
-
-                if result_rel and result_rel[0].get("rel_id"):
-                    edges_created_count += 1
-                    logger.debug(f"Created dimension node '{dim_label}' (ID: {created_dimension_id}) and linked to root node {root_node_id}.")
+                result_rels = execute_query(batch_rel_query, {"batch_rels": batch_relationship_data}, tx_type='write')
+                if result_rels and result_rels[0].get("total_rels_created") is not None:
+                    edges_created_count = result_rels[0]["total_rels_created"]
+                    logger.debug(f"Batch created {edges_created_count} DECOMPOSITION_OF relationships.")
                 else:
-                    logger.error(f"Failed to create DECOMPOSITION_OF relationship for dimension {created_dimension_id} to root {root_node_id}.")
-
+                    logger.error("Batch relationship creation query did not return expected count.")
             except Neo4jError as e:
-                logger.error(f"Neo4j error creating dimension '{dim_label}' or its relationship: {e}")
+                logger.error(f"Neo4j error during batch DECOMPOSITION_OF relationship creation: {e}")
             except Exception as e:
-                logger.error(f"Unexpected error creating dimension '{dim_label}': {e}")
-
+                logger.error(f"Unexpected error during batch DECOMPOSITION_OF relationship creation: {e}")
 
         summary = f"Task decomposed into {nodes_created_count} dimensions in Neo4j: {', '.join(dimension_labels_created)}."
         metrics = {
             "dimensions_created_in_neo4j": nodes_created_count,
             "relationships_created_in_neo4j": edges_created_count,
         }
-        context_update = {"dimension_node_ids": dimension_node_ids_created}
+        # Ensure decomposition_results key is populated if other stages expect it.
+        # The prompt for stage-skipping logic in got_processor.py assumes a "decomposition_results" key.
+        # This key should contain the actual dimension data, not just IDs.
+        # For now, dimension_node_ids_created is what we have. If fuller results are needed, this needs adjustment.
+        decomposition_results_for_context = [
+            {"id": node_id, "label": label} for node_id, label in zip(dimension_node_ids_created, dimension_labels_created)
+        ]
 
+        context_update = {
+            "dimension_node_ids": dimension_node_ids_created,
+            "decomposition_results": decomposition_results_for_context # Added based on got_processor expectation
+        }
+        
         output = StageOutput(
             summary=summary, metrics=metrics,
             next_stage_context_update={self.stage_name: context_update}

@@ -56,8 +56,9 @@
         },
         "mcp_transport_type": {
           "type": "string",
+          "enum": ["http", "stdio", "both"],
           "default": "http",
-          "description": "MCP transport type: http, stdio, or both. Environment variable: MCP_TRANSPORT_TYPE."
+          "description": "Allowed values: 'http', 'stdio', or 'both'. Environment variable: MCP_TRANSPORT_TYPE."
         },
         "mcp_stdio_enabled": {
           "type": "boolean",

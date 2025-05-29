@@ -42,11 +42,10 @@ The `StageOutput` class is used to return results from your stage:
 ```python
 # src/asr_got_reimagined/domain/stages/my_custom_stage.py (Example Path)
 
-from src.asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
-from src.asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.models.common_types import GoTProcessorSessionData
 from src.asr_got_reimagined.config import Settings # Assuming settings are passed
 from loguru import logger
-
 class MyCustomAnalysisStage(BaseStage):
     stage_name = "MyCustomAnalysisStage"
 

@@ -1,6 +1,7 @@
 import datetime
 import random
-from typing import Any, Optional
+import json
+from typing import Any, Optional, List, Dict, Set, Union, Tuple
 
 from loguru import logger  # type: ignore
 
@@ -23,33 +24,47 @@ from asr_got_reimagined.domain.models.graph_elements import (
     NodeType,
     StatisticalPower,
 )
-# from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
-from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # Import Neo4j utils
-from src.asr_got_reimagined.domain.utils.math_helpers import ( # Ensure these are still relevant
+# from asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
+from asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # Import Neo4j utils
+from asr_got_reimagined.domain.utils.math_helpers import ( # Ensure these are still relevant
     bayesian_update_confidence, # This will be used
     calculate_information_gain, # This will be used
 )
-from src.asr_got_reimagined.domain.utils.metadata_helpers import (
+from asr_got_reimagined.domain.utils.metadata_helpers import (
     calculate_semantic_similarity, # This will be used
 )
 
-from .base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
 from .stage_3_hypothesis import HypothesisStage  # To access hypothesis_node_ids
 
-import json # For property preparation
 from datetime import datetime as dt # Alias dt for datetime.datetime
 from enum import Enum # For property preparation
-from typing import Dict, List, Set, Tuple # For type hints
-
 
 class EvidenceStage(BaseStage):
+     ...
+# -- utilities ---------------------------------------------------------
+     def _deserialize_tags(self, raw) -> Set[str]:
+         """
+         Helper to normalise discipline tag payloads originating from Neo4j.
+         Accepts JSON strings, lists, sets, or None.
+         """
+         if raw is None:
+             return set()
+         if isinstance(raw, (set, list)):
+             return set(raw)
+         try:
+             return set(json.loads(raw))
+         except Exception:
+             logger.warning("Could not deserialize tags payload '%s'", raw)
+             return set()
     stage_name: str = "EvidenceStage"
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
         self.max_iterations = self.default_params.evidence_max_iterations
-        self.ibn_similarity_threshold = self.default_params.get("ibn_similarity_threshold", 0.5) # Use .get for safety
-        self.min_nodes_for_hyperedge_consideration = self.default_params.get("min_nodes_for_hyperedge", 2) # Use .get
+        # Safe access to optional attributes using getattr
+        self.ibn_similarity_threshold = getattr(self.default_params, "ibn_similarity_threshold", 0.5)
+        self.min_nodes_for_hyperedge_consideration = getattr(self.default_params, "min_nodes_for_hyperedge", 2)
 
     def _prepare_node_properties_for_neo4j(self, node_pydantic: Node) -> Dict[str, Any]:
         """Converts a Node Pydantic model into a flat dictionary for Neo4j."""
@@ -86,7 +101,22 @@ class EvidenceStage(BaseStage):
         if edge_pydantic is None: return {}
         props = {"id": edge_pydantic.id}
         if hasattr(edge_pydantic, 'confidence') and edge_pydantic.confidence is not None:
-             props["confidence"] = edge_pydantic.confidence
+             if isinstance(edge_pydantic.confidence, (int, float)):
+     if isinstance(edge_pydantic.confidence, (int, float)):
+     if isinstance(edge_pydantic.confidence, (int, float)):
+     if isinstance(edge_pydantic.confidence, (int, float)):
+     if isinstance(edge_pydantic.confidence, (int, float)):
+     props["confidence"] = edge_pydantic.confidence
+ elif edge_pydantic.confidence:
+     props["confidence_json"] = json.dumps(edge_pydantic.confidence.model_dump())
+ elif edge_pydantic.confidence:
+     props["confidence_json"] = json.dumps(edge_pydantic.confidence.model_dump())
+ elif edge_pydantic.confidence:
+     props["confidence_json"] = json.dumps(edge_pydantic.confidence.model_dump())
+ elif edge_pydantic.confidence:
+     props["confidence_json"] = json.dumps(edge_pydantic.confidence.model_dump())
+ elif edge_pydantic.confidence:
+     props["confidence_json"] = json.dumps(edge_pydantic.confidence.model_dump())
         if edge_pydantic.metadata:
             for meta_field, meta_val in edge_pydantic.metadata.model_dump().items():
                 if meta_val is None: continue
@@ -122,7 +152,7 @@ class EvidenceStage(BaseStage):
         """ # Fetch a few candidates to score locally
         
         try:
-            results = execute_query(query, {"hypothesis_ids": hypothesis_node_ids}, tx_type="read")
+            results = await execute_query(query, {"hypothesis_ids": hypothesis_node_ids}, tx_type="read")
             if not results: return None
 
             eligible_hypotheses_data = []
@@ -228,7 +258,7 @@ class EvidenceStage(BaseStage):
         RETURN node.id AS evidence_id, properties(node) as evidence_props
         """
         try:
-            result_ev_node = execute_query(create_ev_node_query, {"props": ev_props_for_neo4j, "type_label": NodeType.EVIDENCE.value}, tx_type='write')
+            result_ev_node = await execute_query(create_ev_node_query, {"props": ev_props_for_neo4j, "type_label": NodeType.EVIDENCE.value}, tx_type='write')
             if not result_ev_node or not result_ev_node[0].get("evidence_id"):
                 logger.error(f"Failed to create evidence node {evidence_id} in Neo4j.")
                 return None
@@ -243,19 +273,19 @@ class EvidenceStage(BaseStage):
                 metadata=EdgeMetadata(description=f"Evidence '{evidence_node_pydantic.label[:20]}...' {'supports' if evidence_data['supports_hypothesis'] else 'contradicts'} hypothesis.")
             )
             edge_props_for_neo4j = self._prepare_edge_properties_for_neo4j(edge_pydantic)
+create_rel_query = f"""
+             MATCH (ev:Node {{id: $evidence_id}})
+             MATCH (hyp:Node {{id: $hypothesis_id}})
+            MERGE (ev)-[r:`{edge_type.value}` {{id: $props.id}}]->(hyp)
+             SET r += $props
+             RETURN r.id as rel_id
+            """
+@@
+ params_rel = {"evidence_id": created_evidence_id, "hypothesis_id": hypothesis_id, "props": edge_props_for_neo4j}
 
-            create_rel_query = """
-            MATCH (ev:Node {id: $evidence_id})
-            MATCH (hyp:Node {id: $hypothesis_id})
-            MERGE (ev)-[r:%s {id: $props.id}]->(hyp)
-            SET r += $props
-            RETURN r.id as rel_id
-            """ % edge_type.value # Dynamically set relationship type
-            
-            params_rel = {"evidence_id": created_evidence_id, "hypothesis_id": hypothesis_id, "props": edge_props_for_neo4j}
-            result_rel = execute_query(create_rel_query, params_rel, tx_type='write')
+result_rel = await execute_query(create_rel_query, params_rel, tx_type="write")
 
-            if not result_rel or not result_rel[0].get("rel_id"):
+if not result_rel or not result_rel[0].get("rel_id"):
                 logger.error(f"Failed to link evidence {created_evidence_id} to hypothesis {hypothesis_id}.")
                 # Potentially delete orphaned evidence node or mark for cleanup
                 return None
@@ -271,39 +301,12 @@ class EvidenceStage(BaseStage):
     async def _update_hypothesis_confidence_in_neo4j(
         self, hypothesis_id: str, prior_confidence: ConfidenceVector, 
         evidence_strength: float, supports_hypothesis: bool, 
-        statistical_power: Optional[StatisticalPower], edge_type: Optional[EdgeType]
+        statistical_power: Optional[StatisticalPower] = None, edge_type: Optional[EdgeType] = None
     ) -> bool:
-        def _deserialize_tags(self, raw) -> Set[str]:
-        """
-        Safely deserialize disciplinary tags from JSON string, list, or None.
-        
-        Args:
-            raw: Input that could be a JSON string, list, or None
-            
-        Returns:
-            Set of string tags, empty set if parsing fails or input is None/empty
-        """
-        if raw is None:
-            return set()
-        
-        if isinstance(raw, str):
-            try:
-                parsed = json.loads(raw)
-                return set(parsed) if parsed else set()
-            except json.JSONDecodeError:
-                logger.warning(f"Failed to parse disciplinary tags JSON: {raw}")
-                return set()
-        
-        # Handle list/iterable inputs
-        try:
-            return set(raw) if raw else set()
-        except (TypeError, ValueError):
-            logger.warning(f"Failed to convert disciplinary tags to set: {raw}")
-            return set()
         new_confidence_vec = bayesian_update_confidence(
-            prior_confidence=prior_confidence, evidence_strength=evidence_strength,
-            evidence_supports_hypothesis=supports_hypothesis, statistical_power=statistical_power, edge_type=edge_type
-        )
+           prior_confidence=prior_confidence, evidence_strength=evidence_strength,
+           evidence_supports_hypothesis=supports_hypothesis, statistical_power=statistical_power, edge_type=edge_type
+         )
         information_gain = calculate_information_gain(prior_confidence.to_list(), new_confidence_vec.to_list())
 
         update_query = """
@@ -326,7 +329,7 @@ class EvidenceStage(BaseStage):
             "timestamp": dt.now().isoformat()
         }
         try:
-            result = execute_query(update_query, params, tx_type="write")
+            result = await execute_query(update_query, params, tx_type="write")
             if result and result[0].get("id"):
                 logger.debug(f"Updated confidence for hypothesis {hypothesis_id} in Neo4j.")
                 return True
@@ -376,7 +379,7 @@ class EvidenceStage(BaseStage):
             WITH ibn, $type_label AS typeLabel CALL apoc.create.addLabels(ibn, [typeLabel]) YIELD node
             RETURN node.id AS ibn_created_id
             """
-            result_ibn = execute_query(create_ibn_query, {"props": ibn_props, "type_label": NodeType.INTERDISCIPLINARY_BRIDGE.value}, tx_type='write')
+            result_ibn = await execute_query(create_ibn_query, {"props": ibn_props, "type_label": NodeType.INTERDISCIPLINARY_BRIDGE.value}, tx_type='write')
             if not result_ibn or not result_ibn[0].get("ibn_created_id"):
                  logger.error(f"Failed to create IBN node {ibn_id} in Neo4j.")
                  return None
@@ -409,9 +412,9 @@ class EvidenceStage(BaseStage):
                 "edge1_props": edge1_props,
                 "edge2_props": edge2_props
             }
-            link_results = execute_query(link_ibn_query, params_link, tx_type='write')
+link_results = await execute_query(link_ibn_query, params_link, tx_type="write")
 
-            if link_results and link_results[0].get("r1_id") and link_results[0].get("r2_id"):
+if link_results and link_results[0].get("r1_id") and link_results[0].get("r2_id"):
                 logger.info(f"Created IBN {created_ibn_id} and linked it between {evidence_node_data['id']} and {hypothesis_node_data['id']}.")
                 return created_ibn_id
             else:
@@ -469,7 +472,7 @@ class EvidenceStage(BaseStage):
             WITH hc, $type_label AS typeLabel CALL apoc.create.addLabels(hc, [typeLabel]) YIELD node
             RETURN node.id AS hyperedge_center_created_id
             """
-            result_center = execute_query(create_center_query, {"props": center_node_props, "type_label": NodeType.HYPEREDGE_CENTER.value}, tx_type='write')
+            result_center = await execute_query(create_center_query, {"props": center_node_props, "type_label": NodeType.HYPEREDGE_CENTER.value}, tx_type='write')
             if not result_center or not result_center[0].get("hyperedge_center_created_id"):
                 logger.error(f"Failed to create hyperedge center node {hyperedge_center_id}.")
                 return created_hyperedge_ids
@@ -494,16 +497,16 @@ class EvidenceStage(BaseStage):
                 MATCH (member:Node {id: link_data.member_node_id})
                 MERGE (hc)-[r:HAS_MEMBER {id: link_data.props.id}]->(member)
                 SET r += link_data.props
-                RETURN count(r) AS total_links_created
+RETURN count(r) AS total_links_created
                 """
-                link_results = execute_query(link_members_query, {"links": batch_member_links_data}, tx_type='write')
+                 link_results = await execute_query(link_members_query, {"links": batch_member_links_data}, tx_type='write')
                 if link_results and link_results[0].get("total_links_created") is not None:
                     logger.debug(f"Batch created {link_results[0]['total_links_created']} HAS_MEMBER links for hyperedge {created_hyperedge_center_id}.")
                 else:
                     logger.error(f"Failed to get count from batch hyperedge member linking for {created_hyperedge_center_id}.")
             
             created_hyperedge_ids.append(created_hyperedge_center_id)
-            logger.info(f"Created Hyperedge (center node {created_hyperedge_center_id}) for hypothesis {hypothesis_data['id']} and {len(related_evidence_data_for_hyperedge)} evidence nodes.")
+            logger.info(f"Created Hyperedge (center node {created_hyperedge_center_id}) for hypothesis {hypothesis_data['id']} and {len(related_evidence_data_list)} evidence nodes.")
         except Neo4jError as e:
             logger.error(f"Neo4j error creating hyperedge or linking members for hypothesis {hypothesis_data['id']}: {e}")
         

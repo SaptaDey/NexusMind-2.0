@@ -26,7 +26,7 @@ from asr_got_reimagined.domain.models.graph_elements import (
 # from asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
 from asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError
 
-from .base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
 
 # T = TypeVar("T", bound=BaseModel) # No longer needed here as rehydration helpers are removed
 
@@ -127,7 +127,7 @@ class InitializationStage(BaseStage):
             """
             # Assuming execute_query can be awaited if it's async, or called directly if sync
             # For now, calling it directly as per the tool's current capabilities for neo4j_utils
-            root_node_records = execute_query(find_root_query, {"initial_query": initial_query}, tx_type="read")
+            root_node_records = await execute_query(find_root_query, {"initial_query": initial_query}, tx_type="read")
 
             if root_node_records:
                 root_record = root_node_records[0]
@@ -146,11 +146,11 @@ class InitializationStage(BaseStage):
                     SET n.metadata_disciplinary_tags = $tags
                     RETURN n.metadata_disciplinary_tags AS updated_tags
                     """
-                    updated_tags_result = execute_query(
-                        update_tags_query, 
-                        {"node_id": root_node_id_for_context, "tags": list(combined_tags)}, 
-                        tx_type="write"
-                    )
+                    updated_tags_result = await execute_query(
+                         update_tags_query, 
+                         {"node_id": root_node_id_for_context, "tags": list(combined_tags)}, 
+                         tx_type="write"
+                     )
                     if updated_tags_result:
                         logger.info(f"Updated disciplinary tags for ROOT node '{root_node_id_for_context}' to: {updated_tags_result[0]['updated_tags']}")
                         updated_existing_node_tags = True
@@ -202,7 +202,7 @@ class InitializationStage(BaseStage):
                 """
                 query_params = {"props": node_props_for_neo4j, "type_label": NodeType.ROOT.value}
                 # await execute_query(...) if execute_query becomes async
-                creation_result = execute_query(create_query, query_params, tx_type='write')
+                creation_result = await execute_query(create_query, query_params, tx_type='write')
                 
                 if creation_result and creation_result[0].get("new_node_id"):
                     root_node_id_for_context = creation_result[0]["new_node_id"]

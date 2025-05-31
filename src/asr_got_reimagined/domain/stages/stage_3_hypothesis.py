@@ -20,15 +20,15 @@ from asr_got_reimagined.domain.models.graph_elements import (
     NodeType,
     Plan,
 )
-# from src.asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
-from src.asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # Import Neo4j utils
+# from asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
+from asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # Import Neo4j utils
 
 import json # For property preparation
 from datetime import datetime # For property preparation
 from enum import Enum # For property preparation
-from typing import Dict, List, Set # For type hints
+from typing import Dict, List, Set, Optional, Union # For type hints
 
-from .base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
 
 # Import names of previous stages to access their output keys in accumulated_context
 from .stage_2_decomposition import DecompositionStage
@@ -166,7 +166,7 @@ class HypothesisStage(BaseStage):
         for dim_id in dimension_node_ids:
             try:
                 fetch_dim_query = "MATCH (d:Node {id: $dimension_id}) RETURN properties(d) as props"
-                dim_records = execute_query(fetch_dim_query, {"dimension_id": dim_id}, tx_type="read")
+                dim_records = await execute_query(fetch_dim_query, {"dimension_id": dim_id}, tx_type="read")
                 if not dim_records or not dim_records[0].get("props"):
                     logger.warning(f"Dimension node {dim_id} not found. Skipping hypothesis generation for it.")
                     continue
@@ -223,7 +223,7 @@ class HypothesisStage(BaseStage):
                 WITH h, item.type_label_value AS typeLabelValue CALL apoc.create.addLabels(h, [typeLabelValue]) YIELD node
                 RETURN node.id AS created_hyp_id, item.dim_id_source AS dim_id_source, item.hypo_label_original AS hypo_label
                 """
-                results_nodes = execute_query(batch_node_query, {"batch_data": batch_hypothesis_node_data}, tx_type='write')
+                results_nodes = await execute_query(batch_node_query, {"batch_data": batch_hypothesis_node_data}, tx_type='write')
                 
                 for record in results_nodes:
                     created_hyp_id = record["created_hyp_id"]
@@ -278,7 +278,7 @@ class HypothesisStage(BaseStage):
                 SET r += rel_detail.props
                 RETURN count(r) AS total_rels_created
                 """
-                result_rels = execute_query(batch_rel_query, {"batch_rels": batch_relationship_data}, tx_type='write')
+                result_rels = await execute_query(batch_rel_query, {"batch_rels": batch_relationship_data}, tx_type='write')
                 if result_rels and result_rels[0].get("total_rels_created") is not None:
                     edges_created_count = result_rels[0]["total_rels_created"]
                     logger.debug(f"Batch created {edges_created_count} GENERATES_HYPOTHESIS relationships.")

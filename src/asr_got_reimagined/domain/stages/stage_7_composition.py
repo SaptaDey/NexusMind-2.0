@@ -1,5 +1,5 @@
 import random
-from typing import Optional, Union
+from typing import Optional, Union, Dict, List, Any
 
 from loguru import logger
 from pydantic import BaseModel, Field, ValidationError
@@ -10,11 +10,10 @@ from asr_got_reimagined.domain.models.graph_elements import ( # Node might not b
     NodeType, # Still useful for type checking
 )
 # from asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
-from .base_stage import BaseStage, StageOutput
-from .stage_6_subgraph_extraction import SubgraphExtractionStage # For context key
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.stage_6_subgraph_extraction import SubgraphExtractionStage # For context key
 # No need to import ExtractedSubgraph if we use dicts or define a local version matching the input structure
 
-from typing import Any, Dict, List # For type hints
 import datetime # For parsing ISO date strings if necessary
 
 
@@ -90,10 +89,12 @@ class CompositionStage(BaseStage):
         if not node_type_str and "labels" in node_dict: # Try inferring from labels if type property not set
             # Example: if labels = ["HYPOTHESIS", "Node"], prefer "HYPOTHESIS"
             # This logic might need refinement based on how labels are structured by SubgraphExtraction
-            specific_labels = [l for l in node_dict["labels"] if l != "Node"]
-            if specific_labels: node_type_str = specific_labels[0]
-            else: node_type_str = "UnknownType"
-        
+            labels = node_dict.get("labels")
+            if labels:
+                specific_labels = [l for l in labels if l != "Node"]
+                node_type_str = specific_labels[0] if specific_labels else "UnknownType"
+            else:
+                node_type_str = "UnknownType"
         node_type_val = node_type_str or "UnknownType" # Fallback
 
         claim_text = f"Claim based on Node {node_id} ('{node_label}', Type: {node_type_val}): "

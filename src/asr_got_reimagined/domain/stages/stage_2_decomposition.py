@@ -19,12 +19,12 @@ from asr_got_reimagined.domain.models.graph_elements import (
 # from asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
 from asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError
 from .stage_1_initialization import InitializationStage # For context key
-from .base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
 
 import json # For property preparation
 from datetime import datetime # For property preparation
 from enum import Enum # For property preparation
-from typing import Dict, List, Set # For type hints
+from typing import Dict, List, Set, Optional # For type hints
 
 
 class DecompositionStage(BaseStage):

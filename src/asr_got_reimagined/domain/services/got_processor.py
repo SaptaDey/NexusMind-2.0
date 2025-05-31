@@ -142,7 +142,7 @@ class GoTProcessor:
             logger.info(f"Executing stage {i + 1}/{len(self.stages)}: {stage_name_for_log} (Context Key: {current_stage_context_key})")
 
             logger.debug(f"--- Preparing for Stage: {stage_name_for_log} ---")
-            if current_stage_context_key == InitializationStage.stage_name:
+            if current_stage_context_key == _stages["InitializationStage"].stage_name:
                  logger.debug(f"Input for {stage_name_for_log}: Query='{query[:100]}...', InitialContextKeys={list(initial_context.keys()) if initial_context else []}, OpParamsKeys={list(op_params.keys())}")
             else:
                  context_keys = list(current_session_data.accumulated_context.keys())
@@ -215,7 +215,7 @@ class GoTProcessor:
                 subgraph_extraction_stage_name = _stages["SubgraphExtractionStage"].stage_name
                 
                 # --- Stage-Specific Halting Checks (using current_stage_context_key) ---
-                if current_stage_context_key == initialization_stage_name:
+                if current_stage_context_key == _stages["InitializationStage"].stage_name:
                     init_context_data = current_session_data.accumulated_context.get(initialization_stage_name, {})
                     error_summary = None
                     if isinstance(stage_result, StageOutput) and stage_result.error_message:
@@ -310,6 +310,7 @@ class GoTProcessor:
             current_session_data.final_confidence_vector = final_confidence
 
         total_execution_time_ms = int((time.time() - start_total_time) * 1000)
+        current_session_data.execution_time_ms = total_execution_time_ms
         logger.info(
             f"NexusMind query processing completed for session {current_session_data.session_id} in {total_execution_time_ms}ms."
         )

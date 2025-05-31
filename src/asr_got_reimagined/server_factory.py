@@ -84,8 +84,9 @@ class MCPServerFactory:
             # Main STDIO loop
             while True:
                 try:
-                    # Read a line from stdin
-                    line = sys.stdin.readline()
+                    # Read a line from stdin without blocking the event loop
+                    import asyncio
+                    line = await asyncio.to_thread(sys.stdin.readline)
                     if not line:
                         logger.info("STDIO input closed, shutting down server.")
                         break
@@ -169,8 +170,12 @@ class MCPServerFactory:
             request_id = request_data.get("id")
             
             if method == "initialize":
+                # JSON-RPC notifications (no `id`) do not expect a result (§5)
+                if request_id is None:
+                    await MCPServerFactory._handle_initialize(params, None)
+                    return None
+
                 return await MCPServerFactory._handle_initialize(params, request_id)
-            
             elif method == "asr_got.query":
                 return await MCPServerFactory._handle_asr_got_query(
                     params, request_id, got_processor
@@ -242,17 +247,15 @@ class MCPServerFactory:
                 session_id=parsed_params.session_id,
                 operational_params=parsed_params.operational_params
             )
-            
-            # Convert to MCP result format
+result_dict = result.model_dump()
             mcp_result = MCPASRGoTQueryResult(
-                answer=result.get("answer", ""),
-                reasoning_trace_summary=result.get("reasoning_trace_summary"),
-                graph_state_full=result.get("graph_state_full"),
-                confidence_vector=result.get("confidence_vector"),
-                execution_time_ms=result.get("execution_time_ms"),
-                session_id=result.get("session_id")
+                answer=result_dict.get("final_answer", ""),
+                reasoning_trace_summary=result_dict.get("reasoning_trace_summary"),
+                graph_state_full=result_dict.get("graph_state_full"),
+                confidence_vector=result_dict.get("final_confidence_vector"),
+                execution_time_ms=result_dict.get("execution_time_ms"),
+                session_id=result_dict.get("session_id"),
             )
-            
             return JSONRPCResponse(id=request_id, result=mcp_result)
         
         except Exception as e:

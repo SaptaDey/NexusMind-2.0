@@ -1,4 +1,4 @@
-from typing import Optional # Added Optional
+from typing import Optional
 from loguru import logger
 
 from asr_got_reimagined.config import Settings
@@ -13,7 +13,7 @@ from asr_got_reimagined.domain.models.graph_elements import (
 from asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # Import Neo4j utils
 # from asr_got_reimagined.domain.utils.metadata_helpers import calculate_semantic_similarity # Placeholder, hard to use directly in Neo4j
 
-from .base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
 from typing import List, Dict, Any, Set # For type hints
 
 
@@ -27,7 +27,7 @@ class PruningMergingStage(BaseStage):
         self.pruning_impact_threshold = self.default_params.pruning_impact_threshold
         self.merging_semantic_overlap_threshold = self.default_params.merging_semantic_overlap_threshold
         # Example: Threshold for pruning low-confidence edges
-        self.pruning_edge_confidence_threshold = self.default_params.get("pruning_edge_confidence_threshold", 0.2)
+        self.pruning_edge_confidence_threshold = getattr(self.default_params, "pruning_edge_confidence_threshold", 0.2)
 
 
     async def _prune_low_confidence_impact_nodes_in_neo4j(self) -> int:
@@ -52,26 +52,28 @@ class PruningMergingStage(BaseStage):
         RETURN count(n) AS pruned_count
         """
         try:
-        result = execute_query(
-            prune_query,
-            {
-                "conf_thresh": self.pruning_confidence_threshold,
-                "impact_thresh": self.pruning_impact_threshold
-            },
-            tx_type="write"
-        )
-        pruned_count = result[0]["pruned_count"] if result and result[0] else 0
-        if pruned_count > 0:
-            logger.info(f"Pruned {pruned_count} low-confidence/low-impact nodes from Neo4j using optimized query.")
-        else:
-            logger.info("No nodes met the criteria for confidence/impact pruning.")
-        return pruned_count
+            result = await execute_query(
+                prune_query,
+                {
+                    "conf_thresh": self.pruning_confidence_threshold,
+                    "impact_thresh": self.pruning_impact_threshold,
+                },
+                tx_type="write",
+            )
+            pruned_count = result[0]["pruned_count"] if result and result[0] else 0
+            if pruned_count > 0:
+                logger.info(
+                    f"Pruned {pruned_count} low-confidence/low-impact nodes from Neo4j using optimized query."
+                )
+            else:
+                logger.info("No nodes met the criteria for confidence/impact pruning.")
+            return pruned_count
         except Neo4jError as e:
-        logger.error(f"Neo4j error during node pruning: {e}")
-        return 0
+            logger.error(f"Neo4j error during node pruning: {e}")
+            return 0
         except Exception as e:
-        logger.error(f"Unexpected error during node pruning: {e}")
-        return 0
+            logger.error(f"Unexpected error during node pruning: {e}")
+            return 0
 
 
     async def _prune_isolated_nodes_in_neo4j(self) -> int:
@@ -83,7 +85,7 @@ class PruningMergingStage(BaseStage):
         RETURN count(n) as pruned_count
         """
         try:
-            result = execute_query(query, {}, tx_type="write")
+            result = await execute_query(query, {}, tx_type="write")
             pruned_count = result[0]["pruned_count"] if result and result[0] else 0
             if pruned_count > 0:
                 logger.info(f"Pruned {pruned_count} isolated nodes from Neo4j.")
@@ -104,7 +106,7 @@ class PruningMergingStage(BaseStage):
         RETURN count(r) as pruned_count
         """
         try:
-            result = execute_query(query, {"threshold": self.pruning_edge_confidence_threshold}, tx_type="write")
+            result = await execute_query(query, {"threshold": self.pruning_edge_confidence_threshold}, tx_type="write")
             pruned_count = result[0]["pruned_count"] if result and result[0] else 0
             if pruned_count > 0:
                 logger.info(f"Pruned {pruned_count} low-confidence edges from Neo4j.")
@@ -171,7 +173,7 @@ class PruningMergingStage(BaseStage):
             count_query = "MATCH (n:Node) RETURN count(n) AS node_count; MATCH ()-[r]->() RETURN count(r) AS edge_count;"
             # This specific tool might only execute one query or handle multi-statement differently.
             # For simplicity, let's assume we can get these counts, or make two calls.
-            node_count_res = execute_query(
+            node_count_res = await execute_query(
                 "MATCH (n:Node) RETURN count(n) AS node_count",
                 {},
                 tx_type="read",
@@ -179,7 +181,7 @@ class PruningMergingStage(BaseStage):
             if node_count_res:
                 nodes_remaining = node_count_res[0]["node_count"]
 
-            edge_count_res = execute_query(
+            edge_count_res = await execute_query(
                 "MATCH ()-[r]->() RETURN count(r) AS edge_count",
                 {},
                 tx_type="read",

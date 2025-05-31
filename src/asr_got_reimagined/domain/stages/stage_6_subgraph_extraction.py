@@ -9,7 +9,7 @@ from asr_got_reimagined.domain.models.graph_elements import NodeType # Node remo
 # from asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
 from asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # Import Neo4j utils
 
-from .base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
 
 
 # Datetime might be needed if temporal_recency_days is implemented
@@ -46,8 +46,8 @@ class SubgraphExtractionStage(BaseStage):
         super().__init__(settings)
         self.default_extraction_criteria: List[SubgraphCriterion] = [
             SubgraphCriterion(name="high_confidence_core", description="Nodes with high average confidence and impact.",
-                              min_avg_confidence=self.default_params.subgraph_min_confidence_threshold,
-                              min_impact_score=self.default_params.subgraph_min_impact_threshold,
+                              min_avg_confidence=getattr(self.default_params, "subgraph_min_confidence_threshold", 0.6),
+                              min_impact_score=getattr(self.default_params, "subgraph_min_impact_threshold", 0.6),
                               node_types=[NodeType.HYPOTHESIS, NodeType.EVIDENCE, NodeType.INTERDISCIPLINARY_BRIDGE],
                               include_neighbors_depth=1),
             SubgraphCriterion(name="key_hypotheses_and_support", description="Key hypotheses and their direct support.",
@@ -189,7 +189,7 @@ class SubgraphExtractionStage(BaseStage):
         extracted_rels_dict: Dict[str, Dict[str, Any]] = {}
 
         try:
-            seed_results = execute_query(seed_query, params, tx_type="read")
+            seed_results = await execute_query(seed_query, params, tx_type="read")
             if seed_results:
                 seed_node_ids.update(record["id"] for record in seed_results if record.get("id"))
 
@@ -251,7 +251,7 @@ class SubgraphExtractionStage(BaseStage):
                    collect(DISTINCT {id: r.id, type: type(r), source_id: startNode(r).id, target_id: endNode(r).id, properties: properties(r)}) AS final_relationships
             """
 
-            subgraph_results = execute_query(batch_apoc_query, {"seed_ids": list(seed_node_ids), "max_level": criterion.include_neighbors_depth}, tx_type="read")
+            subgraph_results = await execute_query(batch_apoc_query, {"seed_ids": list(seed_node_ids), "max_level": criterion.include_neighbors_depth}, tx_type="read")
 
             if subgraph_results and subgraph_results[0]:
                 raw_nodes = subgraph_results[0].get("final_nodes", [])

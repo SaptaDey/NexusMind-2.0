@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import sys
 from typing import Any, Dict, Optional, TYPE_CHECKING
@@ -36,7 +37,7 @@ class MCPServerFactory:
         if hasattr(sys.stdin, 'isatty') and not sys.stdin.isatty():
             return "stdio"
         return "http"
-      @staticmethod
+    @staticmethod
     def should_run_http() -> bool:
         """
         Determine if HTTP transport should be enabled.
@@ -83,8 +84,9 @@ class MCPServerFactory:
             # Main STDIO loop
             while True:
                 try:
-                    # Read a line from stdin
-                    line = sys.stdin.readline()
+                    # Read a line from stdin asynchronously
+                    import asyncio
+                    line = await asyncio.to_thread(sys.stdin.readline)
                     if not line:
                         logger.info("STDIO input closed, shutting down server.")
                         break
@@ -231,7 +233,8 @@ class MCPServerFactory:
         got_processor: GoTProcessor
     ) -> JSONRPCResponse:
         """Handle ASR-GoT query request."""
-        try:            parsed_params = MCPASRGoTQueryParams(**params)
+        try:
+            parsed_params = MCPASRGoTQueryParams(**params)
             logger.info("Processing ASR-GoT query via STDIO: {}", parsed_params.query)
             # Process the query using GoT processor
             result = await got_processor.process_query(

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Dict, List
 
 from loguru import logger
 from pydantic import BaseModel, Field, ValidationError
@@ -15,8 +15,8 @@ from asr_got_reimagined.domain.models.graph_elements import (
 # from asr_got_reimagined.domain.models.graph_state import ASRGoTGraph # No longer used
 from asr_got_reimagined.domain.services.neo4j_utils import execute_query, Neo4jError # Import Neo4j utils
 
-from .base_stage import BaseStage, StageOutput
-from .stage_7_composition import ( 
+from asr_got_reimagined.domain.stages.base_stage import BaseStage, StageOutput
+from asr_got_reimagined.domain.stages.stage_7_composition import ( 
     ComposedOutput, # For parsing composed_output_dict
     CompositionStage, # For context key
 )
@@ -38,11 +38,11 @@ class ReflectionStage(BaseStage):
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
-        self.high_confidence_threshold = self.default_params.get("high_confidence_threshold", 0.7)
-        self.high_impact_threshold = self.default_params.get("high_impact_threshold", 0.7)
-        self.min_falsifiable_hypothesis_ratio = self.default_params.get("min_falsifiable_hypothesis_ratio", 0.6)
-        self.max_high_severity_bias_nodes = self.default_params.get("max_high_severity_bias_nodes", 0)
-        self.min_powered_evidence_ratio = self.default_params.get("min_powered_evidence_ratio", 0.5)
+        self.high_confidence_threshold = getattr(self.default_params, "high_confidence_threshold", 0.7)
+        self.high_impact_threshold = getattr(self.default_params, "high_impact_threshold", 0.7)
+        self.min_falsifiable_hypothesis_ratio = getattr(self.default_params, "min_falsifiable_hypothesis_ratio", 0.6)
+        self.max_high_severity_bias_nodes = getattr(self.default_params, "max_high_severity_bias_nodes", 0)
+        self.min_powered_evidence_ratio = getattr(self.default_params, "min_powered_evidence_ratio", 0.5)
         self.audit_checklist_items = [ # These are conceptual names for checks
             "high_confidence_impact_coverage", "bias_flags_assessment", "knowledge_gaps_addressed",
             "hypothesis_falsifiability", "causal_claim_validity", "temporal_consistency",
@@ -59,7 +59,7 @@ class ReflectionStage(BaseStage):
         # If confidence_overall_avg is not stored, fetch components:
         # RETURN n.confidence_empirical_support AS emp, n.confidence_theoretical_basis AS theo, ..., n.metadata_impact_score AS impact
         try:
-            results = execute_query(query, {}, tx_type="read")
+            results = await execute_query(query, {}, tx_type="read")
             if not results:
                 return AuditCheckResult(check_name="high_confidence_impact_coverage", status="NOT_APPLICABLE", message="No relevant nodes found.")
 
@@ -114,7 +114,7 @@ class ReflectionStage(BaseStage):
         query = "MATCH (g:Node) WHERE g.metadata_is_knowledge_gap = true RETURN count(g) as gap_nodes_count"
         gap_nodes_present = False
         try:
-            results = execute_query(query, {}, tx_type="read")
+            results = await execute_query(query, {}, tx_type="read")
             if results and results[0]["gap_nodes_count"] > 0:
                 gap_nodes_present = True
         except Neo4jError as e:
@@ -138,7 +138,7 @@ class ReflectionStage(BaseStage):
         RETURN h.metadata_falsification_criteria_json IS NOT NULL AS has_criteria
         """
         try:
-            results = execute_query(query, {}, tx_type="read")
+            results = await execute_query(query, {}, tx_type="read")
             if not results: return AuditCheckResult(check_name="hypothesis_falsifiability", status="NOT_APPLICABLE", message="No hypotheses found.")
             
             total_hypotheses = len(results)
@@ -157,7 +157,7 @@ class ReflectionStage(BaseStage):
         RETURN e.metadata_statistical_power_json AS stat_power_json
         """
         try:
-            results = execute_query(query, {}, tx_type="read")
+            results = await execute_query(query, {}, tx_type="read")
             if not results: return AuditCheckResult(check_name="statistical_rigor_of_evidence", status="NOT_APPLICABLE", message="No evidence nodes.")
 
             total_evidence = len(results)

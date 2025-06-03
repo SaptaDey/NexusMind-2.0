@@ -4,12 +4,12 @@ from typing import Any, Dict, Optional, TYPE_CHECKING
 
 # Only for type hints, not actual imports
 if TYPE_CHECKING:
-    from asr_got_reimagined.domain.services.got_processor import GoTProcessor
+    from src.asr_got_reimagined.domain.services.got_processor import GoTProcessor
 
 from loguru import logger
 
-from asr_got_reimagined.config import settings
-from asr_got_reimagined.api.schemas import (
+from src.asr_got_reimagined.config import settings
+from src.asr_got_reimagined.api.schemas import (
     JSONRPCResponse,
     MCPInitializeParams,
     MCPInitializeResult,
@@ -22,12 +22,12 @@ from asr_got_reimagined.api.schemas import (
 
 class MCPServerFactory:
     """Factory class for creating and managing MCP servers in different transport modes."""
-    
+
     @staticmethod
     def detect_transport_mode() -> str:
         """
         Auto-detect the appropriate transport mode based on the environment.
-        
+
         Returns:
             "stdio" if running in a STDIO environment, "http" otherwise
         """
@@ -36,12 +36,12 @@ class MCPServerFactory:
         if hasattr(sys.stdin, 'isatty') and not sys.stdin.isatty():
             return "stdio"
         return "http"
-    
+
     @staticmethod
     def should_run_http() -> bool:
         """
         Determine if HTTP transport should be enabled.
-        
+
         Returns:
             True if HTTP transport should be enabled
         """
@@ -50,12 +50,12 @@ class MCPServerFactory:
             settings.app.mcp_http_enabled and 
             transport_type in ["http", "both"]
         )
-    
+
     @staticmethod
     def should_run_stdio() -> bool:
         """
         Determine if STDIO transport should be enabled.
-        
+
         Returns:
             True if STDIO transport should be enabled
         """
@@ -64,22 +64,22 @@ class MCPServerFactory:
             settings.app.mcp_stdio_enabled and 
             transport_type in ["stdio", "both"]
         )
-    
+
     @staticmethod
     async def run_stdio_server():
         """
         Run the MCP server using STDIO transport.
-        
+
         This method handles JSON-RPC communication over stdin/stdout.
         """
         logger.info("Starting MCP STDIO server...")
-        
+
         # Import GoTProcessor only when needed to avoid circular dependencies
-        from asr_got_reimagined.domain.services.got_processor import GoTProcessor
-        
+        from src.asr_got_reimagined.domain.services.got_processor import GoTProcessor
+
         # Initialize GoT processor
         got_processor = GoTProcessor(settings=settings)
-        
+
         try:
             # Main STDIO loop
             while True:
@@ -90,11 +90,11 @@ class MCPServerFactory:
                     if not line:
                         logger.info("STDIO input closed, shutting down server.")
                         break
-                    
+
                     line = line.strip()
                     if not line:
                         continue
-                    
+
                     # Parse JSON-RPC request
                     try:
                         request_data = json.loads(line)
@@ -108,18 +108,18 @@ class MCPServerFactory:
                         )
                         print(json.dumps(error_response.model_dump()), flush=True)
                         continue
-                    
+
                     # Process the request
                     response = await MCPServerFactory._handle_stdio_request(
                         request_data, got_processor
                     )
-                    
+
                     # Send response
                     if response:
                         response_json = json.dumps(response.model_dump())
                         print(response_json, flush=True)
                         logger.debug("Sent STDIO response: {}", response_json)
-                
+
                 except KeyboardInterrupt:
                     logger.info("Received interrupt signal, shutting down STDIO server.")
                     break
@@ -131,16 +131,16 @@ class MCPServerFactory:
                         message="Internal error"
                     )
                     print(json.dumps(error_response.model_dump()), flush=True)
-        
+
         finally:
             # Cleanup
             try:
                 await got_processor.shutdown_resources()
             except Exception as e:
                 logger.error("Error shutting down GoT processor: {}", e)
-            
+
             logger.info("MCP STDIO server shutdown complete.")
-    
+
     @staticmethod
     async def _handle_stdio_request(
         request_data: Dict[str, Any], 
@@ -148,11 +148,11 @@ class MCPServerFactory:
     ) -> Optional[JSONRPCResponse]:
         """
         Handle a single STDIO JSON-RPC request.
-        
+
         Args:
             request_data: The parsed JSON-RPC request
             got_processor: The GoT processor instance
-            
+
         Returns:
             JSON-RPC response or None
         """
@@ -164,11 +164,11 @@ class MCPServerFactory:
                     code=-32600,
                     message="Invalid Request"
                 )
-            
+
             method = request_data.get("method")
             params = request_data.get("params", {})
             request_id = request_data.get("id")
-            
+
             if method == "initialize":
                 # JSON-RPC notifications (no `id`) do not expect a result (§5)
                 if request_id is None:
@@ -180,18 +180,18 @@ class MCPServerFactory:
                 return await MCPServerFactory._handle_asr_got_query(
                     params, request_id, got_processor
                 )
-            
+
             elif method == "shutdown":
                 await MCPServerFactory._handle_shutdown(params, request_id)
                 return JSONRPCResponse(id=request_id, result=None)
-            
+
             else:
                 return create_jsonrpc_error(
                     request_id=request_id,
                     code=-32601,
                     message=f"Method '{method}' not found"
                 )
-        
+
         except Exception as e:
             logger.exception("Error handling STDIO request: {}", e)
             return create_jsonrpc_error(
@@ -199,7 +199,7 @@ class MCPServerFactory:
                 code=-32603,
                 message="Internal error"
             )
-    
+
     @staticmethod
     async def _handle_initialize(
         params: Dict[str, Any], 
@@ -213,15 +213,15 @@ class MCPServerFactory:
                 parsed_params.client_info.client_name if parsed_params.client_info else "Unknown",
                 parsed_params.process_id,
             )
-            
+
             result = MCPInitializeResult(
                 server_name="NexusMind MCP Server",
                 server_version="0.1.0",
                 mcp_version="2024-11-05",
             )
-            
+
             return JSONRPCResponse(id=request_id, result=result)
-        
+
         except Exception as e:
             logger.error("Error in initialize handler: {}", e)
             return create_jsonrpc_error(
@@ -229,7 +229,7 @@ class MCPServerFactory:
                 code=-32602,
                 message="Invalid parameters"
             )
-    
+
     @staticmethod
     async def _handle_asr_got_query(
         params: Dict[str, Any], 
@@ -240,14 +240,14 @@ class MCPServerFactory:
         try:
             parsed_params = MCPASRGoTQueryParams(**params)
             logger.info("Processing ASR-GoT query via STDIO: {}", parsed_params.query)
-            
+
             # Process the query using GoT processor
             result = await got_processor.process_query(
                 query=parsed_params.query,
                 session_id=parsed_params.session_id,
                 operational_params=parsed_params.operational_params
             )
-result_dict = result.model_dump()
+            result_dict = result.model_dump()
             mcp_result = MCPASRGoTQueryResult(
                 answer=result_dict.get("final_answer", ""),
                 reasoning_trace_summary=result_dict.get("reasoning_trace_summary"),
@@ -257,7 +257,7 @@ result_dict = result.model_dump()
                 session_id=result_dict.get("session_id"),
             )
             return JSONRPCResponse(id=request_id, result=mcp_result)
-        
+
         except Exception as e:
             logger.exception("Error in ASR-GoT query handler: {}", e)
             return create_jsonrpc_error(
@@ -265,7 +265,7 @@ result_dict = result.model_dump()
                 code=-32603,
                 message="Internal error processing query"
             )
-    
+
     @staticmethod
     async def _handle_shutdown(
         params: Dict[str, Any], 

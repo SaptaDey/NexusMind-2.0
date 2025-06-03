@@ -61,7 +61,7 @@ COPY ./src ./src
 COPY ./config ./config
 
 # Copy and enable entrypoint script
-COPY ./scripts/docker-entrypoint.sh /entrypoint.sh
+COPY ./docker-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Set file ownership to non-root user

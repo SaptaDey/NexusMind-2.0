@@ -87,7 +87,7 @@ asr_got:
       enabled: true
     - name: "Pruning and Merging" # Renamed for clarity from "PruningMergingStage"
       module_path: "src.asr_got_reimagined.domain.stages.stage_5_pruning_merging.PruningMergingStage"
-      enabled: false # Temporarily disabled due to syntax errors
+      enabled: true
     - name: "Subgraph Extraction" # Renamed for clarity from "SubgraphExtractionStage"
       module_path: "src.asr_got_reimagined.domain.stages.stage_6_subgraph_extraction.SubgraphExtractionStage"
       enabled: true
@@ -120,7 +120,7 @@ asr_got:
 mcp_settings:
   protocol_version: "2024-11-05" # As per original claude_desktop_config.json  server_name: "NexusMind MCP Server"
   server_version: "0.1.0" # Match app.version
-  vendor_name: "Your Organization" # Change this
+  vendor_name: "NexusMind Development Team"
   # display_name: "NexusMind" # If needed by MCP client
   # description: "NexusMind provides advanced scientific reasoning capabilities." # If needed
 

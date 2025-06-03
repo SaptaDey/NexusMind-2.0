@@ -5,8 +5,8 @@ description = "NexusMind: Intelligent Scientific Reasoning through Graph-of-Thou
 authors = ["NexusMind Development Team <saptaswadey@gmail.com>"] 
 readme = "README.md"
 license = "Apache-2.0"
-repository = "https://github.com/nexusmind/nexusmind"
-homepage = "https://github.com/nexusmind/nexusmind"
+repository = "https://github.com/SaptaDey/NexusMind-2.0"
+homepage = "https://github.com/SaptaDey/NexusMind-2.0"
 keywords = ["nexusmind", "got", "graph-of-thoughts", "mcp", "ai", "reasoning", "scientific-computing"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -79,7 +79,7 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true # Start with this, can be made stricter later
 # Add paths for mypy to check, typically your source directory
-# files = "src/" # Uncomment and adjust once src directory is created
+files = "src/"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"] # Add src to pythonpath for tests
